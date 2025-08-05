@@ -1,0 +1,15 @@
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+import django_plotly_dash.views  # Required for Dash support
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('oee_analytics.urls')),  # Connects to your dashboard view
+    path('django_plotly_dash/', include('django_plotly_dash.urls')),  # Required for Dash components
+]
+
+# Serve static files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
