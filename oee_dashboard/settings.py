@@ -25,6 +25,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "django_plotly_dash.middleware.BaseMiddleware",
+    "django_plotly_dash.middleware.ExternalRedirectionMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -93,3 +95,25 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Allow Dash iframes
 X_FRAME_OPTIONS = "SAMEORIGIN"
+
+# ---- Celery Configuration ----
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Celery beat schedule for periodic tasks
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    'calculate-oee-metrics': {
+        'task': 'oee_analytics.tasks.calculate_oee_metrics',
+        'schedule': 30.0,  # Every 30 seconds
+    },
+    'cleanup-old-events': {
+        'task': 'oee_analytics.tasks.cleanup_old_events',
+        'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
+    },
+}

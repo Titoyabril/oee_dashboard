@@ -1,9 +1,12 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from .models import *
+from oee_analytics.events.models import DowntimeEvent
 from django.utils import timezone
 from datetime import timedelta
+from .tasks import process_machine_event, calculate_oee_metrics, generate_fake_event
 
 def home(request):
     """Homepage with gamified OEE overview"""
@@ -20,7 +23,6 @@ def home(request):
     }
     return render(request, 'oee_analytics/home.html', context)
 
-@login_required
 def dashboard(request):
     return render(request, 'oee_analytics/dashboard.html')
 
@@ -52,4 +54,26 @@ def current_metrics_api(request):
         'quality': quality,
         'production_count': 2847,  # Mock - replace with actual
         'timestamp': now.isoformat()
+    })
+
+@csrf_exempt
+def trigger_event_api(request):
+    """API endpoint to trigger a test event via Celery"""
+    if request.method == 'POST':
+        # Trigger fake event generation
+        task = generate_fake_event.delay()
+        return JsonResponse({
+            'status': 'success',
+            'task_id': task.id,
+            'message': 'Event generation triggered'
+        })
+    return JsonResponse({'error': 'POST method required'}, status=400)
+
+def trigger_oee_calculation(request):
+    """API endpoint to trigger OEE calculation via Celery"""
+    task = calculate_oee_metrics.delay()
+    return JsonResponse({
+        'status': 'success', 
+        'task_id': task.id,
+        'message': 'OEE calculation triggered'
     })

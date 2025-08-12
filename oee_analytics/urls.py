@@ -12,4 +12,6 @@ urlpatterns = [
     path('profile/', views.dashboard, name='profile'),  # Placeholder
     path('settings/', views.dashboard, name='settings'),  # Placeholder
     path('api/current-metrics/', views.current_metrics_api, name='current_metrics_api'),
+    path('api/trigger-event/', views.trigger_event_api, name='trigger_event_api'),
+    path('api/trigger-oee/', views.trigger_oee_calculation, name='trigger_oee_calculation'),
 ]

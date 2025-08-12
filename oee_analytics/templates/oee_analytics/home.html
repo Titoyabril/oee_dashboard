@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load plotly_dash %}
 
 {% block title %}Home - OEE Performance Hub{% endblock %}
 
@@ -96,40 +97,15 @@
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <!-- OEE Gauge will be embedded here -->
+                        <!-- OEE Main Gauge -->
                         <div id="oee-gauge-container">
-                            <div style="height: 350px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                <div class="text-center">
-                                    <div class="display-1 text-primary" id="live-oee">85.3</div>
-                                    <div class="text-muted">Current OEE %</div>
-                                </div>
-                            </div>
+                            {% plotly_app name="OEEMainGauge" ratio=0.35 %}
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <!-- Real-time metrics -->
-                        <div class="metrics-grid">
-                            <div class="metric-card">
-                                <div class="metric-value text-success" id="uptime">7.2h</div>
-                                <div class="metric-label">Uptime Today</div>
-                                <div class="metric-trend">
-                                    <i class="fas fa-arrow-up text-success"></i> +12min vs yesterday
-                                </div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-value text-primary" id="production-count">2,847</div>
-                                <div class="metric-label">Units Produced</div>
-                                <div class="metric-trend">
-                                    <i class="fas fa-arrow-up text-success"></i> +5% vs target
-                                </div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-value text-warning" id="defect-rate">2.1%</div>
-                                <div class="metric-label">Defect Rate</div>
-                                <div class="metric-trend">
-                                    <i class="fas fa-arrow-down text-success"></i> -0.3% vs yesterday
-                                </div>
-                            </div>
+                        <!-- Production Counter -->
+                        <div id="production-counter-container">
+                            {% plotly_app name="ProductionCounter" ratio=0.25 %}
                         </div>
                     </div>
                 </div>
@@ -196,13 +172,7 @@
             <div class="card-body">
                 <!-- Performance timeline chart -->
                 <div id="performance-timeline">
-                    <div style="height: 300px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                        <div class="text-center text-muted">
-                            <i class="fas fa-chart-line fa-3x mb-2"></i>
-                            <div>Performance Timeline Chart</div>
-                            <small>(Chart will load here)</small>
-                        </div>
-                    </div>
+                    {% plotly_app name="PerformanceTimeline" ratio=0.4 %}
                 </div>
             </div>
         </div>
@@ -261,6 +231,57 @@
         </div>
     </div>
     
+    <!-- OEE Component Gauges -->
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-gauge me-2"></i>OEE Components Breakdown
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center p-4 bg-light border rounded">
+                    <h5>OEE Components</h5>
+                    <p class="text-muted">Chart loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Downtime Analysis -->
+    <div class="col-xl-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-column me-2"></i>Downtime Analysis (Pareto)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center p-4 bg-light border rounded">
+                    <h5>Downtime Pareto</h5>
+                    <p class="text-muted">Chart loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Machine Status -->
+    <div class="col-xl-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cogs me-2"></i>Machine Status Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center p-4 bg-light border rounded">
+                    <h5>Machine Status</h5>
+                    <p class="text-muted">Chart loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Leaderboard and Team Performance -->
     <div class="col-12">
         <div class="card shadow-sm">

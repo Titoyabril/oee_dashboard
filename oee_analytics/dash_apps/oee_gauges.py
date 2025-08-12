@@ -2,6 +2,10 @@ import plotly.graph_objects as go
 from django_plotly_dash import DjangoDash
 from dash import dcc, html, Input, Output
 import plotly.express as px
+import pandas as pd
+from datetime import datetime, timedelta
+import random
+import json
 
 # OEE Main Gauge
 app1 = DjangoDash("OEEGauge")
