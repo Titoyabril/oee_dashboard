@@ -1,0 +1,151 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OEE Performance Hub{% endblock %}</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{% static 'css/oee-dashboard.css' %}" rel="stylesheet">
+</head>
+<body class="bg-light">
+    
+    <!-- Header with Navigation -->
+    <header class="main-header">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+            <div class="container-fluid">
+                <!-- Logo -->
+                <a class="navbar-brand d-flex align-items-center" href="/">
+                    <i class="fas fa-industry fa-2x me-2"></i>
+                    <span class="fw-bold">OEE Hub</span>
+                </a>
+                
+                <!-- Mobile Toggle -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <!-- Main Navigation -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/dashboard/">
+                                <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#shifts">
+                                <i class="fas fa-users me-1"></i> Shifts & Teams
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#challenges">
+                                <i class="fas fa-trophy me-1"></i> Challenges
+                                <span class="badge bg-warning text-dark ms-1" id="active-challenges-count">3</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#achievements">
+                                <i class="fas fa-medal me-1"></i> Achievements
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#leaderboard">
+                                <i class="fas fa-ranking-star me-1"></i> Leaderboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#training">
+                                <i class="fas fa-graduation-cap me-1"></i> Training
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- User Section -->
+                    <div class="d-flex align-items-center">
+                        <!-- Notifications -->
+                        <div class="notification-container me-3">
+                            <button class="btn btn-outline-light position-relative" id="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                                      id="notification-count">5</span>
+                            </button>
+                        </div>
+                        
+                        <!-- User Profile -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-light dropdown-toggle d-flex align-items-center" 
+                                    data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle fa-2x me-2"></i>
+                                <span class="d-none d-md-inline">{{ user.username|default:"Guest" }}</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#profile">
+                                    <i class="fas fa-user me-2"></i>Profile</a></li>
+                                <li><a class="dropdown-item" href="#settings">
+                                    <i class="fas fa-cog me-2"></i>Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#logout">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Banner Section -->
+    <section class="hero-banner">
+        {% block banner %}{% endblock %}
+    </section>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+        <div class="container-fluid py-4">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer bg-dark text-light py-3 mt-5">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="quick-links">
+                        <a href="/" class="text-light text-decoration-none me-3">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                        <a href="#help" class="text-light text-decoration-none me-3">
+                            <i class="fas fa-question-circle me-1"></i>Help/FAQ
+                        </a>
+                        <a href="#settings" class="text-light text-decoration-none me-3">
+                            <i class="fas fa-cog me-1"></i>Settings
+                        </a>
+                        <a href="#contact" class="text-light text-decoration-none">
+                            <i class="fas fa-envelope me-1"></i>Contact
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">© 2024 OEE Performance Hub. Built with ❤️ for manufacturing excellence.</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/dashboard.js' %}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

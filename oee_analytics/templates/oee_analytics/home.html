@@ -1,0 +1,409 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home - OEE Performance Hub{% endblock %}
+
+{% block banner %}
+<div class="hero-banner bg-gradient-primary text-white py-5">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <!-- OEE Score Summary -->
+            <div class="col-lg-4">
+                <div class="oee-summary">
+                    <h2 class="fw-bold mb-3">Current Shift Performance</h2>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="oee-main-score me-4">
+                            <div class="display-2 fw-bold" id="current-oee">85.3</div>
+                            <div class="small">OEE Score</div>
+                        </div>
+                        <div class="target-comparison">
+                            <div class="mb-2">
+                                <span class="badge bg-success">Target: 85%</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                     style="width: 85%" id="oee-progress"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="oee-components d-flex gap-3">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-success" id="availability">92.5%</div>
+                            <small>Availability</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-info" id="performance">89.1%</div>
+                            <small>Performance</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-warning" id="quality">95.8%</div>
+                            <small>Quality</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Team Status -->
+            <div class="col-lg-4 text-center">
+                <div class="team-status">
+                    <div class="status-indicator mb-3">
+                        <div class="status-light status-green mx-auto mb-2"></div>
+                        <h4>Team Alpha - On Track!</h4>
+                        <p class="mb-0">Performing above target for the shift</p>
+                    </div>
+                    <div class="performance-trend mt-3">
+                        <canvas id="trend-chart" width="200" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Call to Action -->
+            <div class="col-lg-4 text-center">
+                <div class="cta-section">
+                    <div class="highlight-card bg-white text-dark p-4 rounded-3 shadow">
+                        <h5 class="text-primary mb-3">🏆 Best Shift of the Week</h5>
+                        <p class="mb-3">Team Bravo achieved <strong>94.2% OEE</strong> yesterday!</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-lg" onclick="joinChallenge()">
+                                <i class="fas fa-trophy me-2"></i>Join Today's Challenge
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="viewShiftStats()">
+                                <i class="fas fa-chart-line me-2"></i>View Shift Performance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Alert Container -->
+<div id="alert-container"></div>
+
+<div class="row g-4">
+    
+    <!-- OEE Performance Summary -->
+    <div class="col-xl-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tachometer-alt me-2"></i>Current Shift OEE Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <!-- OEE Gauge will be embedded here -->
+                        <div id="oee-gauge-container">
+                            <div style="height: 350px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <div class="text-center">
+                                    <div class="display-1 text-primary" id="live-oee">85.3</div>
+                                    <div class="text-muted">Current OEE %</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <!-- Real-time metrics -->
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-value text-success" id="uptime">7.2h</div>
+                                <div class="metric-label">Uptime Today</div>
+                                <div class="metric-trend">
+                                    <i class="fas fa-arrow-up text-success"></i> +12min vs yesterday
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value text-primary" id="production-count">2,847</div>
+                                <div class="metric-label">Units Produced</div>
+                                <div class="metric-trend">
+                                    <i class="fas fa-arrow-up text-success"></i> +5% vs target
+                                </div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value text-warning" id="defect-rate">2.1%</div>
+                                <div class="metric-label">Defect Rate</div>
+                                <div class="metric-trend">
+                                    <i class="fas fa-arrow-down text-success"></i> -0.3% vs yesterday
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Current Shift Challenges -->
+    <div class="col-xl-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy me-2"></i>Active Challenges
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="challenges-list">
+                    <div class="challenge-item mb-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">Reduce Downtime</h6>
+                            <span class="badge bg-success">+150 XP</span>
+                        </div>
+                        <p class="small text-muted mb-2">Keep downtime under 30 minutes today</p>
+                        <div class="progress mb-2" style="height: 6px;">
+                            <div class="progress-bar bg-success" style="width: 78%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span>78% Complete</span>
+                            <span>22min remaining</span>
+                        </div>
+                    </div>
+                    
+                    <div class="challenge-item mb-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">Quality Excellence</h6>
+                            <span class="badge bg-primary">+200 XP</span>
+                        </div>
+                        <p class="small text-muted mb-2">Achieve 98% quality rate</p>
+                        <div class="progress mb-2" style="height: 6px;">
+                            <div class="progress-bar bg-primary" style="width: 95%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span>95.8% Complete</span>
+                            <span>2.2% to go</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <button class="btn btn-outline-primary btn-sm">View All Challenges</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Daily/Weekly Performance Overview -->
+    <div class="col-xl-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Performance Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Performance timeline chart -->
+                <div id="performance-timeline">
+                    <div style="height: 300px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-chart-line fa-3x mb-2"></i>
+                            <div>Performance Timeline Chart</div>
+                            <small>(Chart will load here)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Bars for Shift Goals -->
+    <div class="col-xl-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bullseye me-2"></i>Today's Goals Progress
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="goals-progress">
+                    <div class="goal-item mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="fw-medium">Production Target</span>
+                            <span class="text-success">2,847 / 3,000</span>
+                        </div>
+                        <div class="progress mb-1" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: 95%"></div>
+                        </div>
+                        <small class="text-muted">94.9% complete - 153 units to go</small>
+                    </div>
+                    
+                    <div class="goal-item mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="fw-medium">Downtime Reduction</span>
+                            <span class="text-warning">22min / 30min target</span>
+                        </div>
+                        <div class="progress mb-1" style="height: 8px;">
+                            <div class="progress-bar bg-warning" style="width: 73%"></div>
+                        </div>
+                        <small class="text-muted">8 minutes under target - Great job!</small>
+                    </div>
+                    
+                    <div class="goal-item mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="fw-medium">Quality Score</span>
+                            <span class="text-primary">95.8% / 95% target</span>
+                        </div>
+                        <div class="progress mb-1" style="height: 8px;">
+                            <div class="progress-bar bg-primary" style="width: 100%"></div>
+                        </div>
+                        <small class="text-success">Target exceeded! +0.8% above goal</small>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <button class="btn btn-success" onclick="viewDetailedStats()">
+                        <i class="fas fa-chart-line me-2"></i>View Detailed Stats
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaderboard and Team Performance -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-ranking-star me-2"></i>Team Performance Leaderboard
+                    </h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-light active">Today</button>
+                        <button class="btn btn-outline-light">This Week</button>
+                        <button class="btn btn-outline-light">This Month</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Team</th>
+                                <th>Shift</th>
+                                <th>OEE Score</th>
+                                <th>Availability</th>
+                                <th>Performance</th>
+                                <th>Quality</th>
+                                <th>XP Earned</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-success">
+                                <td><span class="badge bg-warning text-dark">🥇 1</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="team-avatar bg-success text-white rounded-circle me-2">A</div>
+                                        <strong>Team Alpha</strong>
+                                    </div>
+                                </td>
+                                <td>Morning (6AM-2PM)</td>
+                                <td><span class="fw-bold text-success">92.4%</span></td>
+                                <td>95.2%</td>
+                                <td>91.8%</td>
+                                <td>96.9%</td>
+                                <td><span class="badge bg-primary">+250 XP</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-secondary">🥈 2</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="team-avatar bg-primary text-white rounded-circle me-2">B</div>
+                                        <strong>Team Bravo</strong>
+                                    </div>
+                                </td>
+                                <td>Evening (2PM-10PM)</td>
+                                <td><span class="fw-bold text-primary">89.7%</span></td>
+                                <td>92.1%</td>
+                                <td>88.5%</td>
+                                <td>95.2%</td>
+                                <td><span class="badge bg-primary">+200 XP</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-warning text-dark">🥉 3</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="team-avatar bg-warning text-dark rounded-circle me-2">C</div>
+                                        <strong>Team Charlie</strong>
+                                    </div>
+                                </td>
+                                <td>Night (10PM-6AM)</td>
+                                <td><span class="fw-bold text-warning">85.3%</span></td>
+                                <td>88.9%</td>
+                                <td>87.1%</td>
+                                <td>93.6%</td>
+                                <td><span class="badge bg-primary">+180 XP</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Action Buttons -->
+<div class="floating-actions">
+    <button class="btn btn-success btn-lg rounded-circle shadow" 
+            title="Quick OEE Check" onclick="quickOEECheck()">
+        <i class="fas fa-tachometer-alt"></i>
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Real-time updates
+function updateMetrics() {
+    // Fetch latest metrics via WebSocket or AJAX
+    fetch('/api/current-metrics/')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('current-oee').textContent = data.oee.toFixed(1);
+            document.getElementById('availability').textContent = data.availability.toFixed(1) + '%';
+            document.getElementById('performance').textContent = data.performance.toFixed(1) + '%';
+            document.getElementById('quality').textContent = data.quality.toFixed(1) + '%';
+            
+            // Update progress bar
+            document.getElementById('oee-progress').style.width = data.oee + '%';
+            
+            // Update production count
+            document.getElementById('production-count').textContent = data.production_count.toLocaleString();
+        });
+}
+
+// Update every 5 seconds
+setInterval(updateMetrics, 5000);
+
+// Button functions
+function joinChallenge() {
+    window.location.href = '/challenges/';
+}
+
+function viewShiftStats() {
+    window.location.href = '/shifts/';
+}
+
+function viewDetailedStats() {
+    window.location.href = '/dashboard/';
+}
+
+function quickOEECheck() {
+    // Show quick modal with current OEE breakdown
+    updateMetrics();
+}
+</script>
+{% endblock %}
