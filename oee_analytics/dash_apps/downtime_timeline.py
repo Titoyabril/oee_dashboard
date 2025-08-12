@@ -16,7 +16,7 @@ app.layout = html.Div([
 @app.callback(Output("timeline","figure"), [Input("tick","n_intervals"), Input("window","value")])
 def _update(_, minutes):
     try:
-        resp = requests.get(f"/api/events/recent/?minutes={minutes}", timeout=1.5)
+        resp = requests.get(f"http://127.0.0.1:8000/api/events/recent/?minutes={minutes}", timeout=1.5)
         data = resp.json() if resp.ok else []
     except Exception:
         data = []
