@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load plotly_dash %}
 
 {% block title %}Home - OEE Performance Hub{% endblock %}
 
@@ -84,304 +83,25 @@
 <!-- Alert Container -->
 <div id="alert-container" class="container-fluid mb-3"></div>
 
-<div class="row g-4">
-    
-    <!-- OEE Performance Summary -->
-    <div class="col-xl-8">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-tachometer-alt me-2"></i>Current Shift OEE Performance
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <!-- OEE Main Gauge -->
-                        <div id="oee-gauge-container">
-                            {% plotly_app name="OEEMainGauge" ratio=0.35 %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <!-- Production Counter -->
-                        <div id="production-counter-container">
-                            {% plotly_app name="ProductionCounter" ratio=0.25 %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Current Shift Challenges -->
-    <div class="col-xl-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-trophy me-2"></i>Active Challenges
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="challenges-list">
-                    <div class="challenge-item mb-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0">Reduce Downtime</h6>
-                            <span class="badge bg-success">+150 XP</span>
-                        </div>
-                        <p class="small text-muted mb-2">Keep downtime under 30 minutes today</p>
-                        <div class="progress mb-2" style="height: 6px;">
-                            <div class="progress-bar bg-success" style="width: 78%"></div>
-                        </div>
-                        <div class="d-flex justify-content-between small">
-                            <span>78% Complete</span>
-                            <span>22min remaining</span>
-                        </div>
-                    </div>
-                    
-                    <div class="challenge-item mb-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0">Quality Excellence</h6>
-                            <span class="badge bg-primary">+200 XP</span>
-                        </div>
-                        <p class="small text-muted mb-2">Achieve 98% quality rate</p>
-                        <div class="progress mb-2" style="height: 6px;">
-                            <div class="progress-bar bg-primary" style="width: 95%"></div>
-                        </div>
-                        <div class="d-flex justify-content-between small">
-                            <span>95.8% Complete</span>
-                            <span>2.2% to go</span>
-                        </div>
-                    </div>
-                    
-                    <div class="text-center mt-3">
-                        <button class="btn btn-outline-primary btn-sm">View All Challenges</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Daily/Weekly Performance Overview -->
-    <div class="col-xl-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-info text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-chart-bar me-2"></i>Performance Overview
-                </h5>
-            </div>
-            <div class="card-body">
-                <!-- Performance timeline chart -->
-                <div id="performance-timeline">
-                    {% plotly_app name="PerformanceTimeline" ratio=0.4 %}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Progress Bars for Shift Goals -->
-    <div class="col-xl-6">
+<!-- Clean Start Message -->
+<div class="row justify-content-center">
+    <div class="col-md-8">
         <div class="card shadow-sm">
             <div class="card-header bg-success text-white">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-bullseye me-2"></i>Today's Goals Progress
+                    <i class="fas fa-check-circle me-2"></i>Clean Dashboard Start
                 </h5>
             </div>
-            <div class="card-body">
-                <div class="goals-progress">
-                    <div class="goal-item mb-4">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="fw-medium">Production Target</span>
-                            <span class="text-success">2,847 / 3,000</span>
-                        </div>
-                        <div class="progress mb-1" style="height: 8px;">
-                            <div class="progress-bar bg-success" style="width: 95%"></div>
-                        </div>
-                        <small class="text-muted">94.9% complete - 153 units to go</small>
-                    </div>
-                    
-                    <div class="goal-item mb-4">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="fw-medium">Downtime Reduction</span>
-                            <span class="text-warning">22min / 30min target</span>
-                        </div>
-                        <div class="progress mb-1" style="height: 8px;">
-                            <div class="progress-bar bg-warning" style="width: 73%"></div>
-                        </div>
-                        <small class="text-muted">8 minutes under target - Great job!</small>
-                    </div>
-                    
-                    <div class="goal-item mb-4">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="fw-medium">Quality Score</span>
-                            <span class="text-primary">95.8% / 95% target</span>
-                        </div>
-                        <div class="progress mb-1" style="height: 8px;">
-                            <div class="progress-bar bg-primary" style="width: 100%"></div>
-                        </div>
-                        <small class="text-success">Target exceeded! +0.8% above goal</small>
-                    </div>
-                </div>
-                
-                <div class="text-center mt-3">
-                    <button class="btn btn-success" onclick="viewDetailedStats()">
-                        <i class="fas fa-chart-line me-2"></i>View Detailed Stats
-                    </button>
+            <div class="card-body text-center py-5">
+                <h3>OEE Dashboard Platform</h3>
+                <p class="lead">All previous dashboards have been removed.</p>
+                <p>Ready for fresh dashboard development from scratch.</p>
+                <div class="alert alert-info">
+                    <strong>Status:</strong> Clean environment ready for new dashboard implementation
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- OEE Component Gauges -->
-    <div class="col-12">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-gauge me-2"></i>OEE Components Breakdown
-                </h5>
-            </div>
-            <div class="card-body">
-                <!-- OEE Components Gauges -->
-                <div id="oee-components-container">
-                    {% plotly_app name="OEEComponents" ratio=0.3 %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Downtime Analysis -->
-    <div class="col-xl-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-danger text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-chart-column me-2"></i>Downtime Analysis (Pareto)
-                </h5>
-            </div>
-            <div class="card-body">
-                <!-- Downtime Pareto Chart -->
-                <div id="downtime-pareto-container">
-                    {% plotly_app name="DowntimePareto" ratio=0.4 %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Machine Status -->
-    <div class="col-xl-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-info text-white">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-cogs me-2"></i>Machine Status Overview
-                </h5>
-            </div>
-            <div class="card-body">
-                <!-- Machine Status Grid -->
-                <div id="machine-status-container">
-                    {% plotly_app name="MachineStatus" ratio=0.25 %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Leaderboard and Team Performance -->
-    <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-ranking-star me-2"></i>Team Performance Leaderboard
-                    </h5>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-light active">Today</button>
-                        <button class="btn btn-outline-light">This Week</button>
-                        <button class="btn btn-outline-light">This Month</button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Team</th>
-                                <th>Shift</th>
-                                <th>OEE Score</th>
-                                <th>Availability</th>
-                                <th>Performance</th>
-                                <th>Quality</th>
-                                <th>XP Earned</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="table-success">
-                                <td><span class="badge bg-warning text-dark">🥇 1</span></td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="team-avatar bg-success text-white rounded-circle me-2">A</div>
-                                        <strong>Team Alpha</strong>
-                                    </div>
-                                </td>
-                                <td>Morning (6AM-2PM)</td>
-                                <td><span class="fw-bold text-success">92.4%</span></td>
-                                <td>95.2%</td>
-                                <td>91.8%</td>
-                                <td>96.9%</td>
-                                <td><span class="badge bg-primary">+250 XP</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">View Details</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge bg-secondary">🥈 2</span></td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="team-avatar bg-primary text-white rounded-circle me-2">B</div>
-                                        <strong>Team Bravo</strong>
-                                    </div>
-                                </td>
-                                <td>Evening (2PM-10PM)</td>
-                                <td><span class="fw-bold text-primary">89.7%</span></td>
-                                <td>92.1%</td>
-                                <td>88.5%</td>
-                                <td>95.2%</td>
-                                <td><span class="badge bg-primary">+200 XP</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">View Details</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge bg-warning text-dark">🥉 3</span></td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="team-avatar bg-warning text-dark rounded-circle me-2">C</div>
-                                        <strong>Team Charlie</strong>
-                                    </div>
-                                </td>
-                                <td>Night (10PM-6AM)</td>
-                                <td><span class="fw-bold text-warning">85.3%</span></td>
-                                <td>88.9%</td>
-                                <td>87.1%</td>
-                                <td>93.6%</td>
-                                <td><span class="badge bg-primary">+180 XP</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">View Details</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Floating Action Buttons -->
-<div class="floating-actions">
-    <button class="btn btn-success btn-lg rounded-circle shadow" 
-            title="Quick OEE Check" onclick="quickOEECheck()">
-        <i class="fas fa-tachometer-alt"></i>
-    </button>
 </div>
 {% endblock %}
 
@@ -462,14 +182,6 @@ function viewShiftStats() {
     window.location.href = '/shifts/';
 }
 
-function viewDetailedStats() {
-    window.location.href = '/dashboard/';
-}
-
-function quickOEECheck() {
-    updateMetrics();
-}
-
 // Initialize trend chart
 function initTrendChart() {
     const canvas = document.getElementById('trend-chart');
@@ -499,40 +211,6 @@ function initTrendChart() {
         });
     } catch (error) {
         console.log('Canvas chart initialization failed:', error);
-    }
-}
-
-// Show simple toast notification
-function showToast(message, type = 'info') {
-    const toastContainer = document.getElementById('toast-container');
-    if (!toastContainer) return;
-    
-    const toastId = 'toast-' + Date.now();
-    const toastHtml = `
-        <div id="${toastId}" class="toast show" role="alert">
-            <div class="toast-header bg-${type} text-white">
-                <strong class="me-auto">OEE Hub</strong>
-                <button type="button" class="btn-close btn-close-white" onclick="removeToast('${toastId}')"></button>
-            </div>
-            <div class="toast-body">
-                ${message}
-            </div>
-        </div>
-    `;
-    
-    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-    
-    // Remove after 4 seconds
-    setTimeout(() => {
-        removeToast(toastId);
-    }, 4000);
-}
-
-// Remove toast notification
-function removeToast(toastId) {
-    const toast = document.getElementById(toastId);
-    if (toast) {
-        toast.remove();
     }
 }
 </script>

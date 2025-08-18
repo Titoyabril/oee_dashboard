@@ -7,5 +7,3 @@ class OeeAnalyticsConfig(AppConfig):
     def ready(self):
         # ensure these modules are imported so they register themselves
         from . import signals  # hooks post_save to push WS events
-        from .dash_apps import downtime_timeline  # registers DjangoDash("DowntimeTimeline")
-        from .dash_apps import comprehensive_dashboard  # registers all OEE dashboard components

@@ -3,7 +3,16 @@
     "allow": [
       "Bash(python:*)",
       "Bash(curl:*)",
-      "Bash(celery:*)"
+      "Bash(celery:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(timeout:*)",
+      "Bash(rm:*)",
+      "Bash(del:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

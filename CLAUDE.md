@@ -1,0 +1,1 @@
+- add to your memory that before you ask me to check a page that you look at the logs for errors once the server is running and you resolve them. only need to resolve errors not warnings.
