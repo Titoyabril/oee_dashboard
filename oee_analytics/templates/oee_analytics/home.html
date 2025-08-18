@@ -82,7 +82,7 @@
 
 {% block content %}
 <!-- Alert Container -->
-<div id="alert-container"></div>
+<div id="alert-container" class="container-fluid mb-3"></div>
 
 <div class="row g-4">
     
@@ -240,9 +240,9 @@
                 </h5>
             </div>
             <div class="card-body">
-                <div class="text-center p-4 bg-light border rounded">
-                    <h5>OEE Components</h5>
-                    <p class="text-muted">Chart loading...</p>
+                <!-- OEE Components Gauges -->
+                <div id="oee-components-container">
+                    {% plotly_app name="OEEComponents" ratio=0.3 %}
                 </div>
             </div>
         </div>
@@ -257,9 +257,9 @@
                 </h5>
             </div>
             <div class="card-body">
-                <div class="text-center p-4 bg-light border rounded">
-                    <h5>Downtime Pareto</h5>
-                    <p class="text-muted">Chart loading...</p>
+                <!-- Downtime Pareto Chart -->
+                <div id="downtime-pareto-container">
+                    {% plotly_app name="DowntimePareto" ratio=0.4 %}
                 </div>
             </div>
         </div>
@@ -274,9 +274,9 @@
                 </h5>
             </div>
             <div class="card-body">
-                <div class="text-center p-4 bg-light border rounded">
-                    <h5>Machine Status</h5>
-                    <p class="text-muted">Chart loading...</p>
+                <!-- Machine Status Grid -->
+                <div id="machine-status-container">
+                    {% plotly_app name="MachineStatus" ratio=0.25 %}
                 </div>
             </div>
         </div>
@@ -387,29 +387,73 @@
 
 {% block extra_js %}
 <script>
-// Real-time updates
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDashboard();
+    startMetricsUpdates();
+    initTrendChart();
+});
+
+// Initialize dashboard components
+function initializeDashboard() {
+    // Add fade-in animation to cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.classList.add('fade-in');
+        }, index * 100);
+    });
+}
+
+// Start periodic metrics updates
+function startMetricsUpdates() {
+    // Update immediately
+    updateMetrics();
+    // Then update every 5 seconds
+    setInterval(updateMetrics, 5000);
+}
+
+// Update metrics from API
 function updateMetrics() {
-    // Fetch latest metrics via WebSocket or AJAX
     fetch('/api/current-metrics/')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
-            document.getElementById('current-oee').textContent = data.oee.toFixed(1);
-            document.getElementById('availability').textContent = data.availability.toFixed(1) + '%';
-            document.getElementById('performance').textContent = data.performance.toFixed(1) + '%';
-            document.getElementById('quality').textContent = data.quality.toFixed(1) + '%';
-            
-            // Update progress bar
-            document.getElementById('oee-progress').style.width = data.oee + '%';
-            
-            // Update production count
-            document.getElementById('production-count').textContent = data.production_count.toLocaleString();
+            updateOEEMetrics(data);
+        })
+        .catch(error => {
+            console.log('Metrics update failed:', error);
         });
 }
 
-// Update every 5 seconds
-setInterval(updateMetrics, 5000);
+// Update OEE metrics in UI
+function updateOEEMetrics(data) {
+    // Safely update elements with null checks
+    updateElement('current-oee', data.oee ? data.oee.toFixed(1) : '0.0');
+    updateElement('availability', data.availability ? data.availability.toFixed(1) + '%' : '0.0%');
+    updateElement('performance', data.performance ? data.performance.toFixed(1) + '%' : '0.0%');
+    updateElement('quality', data.quality ? data.quality.toFixed(1) + '%' : '0.0%');
+    
+    // Update progress bar
+    const progressBar = document.getElementById('oee-progress');
+    if (progressBar && data.oee) {
+        progressBar.style.width = data.oee + '%';
+    }
+}
 
-// Button functions
+// Safely update an element's text content
+function updateElement(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+// Button functions for home page
 function joinChallenge() {
     window.location.href = '/challenges/';
 }
@@ -423,8 +467,73 @@ function viewDetailedStats() {
 }
 
 function quickOEECheck() {
-    // Show quick modal with current OEE breakdown
     updateMetrics();
+}
+
+// Initialize trend chart
+function initTrendChart() {
+    const canvas = document.getElementById('trend-chart');
+    if (!canvas) return;
+    
+    try {
+        const ctx = canvas.getContext('2d');
+        
+        // Simple line drawing for trend
+        ctx.strokeStyle = '#28a745';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(10, 80);
+        ctx.lineTo(50, 60);
+        ctx.lineTo(100, 40);
+        ctx.lineTo(150, 30);
+        ctx.lineTo(190, 20);
+        ctx.stroke();
+        
+        // Add some dots
+        ctx.fillStyle = '#28a745';
+        [10, 50, 100, 150, 190].forEach((x, i) => {
+            const y = [80, 60, 40, 30, 20][i];
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+    } catch (error) {
+        console.log('Canvas chart initialization failed:', error);
+    }
+}
+
+// Show simple toast notification
+function showToast(message, type = 'info') {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast show" role="alert">
+            <div class="toast-header bg-${type} text-white">
+                <strong class="me-auto">OEE Hub</strong>
+                <button type="button" class="btn-close btn-close-white" onclick="removeToast('${toastId}')"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Remove after 4 seconds
+    setTimeout(() => {
+        removeToast(toastId);
+    }, 4000);
+}
+
+// Remove toast notification
+function removeToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.remove();
+    }
 }
 </script>
 {% endblock %}
