@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('new-dashboard/', views.new_dashboard, name='new_dashboard'),
     path('shifts/', views.dashboard, name='shifts'),  # Placeholder
     path('challenges/', views.dashboard, name='challenges'),  # Placeholder
     path('achievements/', views.dashboard, name='achievements'),  # Placeholder

@@ -26,6 +26,10 @@ def home(request):
 def dashboard(request):
     return render(request, 'oee_analytics/dashboard.html')
 
+def new_dashboard(request):
+    """New dashboard with top KPI row"""
+    return render(request, 'oee_analytics/new_dashboard.html')
+
 def current_metrics_api(request):
     """API endpoint for real-time metrics"""
     # Calculate current OEE metrics

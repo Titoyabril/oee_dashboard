@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}OEE Dashboard{% endblock %}
+
+{% block content %}
+<!-- Top KPI Row - spans full width, ~20-25% height of screen -->
+<div class="kpi-row">
+    <div class="container-fluid h-100">
+        <div class="row h-100 g-3">
+            
+            <!-- Availability Card -->
+            <div class="col kpi-card-col">
+                <div class="kpi-card h-100">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Availability</span>
+                    </div>
+                    <div class="kpi-main">
+                        <div class="kpi-value" id="availability-value">95%</div>
+                    </div>
+                    <div class="kpi-sparkline-container">
+                        <canvas id="availability-sparkline" width="200" height="40"></canvas>
+                        <div class="mini-indicators">
+                            <span class="mini-indicator left">∇7</span>
+                            <span class="mini-indicator right">2v</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Card -->
+            <div class="col kpi-card-col">
+                <div class="kpi-card h-100">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Performance</span>
+                    </div>
+                    <div class="kpi-main">
+                        <div class="kpi-value" id="performance-value">88%</div>
+                    </div>
+                    <div class="kpi-sparkline-container">
+                        <canvas id="performance-sparkline" width="200" height="40"></canvas>
+                        <div class="mini-indicators">
+                            <span class="mini-indicator right">-1.2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quality Card -->
+            <div class="col kpi-card-col">
+                <div class="kpi-card h-100">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Quality</span>
+                    </div>
+                    <div class="kpi-main">
+                        <div class="kpi-value" id="quality-value">98%</div>
+                    </div>
+                    <div class="kpi-sparkline-container">
+                        <canvas id="quality-sparkline" width="200" height="40"></canvas>
+                        <div class="mini-indicators">
+                            <span class="mini-indicator right">+0.8</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall OEE Card -->
+            <div class="col kpi-card-col">
+                <div class="kpi-card h-100">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Overall OEE</span>
+                    </div>
+                    <div class="kpi-main">
+                        <div class="kpi-value oee-main" id="oee-value">82%</div>
+                    </div>
+                    <div class="kpi-sparkline-container">
+                        <canvas id="oee-sparkline" width="200" height="40"></canvas>
+                        <div class="mini-indicators">
+                            <span class="mini-indicator right">+1.5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Window / Trend Card (narrower) -->
+            <div class="col trend-card-col">
+                <div class="trend-card h-100">
+                    <div class="trend-header">
+                        <span class="trend-label">4 Hours</span>
+                    </div>
+                    <div class="trend-chart">
+                        <canvas id="trend-chart" width="120" height="80"></canvas>
+                    </div>
+                    <div class="trend-footer">
+                        <span class="trend-change positive">0.8%</span>
+                        <span class="trend-tag">Reepara</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Placeholder for middle and bottom sections -->
+<div class="dashboard-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card mt-4">
+                    <div class="card-body text-center py-5">
+                        <h4>Dashboard Content Area</h4>
+                        <p class="text-muted">Middle and bottom sections will be built next</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.kpi-value {
+    font-size: 4.5rem !important;
+    font-weight: 700 !important;
+    color: #2d3748 !important;
+    line-height: 1 !important;
+}
+
+.kpi-value.oee-main {
+    color: #007bff !important;
+    font-size: 4.75rem !important;
+}
+</style>
+
+<script>
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeKPIRow();
+    startDataUpdates();
+});
+
+// Initialize KPI row components
+function initializeKPIRow() {
+    initializeSparklines();
+    initializeTrendChart();
+    animateKPIValues();
+}
+
+// Initialize sparklines for each KPI card
+function initializeSparklines() {
+    const sparklineData = {
+        availability: [88, 90, 92, 89, 93, 91, 92.5],
+        performance: [92, 88, 90, 87, 89, 90, 89.1],
+        quality: [94, 96, 95, 97, 95, 96, 95.8],
+        oee: [82, 84, 86, 83, 87, 85, 85.3]
+    };
+
+    Object.keys(sparklineData).forEach(metric => {
+        drawSparkline(metric + '-sparkline', sparklineData[metric]);
+    });
+}
+
+// Draw sparkline on canvas
+function drawSparkline(canvasId, data) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Calculate dimensions
+    const padding = 4;
+    const chartWidth = width - (padding * 2);
+    const chartHeight = height - (padding * 2);
+    
+    // Find min/max for scaling
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    
+    // Calculate points
+    const points = data.map((value, index) => ({
+        x: padding + (index * chartWidth / (data.length - 1)),
+        y: padding + chartHeight - ((value - min) / range * chartHeight)
+    }));
+    
+    // Draw line
+    ctx.strokeStyle = '#007bff';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    
+    for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+    }
+    
+    ctx.stroke();
+    
+    // Draw points
+    ctx.fillStyle = '#007bff';
+    points.forEach(point => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+        ctx.fill();
+    });
+}
+
+// Initialize trend chart
+function initializeTrendChart() {
+    const canvas = document.getElementById('trend-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Sample 24h trend data
+    const trendData = [82, 84, 83, 85, 87, 86, 88, 85, 87, 86, 85, 85.3];
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Calculate dimensions
+    const padding = 8;
+    const chartWidth = width - (padding * 2);
+    const chartHeight = height - (padding * 2);
+    
+    // Find min/max for scaling
+    const min = Math.min(...trendData);
+    const max = Math.max(...trendData);
+    const range = max - min || 1;
+    
+    // Calculate points
+    const points = trendData.map((value, index) => ({
+        x: padding + (index * chartWidth / (trendData.length - 1)),
+        y: padding + chartHeight - ((value - min) / range * chartHeight)
+    }));
+    
+    // Draw area fill
+    ctx.fillStyle = 'rgba(40, 167, 69, 0.1)';
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, height - padding);
+    points.forEach(point => ctx.lineTo(point.x, point.y));
+    ctx.lineTo(points[points.length - 1].x, height - padding);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Draw line
+    ctx.strokeStyle = '#28a745';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    points.forEach(point => ctx.lineTo(point.x, point.y));
+    ctx.stroke();
+}
+
+// Animate KPI values on load
+function animateKPIValues() {
+    const kpiElements = document.querySelectorAll('.kpi-value');
+    
+    kpiElements.forEach((element, index) => {
+        setTimeout(() => {
+            element.style.transform = 'scale(1.05)';
+            element.style.transition = 'transform 0.3s ease';
+            
+            setTimeout(() => {
+                element.style.transform = 'scale(1)';
+            }, 300);
+        }, index * 100);
+    });
+}
+
+// Start periodic data updates
+function startDataUpdates() {
+    // Update every 5 seconds
+    setInterval(() => {
+        updateKPIData();
+    }, 5000);
+}
+
+// Update KPI data from API
+function updateKPIData() {
+    fetch('/api/current-metrics/')
+        .then(response => response.json())
+        .then(data => {
+            // Update availability
+            const availabilityEl = document.getElementById('availability-value');
+            if (availabilityEl && data.availability) {
+                availabilityEl.textContent = data.availability.toFixed(1) + '%';
+            }
+            
+            // Update performance
+            const performanceEl = document.getElementById('performance-value');
+            if (performanceEl && data.performance) {
+                performanceEl.textContent = data.performance.toFixed(1) + '%';
+            }
+            
+            // Update quality
+            const qualityEl = document.getElementById('quality-value');
+            if (qualityEl && data.quality) {
+                qualityEl.textContent = data.quality.toFixed(1) + '%';
+            }
+            
+            // Update OEE
+            const oeeEl = document.getElementById('oee-value');
+            if (oeeEl && data.oee) {
+                oeeEl.textContent = data.oee.toFixed(1) + '%';
+            }
+        })
+        .catch(error => {
+            console.log('KPI update failed:', error);
+        });
+}
+</script>
+{% endblock %}
