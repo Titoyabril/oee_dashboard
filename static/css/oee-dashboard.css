@@ -1,4 +1,4 @@
-/* OEE Dashboard Custom Styles */
+/* Clean OEE Dashboard Base Styles */
 
 /* Color Variables */
 :root {
@@ -7,13 +7,6 @@
     --oee-good: #0d6efd;       /* Blue - OEE 80-90% */
     --oee-warning: #ffc107;    /* Yellow - OEE 70-80% */
     --oee-critical: #dc3545;   /* Red - OEE < 70% */
-    
-    /* Gamification Colors */
-    --xp-gold: #FFD700;
-    --badge-bronze: #CD7F32;
-    --badge-silver: #C0C0C0;
-    --badge-gold: #FFD700;
-    --badge-platinum: #E5E4E2;
     
     /* Status Light Colors */
     --status-green: #28a745;
@@ -171,56 +164,7 @@ body {
     font-weight: 600;
 }
 
-/* Metric Cards */
-.metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-}
-
-.metric-card {
-    text-align: center;
-    padding: 1.5rem;
-    background: #f8f9fa;
-    border-radius: 12px;
-    transition: all 0.3s ease;
-}
-
-.metric-card:hover {
-    background: #e9ecef;
-    transform: scale(1.02);
-}
-
-.metric-value {
-    font-size: 2rem;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-}
-
-.metric-label {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin-bottom: 0.25rem;
-}
-
-.metric-trend {
-    font-size: 0.75rem;
-    color: #28a745;
-}
-
-/* Challenge Styles */
-.challenge-item {
-    padding: 1rem;
-    background: #f8f9fa;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.challenge-item:hover {
-    background: #e9ecef;
-    transform: translateX(4px);
-}
-
+/* Progress Bar Styles */
 .progress {
     border-radius: 10px;
     overflow: hidden;
@@ -228,50 +172,6 @@ body {
 
 .progress-bar {
     transition: width 0.6s ease;
-}
-
-/* Team Avatar Styles */
-.team-avatar {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1.1rem;
-}
-
-/* Goal Progress Styles */
-.goal-item {
-    padding: 1rem;
-    background: rgba(255,255,255,0.5);
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.goal-item:hover {
-    background: rgba(255,255,255,0.8);
-    transform: scale(1.01);
-}
-
-/* Floating Action Button */
-.floating-actions {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-}
-
-.floating-actions .btn {
-    width: 56px;
-    height: 56px;
-    font-size: 1.25rem;
-    transition: all 0.3s ease;
-}
-
-.floating-actions .btn:hover {
-    transform: scale(1.1) rotate(5deg);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
 
 /* Responsive Design */
@@ -283,21 +183,6 @@ body {
     .oee-summary .display-2 {
         font-size: 3rem;
     }
-    
-    .metrics-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .floating-actions {
-        bottom: 10px;
-        right: 10px;
-    }
-    
-    .floating-actions .btn {
-        width: 48px;
-        height: 48px;
-        font-size: 1rem;
-    }
 }
 
 @media (max-width: 576px) {
@@ -307,10 +192,6 @@ body {
     
     .card-body {
         padding: 1rem;
-    }
-    
-    .table-responsive {
-        font-size: 0.875rem;
     }
 }
 
@@ -330,46 +211,6 @@ body {
     }
 }
 
-.slide-in-right {
-    animation: slideInRight 0.6s ease-out;
-}
-
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-/* Loading States */
-.loading {
-    position: relative;
-    color: transparent !important;
-}
-
-.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
-    margin: -10px 0 0 -10px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #007bff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
 /* Toast Notifications */
 .toast-container .toast {
     background: rgba(255,255,255,0.95);
@@ -378,34 +219,9 @@ body {
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    .card {
-        background-color: #2d3748;
-        color: #e2e8f0;
-    }
-    
-    .metric-card {
-        background: #4a5568;
-        color: #e2e8f0;
-    }
-    
-    .challenge-item {
-        background: #4a5568;
-        color: #e2e8f0;
-    }
-    
-    .goal-item {
-        background: rgba(74, 85, 104, 0.5);
-        color: #e2e8f0;
-    }
-}
-
 /* Print Styles */
 @media print {
-    .main-header,
-    .floating-actions,
-    .hero-banner .cta-section {
+    .main-header {
         display: none;
     }
     

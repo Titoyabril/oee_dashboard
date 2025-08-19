@@ -1,5 +1,4 @@
 {% load static %}
-{% load plotly_dash %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,8 +12,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="{% static 'css/oee-dashboard.css' %}" rel="stylesheet">
-    
-    {% plotly_header %}
 </head>
 <body class="bg-light">
     
@@ -147,7 +144,6 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    {% plotly_footer %}
     
     {% block extra_js %}{% endblock %}
 </body>
