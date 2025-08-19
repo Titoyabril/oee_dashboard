@@ -7,10 +7,10 @@
 <!-- Top KPI Row - spans full width, ~20-25% height of screen -->
 <div class="kpi-row">
     <div class="container-fluid h-100">
-        <div class="row h-100 g-3">
+        <div class="row h-100 gx-2 gy-0">
             
             <!-- Availability Card -->
-            <div class="col kpi-card-col">
+            <div class="col-3 kpi-card-col">
                 <div class="kpi-card h-100">
                     <div class="kpi-header">
                         <span class="kpi-label">Availability</span>
@@ -29,7 +29,7 @@
             </div>
 
             <!-- Performance Card -->
-            <div class="col kpi-card-col">
+            <div class="col-2 kpi-card-col">
                 <div class="kpi-card h-100">
                     <div class="kpi-header">
                         <span class="kpi-label">Performance</span>
@@ -47,7 +47,7 @@
             </div>
 
             <!-- Quality Card -->
-            <div class="col kpi-card-col">
+            <div class="col-2 kpi-card-col">
                 <div class="kpi-card h-100">
                     <div class="kpi-header">
                         <span class="kpi-label">Quality</span>
@@ -65,7 +65,7 @@
             </div>
 
             <!-- Overall OEE Card -->
-            <div class="col kpi-card-col">
+            <div class="col-3 kpi-card-col">
                 <div class="kpi-card h-100">
                     <div class="kpi-header">
                         <span class="kpi-label">Overall OEE</span>
@@ -83,7 +83,7 @@
             </div>
 
             <!-- Time Window / Trend Card (narrower) -->
-            <div class="col trend-card-col">
+            <div class="col-2 trend-card-col">
                 <div class="trend-card h-100">
                     <div class="trend-header">
                         <span class="trend-label">4 Hours</span>
@@ -105,14 +105,14 @@
 <!-- Middle Section - Occupies 45-50% of dashboard height -->
 <div class="middle-section">
     <div class="container-fluid h-100">
-        <div class="row h-100 g-3">
+        <div class="row h-100 gx-2 gy-0">
             
             <!-- Left Panel: Planned vs Actual (70% width) -->
             <div class="col-8 left-panel-col">
                 <div class="left-panel h-100">
                     
-                    <!-- Line Chart Area (60-65% of panel height) -->
-                    <div class="chart-area" style="height: 50% !important; margin-bottom: 0.5rem !important;">
+                    <!-- Line Chart Area (65% of panel height) -->
+                    <div class="chart-area" style="height: 65% !important; margin-bottom: 0.5rem !important;">
                         <div class="chart-header">
                             <h5 class="chart-title">PLANNED vs ACTUAL</h5>
                             <div class="chart-annotations">
@@ -125,8 +125,8 @@
                         </div>
                     </div>
                     
-                    <!-- Metric Strip (35-40% of panel height) -->
-                    <div class="metric-strip" style="height: 30% !important; margin-top: auto !important;">
+                    <!-- Metric Strip (35% of panel height) -->
+                    <div class="metric-strip" style="height: 35% !important; margin-top: auto !important;">
                         <div class="row h-100 g-2">
                             
                             <!-- Block 1: Planned vs Actual Values -->
@@ -200,13 +200,16 @@
                     <div class="fault-overlay" style="height: 40% !important; margin-bottom: 0.1rem !important;">
                         <div class="fault-header">
                             <h6 class="fault-title">ACTIVE FAULT OVERLAY</h6>
-                            <div class="fault-legend">
-                                <span class="legend-item">TOP LINE</span>
-                                <span class="legend-item">MTTR</span>
-                                <span class="legend-item">MTBF</span>
-                            </div>
                         </div>
                         <div class="fault-table">
+                            <!-- Table Header Row -->
+                            <div class="fault-header-row">
+                                <span class="header-asset">Asset ID</span>
+                                <span class="header-fault">TOP LINE</span>
+                                <span class="header-mttr">MTTR</span>
+                                <span class="header-mtbf">MTBF</span>
+                            </div>
+                            <!-- Data Rows -->
                             <div class="fault-row">
                                 <span class="asset-id">A1a</span>
                                 <span class="fault-type">Maintenance</span>
@@ -228,10 +231,10 @@
                             <h6 class="downtime-title">LAST DOWNTIME EVENT</h6>
                         </div>
                         <div class="downtime-metrics">
-                            <div class="metric-row">
+                            <div class="metrics-row">
                                 <div class="metric-item">
                                     <span class="metric-label">Type</span>
-                                    <span class="metric-value">Setup</span>
+                                    <span class="metric-value highlight">Setup</span>
                                 </div>
                                 <div class="metric-item">
                                     <span class="metric-label">MTTR</span>
@@ -244,13 +247,15 @@
                             </div>
                         </div>
                         <div class="downtime-chart">
-                            <canvas id="downtime-micro-chart" width="200" height="60"></canvas>
+                            <div class="chart-label">Event Timeline</div>
+                            <canvas id="downtime-micro-chart" width="180" height="50"></canvas>
                         </div>
                         <div class="runtime-bar">
                             <div class="runtime-container">
                                 <div class="runtime-label">Run's Time Downtime</div>
                                 <div class="runtime-progress">
                                     <div class="runtime-bar-fill" style="width: 85%"></div>
+                                    <span class="runtime-percentage">85%</span>
                                 </div>
                             </div>
                         </div>
@@ -263,18 +268,75 @@
     </div>
 </div>
 
-<!-- Placeholder for bottom section -->
-<div class="dashboard-content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card mt-4">
-                    <div class="card-body text-center py-5">
-                        <h4>Bottom Section</h4>
-                        <p class="text-muted">Bottom section will be built next</p>
+<!-- Bottom Section: Machine Rail -->
+<div class="machine-rail-section">
+    <div class="container-fluid h-100">
+        <div class="row h-100 align-items-center g-0 mx-0">
+            
+            <!-- Machine 1 -->
+            <div class="col machine-segment">
+                <div class="machine-node">
+                    <div class="node-circle operational" data-machine="1"></div>
+                    <div class="node-label">MACHINE 1</div>
+                </div>
+                <!-- Connection Line to Machine 2 -->
+                <div class="connection-line"></div>
+            </div>
+            
+            <!-- Machine 2 -->
+            <div class="col machine-segment">
+                <div class="machine-node">
+                    <div class="node-circle operational" data-machine="2"></div>
+                    <div class="node-label">MACHINE 2</div>
+                </div>
+                <!-- Connection Line to Machine 3 -->
+                <div class="connection-line"></div>
+            </div>
+            
+            <!-- Machine 3 -->
+            <div class="col machine-segment">
+                <div class="machine-node">
+                    <div class="node-circle operational" data-machine="3"></div>
+                    <div class="node-label">MACHINE 3</div>
+                </div>
+                <!-- Connection Line to Machine 4 -->
+                <div class="connection-line blocked-connection"></div>
+            </div>
+            
+            <!-- Machine 4 (Blocked) -->
+            <div class="col machine-segment">
+                <div class="machine-node">
+                    <div class="node-circle blocked" data-machine="4"></div>
+                    <div class="node-label blocked-label">BLOCKED</div>
+                    
+                    <!-- Fault Popup Overlay -->
+                    <div class="fault-popup">
+                        <div class="popup-content">
+                            <div class="fault-title">HPU Failure</div>
+                            <div class="fault-severity">
+                                <span class="severity-label">Severity</span>
+                                <span class="severity-value high">High</span>
+                            </div>
+                            <div class="fault-start-time">
+                                <span class="time-label">Start Time</span>
+                                <span class="time-value">10:34:01</span>
+                            </div>
+                            <div class="downtime-timer">07:34</div>
+                        </div>
                     </div>
                 </div>
+                <!-- Connection Line to Machine 5 -->
+                <div class="connection-line blocked-connection"></div>
             </div>
+            
+            <!-- Machine 5 -->
+            <div class="col machine-segment">
+                <div class="machine-node">
+                    <div class="node-circle operational" data-machine="5"></div>
+                    <div class="node-label">MACHINE 5</div>
+                </div>
+            </div>
+            
         </div>
     </div>
 </div>
@@ -304,7 +366,8 @@
 
 /* Left Panel - Planned vs Actual (70% width) */
 .left-panel-col {
-    flex: 0 0 70%;
+    flex: 0 0 66.66667%; /* Use Bootstrap col-8 exact percentage */
+    max-width: 66.66667%;
 }
 
 .left-panel {
@@ -480,7 +543,8 @@
 
 /* Right Panel - Status Information (30% width) */
 .right-panel-col {
-    flex: 0 0 30%;
+    flex: 0 0 33.33333%; /* Use Bootstrap col-4 exact percentage */
+    max-width: 33.33333%;
 }
 
 .right-panel {
@@ -527,17 +591,32 @@
 .fault-table {
     display: flex;
     flex-direction: column;
+    gap: 0.25rem;
+}
+
+.fault-header-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr 1fr;
     gap: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    background: #e9ecef;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    border-bottom: 2px solid #dee2e6;
 }
 
 .fault-row {
     display: grid;
     grid-template-columns: 1fr 2fr 1fr 1fr;
     gap: 0.5rem;
-    padding: 0.5rem;
+    padding: 0.4rem 0.5rem;
     background: #f8f9fa;
-    border-radius: 6px;
-    font-size: 0.875rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    border-left: 3px solid #007bff;
 }
 
 .asset-id {
@@ -571,12 +650,16 @@
 }
 
 .downtime-metrics {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
-.metric-row {
+.metrics-row {
     display: flex;
-    gap: 1rem;
+    gap: 0.5rem;
+    background: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
 }
 
 .metric-item {
@@ -588,22 +671,37 @@
 }
 
 .metric-label {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: #6c757d;
     text-transform: uppercase;
     margin-bottom: 0.25rem;
+    font-weight: 500;
 }
 
 .metric-value {
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: #2d3748;
 }
 
+.metric-value.highlight {
+    color: #dc3545;
+    font-weight: 700;
+}
+
 .downtime-chart {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+}
+
+.chart-label {
+    font-size: 0.65rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
 }
 
 .runtime-bar {
@@ -623,16 +721,27 @@
 
 .runtime-progress {
     width: 100%;
-    height: 6px;
+    height: 8px;
     background: #e9ecef;
-    border-radius: 3px;
+    border-radius: 4px;
     overflow: hidden;
+    position: relative;
+    margin-bottom: 0.25rem;
 }
 
 .runtime-bar-fill {
     height: 100%;
-    background: #ffc107;
+    background: linear-gradient(90deg, #ffc107 0%, #ff9500 100%);
     transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.runtime-percentage {
+    font-size: 0.7rem;
+    color: #6c757d;
+    font-weight: 500;
+    text-align: right;
+    display: block;
 }
 
 /* Responsive Design for Middle Section */
@@ -666,22 +775,53 @@
     }
 }
 
-/* CRITICAL: Fix bottom section height to prevent cutoff - Override ALL external CSS */
-.dashboard-content {
-    min-height: 18vh !important; /* Balanced for 100% zoom */
-    max-height: 22vh !important; /* Prevent overflow */
-    padding: 0 1rem !important;
-    margin: 15rem 0 0 0 !important; /* Push bottom section even lower */
+/* MACHINE RAIL BOTTOM SECTION */
+.machine-rail-section {
+    height: 18vh !important; /* 15-20% of viewport height */
+    min-height: 120px !important;
+    max-height: 180px !important;
+    padding: 1rem !important; /* Match top and middle section padding */
+    margin: 16rem 0 0 0 !important; /* Move machine rail even lower */
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+    border-top: 3px solid #0d6efd !important;
+    position: relative !important;
     overflow: visible !important;
 }
 
-/* Ensure body height is properly managed - Account for browser chrome */
+/* Ensure body height is properly managed */
 body {
     overflow-x: auto !important;
     overflow-y: auto !important;
     height: auto !important;
     min-height: 100vh !important;
-    padding-bottom: 2rem !important; /* Extra space for browser chrome */
+    padding-bottom: 1rem !important; /* Small padding to prevent cut-off */
+}
+
+/* OVERRIDE EXTERNAL CSS - Fix column widths */
+.kpi-row .kpi-card-col {
+    flex: unset !important;
+    max-width: unset !important;
+}
+
+.kpi-row .trend-card-col {
+    flex: unset !important;
+    max-width: unset !important;
+}
+
+/* ENSURE CONSISTENT ALIGNMENT ACROSS ALL SECTIONS */
+.kpi-row,
+.middle-section,
+.machine-rail-section {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+/* Remove Bootstrap container padding */
+.kpi-row .container-fluid,
+.middle-section .container-fluid,
+.machine-rail-section .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
 
 /* Force proper viewport height distribution - Balanced for 100% zoom */
@@ -689,6 +829,8 @@ body {
     height: 22vh !important;
     min-height: 170px !important;
     max-height: 220px !important;
+    margin-top: 0 !important; /* Remove default spacing */
+    padding-top: 0.5rem !important; /* Minimal padding from header */
 }
 
 .middle-section {
@@ -696,7 +838,7 @@ body {
     min-height: 200px !important; /* 50% reduction from original 400px */
     max-height: 200px !important; /* 50% reduction for balanced layout */
     background: #f8f9fa !important; /* Back to original light gray */
-    margin-top: 2rem !important; /* Push cards down from top KPI row */
+    margin-top: 1rem !important; /* Moderate spacing */
 }
 
 /* Ensure main content areas don't exceed viewport */
@@ -759,6 +901,243 @@ html, body {
 .middle-section .downtime-title {
     font-size: inherit !important; /* Keep original font sizes */
 }
+
+/* MACHINE RAIL COMPONENTS */
+.machine-segment {
+    flex: 1 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    height: 100% !important;
+}
+
+.machine-node {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    position: relative !important;
+    height: 100% !important;
+    justify-content: center !important;
+}
+
+/* NODE CIRCLES */
+.node-circle {
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    border: 3px solid transparent !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 0.75rem !important;
+    position: relative !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    z-index: 2 !important; /* Above connection lines */
+}
+
+.node-circle.operational {
+    background: radial-gradient(circle, #28a745 0%, #20c997 100%) !important;
+    border-color: #28a745 !important;
+    animation: pulse-green 2s infinite !important;
+}
+
+.node-circle.blocked {
+    background: radial-gradient(circle, #dc3545 0%, #e74c3c 100%) !important;
+    border-color: #dc3545 !important;
+    animation: pulse-red 1.5s infinite !important;
+}
+
+@keyframes pulse-green {
+    0%, 100% { 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    50% { 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 0 8px rgba(40, 167, 69, 0);
+    }
+}
+
+@keyframes pulse-red {
+    0%, 100% { 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    50% { 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+}
+
+/* NODE LABELS */
+.node-label {
+    color: #ffffff !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    text-align: center !important;
+    margin-top: auto !important;
+}
+
+.node-label.blocked-label {
+    color: #ff6b6b !important;
+    font-weight: 700 !important;
+    animation: blink 1s infinite !important;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.6; }
+}
+
+/* CONNECTION LINES BETWEEN MACHINES */
+.connection-line {
+    position: absolute !important;
+    top: 30px !important; /* Position at circle level (60px circle / 2 = 30px) */
+    right: -50% !important;
+    width: 100% !important;
+    height: 1px !important; /* Razor thin line */
+    z-index: 0 !important; /* Behind circles */
+    pointer-events: none !important;
+}
+
+.connection-line:not(.blocked-connection) {
+    background: linear-gradient(90deg, #28a745 0%, #20c997 50%, #28a745 100%) !important;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.5) !important;
+    animation: flow-active 2s infinite !important;
+}
+
+.connection-line.blocked-connection {
+    background: linear-gradient(90deg, #dc3545 0%, #e74c3c 50%, #dc3545 100%) !important;
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.6) !important;
+    animation: flow-blocked 1s infinite !important;
+}
+
+@keyframes flow-active {
+    0%, 100% {
+        opacity: 0.8;
+        box-shadow: 0 0 8px rgba(40, 167, 69, 0.5);
+    }
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 12px rgba(40, 167, 69, 0.8);
+    }
+}
+
+@keyframes flow-blocked {
+    0%, 100% {
+        opacity: 0.6;
+        box-shadow: 0 0 8px rgba(220, 53, 69, 0.6);
+    }
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 15px rgba(220, 53, 69, 0.9);
+    }
+}
+
+/* Adjust machine segment to accommodate connection lines */
+.machine-segment {
+    position: relative !important;
+}
+
+.machine-segment:last-child .connection-line {
+    display: none !important; /* Hide connection line on last machine */
+}
+
+/* FAULT POPUP OVERLAY */
+.fault-popup {
+    position: absolute !important;
+    bottom: 100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    margin-bottom: 1rem !important;
+    z-index: 1000 !important;
+    animation: fadeInUp 0.3s ease !important;
+}
+
+.popup-content {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+    border: 2px solid #e74c3c !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    width: 200px !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
+    position: relative !important;
+}
+
+.popup-content::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 50% !important;
+    margin-left: -8px !important;
+    border: 8px solid transparent !important;
+    border-top-color: #e74c3c !important;
+}
+
+.fault-title {
+    color: #ffffff !important;
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.5rem !important;
+    text-align: left !important;
+}
+
+.fault-severity {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-bottom: 0.4rem !important;
+}
+
+.severity-label, .time-label {
+    color: #bdc3c7 !important;
+    font-size: 0.7rem !important;
+    font-weight: 500 !important;
+}
+
+.severity-value {
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+}
+
+.severity-value.high {
+    color: #e74c3c !important;
+}
+
+.fault-start-time {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.time-value {
+    color: #ffffff !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    font-family: 'Courier New', monospace !important;
+}
+
+.downtime-timer {
+    color: #e74c3c !important;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    font-family: 'Courier New', monospace !important;
+    background: rgba(231, 76, 60, 0.1) !important;
+    border-radius: 6px !important;
+    padding: 0.5rem !important;
+    border: 1px solid #e74c3c !important;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
 </style>
 
 <script>
@@ -766,6 +1145,7 @@ html, body {
 document.addEventListener('DOMContentLoaded', function() {
     initializeKPIRow();
     initializeMiddleSection();
+    initializeMachineRail();
     startDataUpdates();
 });
 
@@ -1086,7 +1466,7 @@ function initializePlannedActualChart() {
     ctx.lineTo(padding, height - padding);
     ctx.stroke();
     
-    // Add time labels
+    // Add X-axis time labels
     ctx.fillStyle = '#6c757d';
     ctx.font = '12px system-ui';
     ctx.textAlign = 'center';
@@ -1095,6 +1475,32 @@ function initializePlannedActualChart() {
         const x = padding + (i * chartWidth / (timePoints.length - 1));
         ctx.fillText(timePoints[i], x, height - padding + 20);
     }
+    
+    // Add Y-axis value labels
+    ctx.textAlign = 'right';
+    ctx.font = '11px system-ui';
+    
+    for (let i = 0; i <= 5; i++) {
+        const y = padding + (i * chartHeight / 5);
+        const value = Math.round(max - (i * range / 5));
+        ctx.fillText(value.toString(), padding - 10, y + 4);
+    }
+    
+    // Add axis titles
+    ctx.save();
+    ctx.translate(15, height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillStyle = '#495057';
+    ctx.fillText('Units Produced', 0, 0);
+    ctx.restore();
+    
+    // X-axis title
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillStyle = '#495057';
+    ctx.fillText('Time', width / 2, height - 5);
 }
 
 // Initialize downtime micro chart
@@ -1128,6 +1534,44 @@ function initializeDowntimeMicroChart() {
         ctx.fillStyle = i % 2 === 0 ? '#007bff' : '#28a745';
         ctx.fillRect(x + 2, y, barWidth - 4, barHeight);
     }
+}
+
+// Initialize machine rail
+function initializeMachineRail() {
+    // Start downtime timer
+    startDowntimeTimer();
+    
+    // Add click handlers for machine nodes
+    document.querySelectorAll('.node-circle').forEach(circle => {
+        circle.addEventListener('click', function() {
+            const machineId = this.getAttribute('data-machine');
+            console.log(`Machine ${machineId} clicked`);
+            // Future: Show machine details modal
+        });
+    });
+}
+
+// Start and update downtime timer
+function startDowntimeTimer() {
+    const timerElement = document.querySelector('.downtime-timer');
+    if (!timerElement) return;
+    
+    // Initial time (7 hours 34 minutes from fault start)
+    let totalMinutes = 7 * 60 + 34;
+    
+    function updateTimer() {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        timerElement.textContent = formattedTime;
+        totalMinutes++; // Increment every minute
+    }
+    
+    // Update immediately
+    updateTimer();
+    
+    // Update every minute (60000ms)
+    setInterval(updateTimer, 60000);
 }
 </script>
 {% endblock %}
