@@ -28,6 +28,7 @@ MIDDLEWARE = [
     "django_plotly_dash.middleware.BaseMiddleware",
     "django_plotly_dash.middleware.ExternalRedirectionMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

@@ -102,15 +102,176 @@
     </div>
 </div>
 
-<!-- Placeholder for middle and bottom sections -->
+<!-- Middle Section - Occupies 45-50% of dashboard height -->
+<div class="middle-section">
+    <div class="container-fluid h-100">
+        <div class="row h-100 g-3">
+            
+            <!-- Left Panel: Planned vs Actual (70% width) -->
+            <div class="col-8 left-panel-col">
+                <div class="left-panel h-100">
+                    
+                    <!-- Line Chart Area (60-65% of panel height) -->
+                    <div class="chart-area" style="height: 50% !important; margin-bottom: 0.5rem !important;">
+                        <div class="chart-header">
+                            <h5 class="chart-title">PLANNED vs ACTUAL</h5>
+                            <div class="chart-annotations">
+                                <span class="annotation-time">1.15 min</span>
+                                <span class="annotation-highlight">0.5 m</span>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="planned-actual-chart" width="800" height="300"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Metric Strip (35-40% of panel height) -->
+                    <div class="metric-strip" style="height: 30% !important; margin-top: auto !important;">
+                        <div class="row h-100 g-2">
+                            
+                            <!-- Block 1: Planned vs Actual Values -->
+                            <div class="col-3">
+                                <div class="metric-block h-100">
+                                    <div class="metric-values">
+                                        <div class="planned-value">
+                                            <span class="value-label">Planned</span>
+                                            <span class="value-number">156</span>
+                                        </div>
+                                        <div class="actual-value">
+                                            <span class="value-label">Current</span>
+                                            <span class="value-number">142</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Block 2: Current Rate -->
+                            <div class="col-3">
+                                <div class="metric-block h-100">
+                                    <div class="rate-display">
+                                        <span class="rate-label">Current Rate</span>
+                                        <span class="rate-value">4.2</span>
+                                        <span class="rate-unit">units/min</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Block 3: Cycle Time vs Target -->
+                            <div class="col-3">
+                                <div class="metric-block h-100">
+                                    <div class="cycle-time-display">
+                                        <span class="cycle-label">Cycle Time vs Target</span>
+                                        <div class="cycle-progress">
+                                            <div class="progress-bar-container">
+                                                <div class="progress-bar" style="width: 78%"></div>
+                                            </div>
+                                            <span class="cycle-annotation">14.3s / 18.5s</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Block 4: Shift Goal -->
+                            <div class="col-3">
+                                <div class="metric-block h-100">
+                                    <div class="shift-goal-display">
+                                        <span class="goal-label">Shift Goal</span>
+                                        <div class="goal-progress">
+                                            <div class="progress-bar-container">
+                                                <div class="progress-bar goal-bar" style="width: 89%"></div>
+                                            </div>
+                                            <span class="goal-annotation">267 / 300</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <!-- Right Panel: Status Information (30% width) -->
+            <div class="col-4 right-panel-col">
+                <div class="right-panel h-100">
+                    
+                    <!-- Active Fault Overlay (top 50%) -->
+                    <div class="fault-overlay" style="height: 40% !important; margin-bottom: 0.1rem !important;">
+                        <div class="fault-header">
+                            <h6 class="fault-title">ACTIVE FAULT OVERLAY</h6>
+                            <div class="fault-legend">
+                                <span class="legend-item">TOP LINE</span>
+                                <span class="legend-item">MTTR</span>
+                                <span class="legend-item">MTBF</span>
+                            </div>
+                        </div>
+                        <div class="fault-table">
+                            <div class="fault-row">
+                                <span class="asset-id">A1a</span>
+                                <span class="fault-type">Maintenance</span>
+                                <span class="mttr-value">0.74</span>
+                                <span class="mtbf-value">5.71</span>
+                            </div>
+                            <div class="fault-row">
+                                <span class="asset-id">MTSE</span>
+                                <span class="fault-type">MJ-SS-96</span>
+                                <span class="mttr-value">0.58</span>
+                                <span class="mtbf-value">5.43</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Last Downtime Event (bottom 50%) -->
+                    <div class="downtime-event" style="height: 40% !important; margin-top: 0.1rem !important;">
+                        <div class="downtime-header">
+                            <h6 class="downtime-title">LAST DOWNTIME EVENT</h6>
+                        </div>
+                        <div class="downtime-metrics">
+                            <div class="metric-row">
+                                <div class="metric-item">
+                                    <span class="metric-label">Type</span>
+                                    <span class="metric-value">Setup</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">MTTR</span>
+                                    <span class="metric-value">2.3m</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">MTBF</span>
+                                    <span class="metric-value">18.7m</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="downtime-chart">
+                            <canvas id="downtime-micro-chart" width="200" height="60"></canvas>
+                        </div>
+                        <div class="runtime-bar">
+                            <div class="runtime-container">
+                                <div class="runtime-label">Run's Time Downtime</div>
+                                <div class="runtime-progress">
+                                    <div class="runtime-bar-fill" style="width: 85%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<!-- Placeholder for bottom section -->
 <div class="dashboard-content">
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
                 <div class="card mt-4">
                     <div class="card-body text-center py-5">
-                        <h4>Dashboard Content Area</h4>
-                        <p class="text-muted">Middle and bottom sections will be built next</p>
+                        <h4>Bottom Section</h4>
+                        <p class="text-muted">Bottom section will be built next</p>
                     </div>
                 </div>
             </div>
@@ -132,12 +293,479 @@
     color: #007bff !important;
     font-size: 4.75rem !important;
 }
+
+/* Middle Section Styles */
+.middle-section {
+    height: 47vh; /* 45-50% of viewport height */
+    min-height: 400px;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+/* Left Panel - Planned vs Actual (70% width) */
+.left-panel-col {
+    flex: 0 0 70%;
+}
+
+.left-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Chart Area (60-65% of panel height) - Scaled down */
+.chart-area {
+    height: 50% !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.chart-annotations {
+    display: flex;
+    gap: 1rem;
+}
+
+.annotation-time {
+    font-size: 0.875rem;
+    color: #28a745;
+    font-weight: 500;
+}
+
+.annotation-highlight {
+    font-size: 0.875rem;
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.chart-container {
+    height: calc(100% - 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Metric Strip (35-40% of panel height) - Scaled down */
+.metric-strip {
+    height: 30% !important;
+    margin-top: auto !important;
+}
+
+.metric-block {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.5rem !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+/* Planned vs Actual Values Block */
+.metric-values {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.planned-value, .actual-value {
+    display: flex;
+    flex-direction: column;
+}
+
+.value-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+.value-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+/* Current Rate Block */
+.rate-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.rate-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6c757d;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.rate-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #007bff;
+}
+
+.rate-unit {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+/* Cycle Time and Shift Goal Progress Blocks */
+.cycle-time-display, .shift-goal-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.cycle-label, .goal-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6c757d;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+}
+
+.cycle-progress, .goal-progress {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #28a745;
+    transition: width 0.3s ease;
+}
+
+.progress-bar.goal-bar {
+    background: #007bff;
+}
+
+.cycle-annotation, .goal-annotation {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+/* Right Panel - Status Information (30% width) */
+.right-panel-col {
+    flex: 0 0 30%;
+}
+
+.right-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Active Fault Overlay (top 50%) - Scaled down */
+.fault-overlay {
+    height: 40% !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.fault-header {
+    margin-bottom: 1rem;
+}
+
+.fault-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 0.5rem 0;
+}
+
+.fault-legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+.legend-item {
+    flex: 1;
+    text-align: center;
+}
+
+.fault-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fault-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.asset-id {
+    font-weight: 600;
+    color: #007bff;
+}
+
+.fault-type {
+    color: #2d3748;
+}
+
+.mttr-value, .mtbf-value {
+    text-align: center;
+    font-weight: 500;
+    color: #28a745;
+}
+
+/* Last Downtime Event (bottom 50%) - Scaled down */
+.downtime-event {
+    height: 40% !important;
+    margin-top: auto !important;
+}
+
+.downtime-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 1rem 0;
+}
+
+.downtime-metrics {
+    margin-bottom: 1rem;
+}
+
+.metric-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.metric-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.metric-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.downtime-chart {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+}
+
+.runtime-bar {
+    margin-top: auto;
+}
+
+.runtime-container {
+    width: 100%;
+}
+
+.runtime-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+
+.runtime-progress {
+    width: 100%;
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.runtime-bar-fill {
+    height: 100%;
+    background: #ffc107;
+    transition: width 0.3s ease;
+}
+
+/* Responsive Design for Middle Section */
+@media (max-width: 992px) {
+    .middle-section {
+        height: auto;
+        min-height: auto;
+        padding: 0.75rem;
+    }
+    
+    .left-panel-col {
+        flex: 0 0 100%;
+        margin-bottom: 1rem;
+    }
+    
+    .right-panel-col {
+        flex: 0 0 100%;
+    }
+    
+    .chart-area {
+        height: 300px;
+    }
+    
+    .metric-strip {
+        height: auto;
+    }
+    
+    .fault-overlay, .downtime-event {
+        height: auto;
+        margin-bottom: 1rem;
+    }
+}
+
+/* CRITICAL: Fix bottom section height to prevent cutoff - Override ALL external CSS */
+.dashboard-content {
+    min-height: 18vh !important; /* Balanced for 100% zoom */
+    max-height: 22vh !important; /* Prevent overflow */
+    padding: 0 1rem !important;
+    margin: 15rem 0 0 0 !important; /* Push bottom section even lower */
+    overflow: visible !important;
+}
+
+/* Ensure body height is properly managed - Account for browser chrome */
+body {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    padding-bottom: 2rem !important; /* Extra space for browser chrome */
+}
+
+/* Force proper viewport height distribution - Balanced for 100% zoom */
+.kpi-row {
+    height: 22vh !important;
+    min-height: 170px !important;
+    max-height: 220px !important;
+}
+
+.middle-section {
+    height: 23vh !important; /* 50% reduction from original 47vh */
+    min-height: 200px !important; /* 50% reduction from original 400px */
+    max-height: 200px !important; /* 50% reduction for balanced layout */
+    background: #f8f9fa !important; /* Back to original light gray */
+    margin-top: 2rem !important; /* Push cards down from top KPI row */
+}
+
+/* Ensure main content areas don't exceed viewport */
+.content-area {
+    max-height: 100vh !important;
+    overflow-y: auto !important;
+}
+
+/* Force container to respect height limits */
+.container-fluid {
+    max-height: 100% !important;
+}
+
+/* Ensure all sections are visible */
+html, body {
+    scroll-behavior: smooth !important;
+}
+
+/* CRITICAL: Scale down CARD CONTAINERS only, keep content original size */
+.middle-section .left-panel {
+    padding: 0.75rem !important; /* Slightly smaller padding */
+    max-height: 86% !important; /* Increase card height by another 20% (72% + 14.4% = 86.4%) */
+    overflow: hidden !important; /* Prevent content overflow */
+}
+
+.middle-section .right-panel {
+    padding: 0.75rem !important; /* Slightly smaller padding */
+    max-height: 86% !important; /* Increase card height by another 20% (72% + 14.4% = 86.4%) */
+    overflow: hidden !important; /* Prevent content overflow */
+}
+
+/* Keep original content proportions inside smaller cards */
+.middle-section .chart-area {
+    height: 60% !important; /* Original proportion within smaller card */
+    margin-bottom: 0.5rem !important; /* Original spacing */
+}
+
+.middle-section .metric-strip {
+    height: 40% !important; /* Original proportion within smaller card */
+    margin-top: auto !important;
+}
+
+.middle-section .fault-overlay {
+    height: 50% !important; /* Original proportion within smaller card */
+    margin-bottom: 0.15rem !important; /* Reduced spacing by 70% (0.5rem - 0.35rem) */
+}
+
+.middle-section .downtime-event {
+    height: 50% !important; /* Original proportion within smaller card */
+    margin-top: 0 !important; /* Remove auto margin to move up by 30% */
+}
+
+.middle-section .metric-block {
+    padding: 0.5rem !important; /* Original padding */
+}
+
+/* Keep original text sizes */
+.middle-section .chart-title,
+.middle-section .fault-title, 
+.middle-section .downtime-title {
+    font-size: inherit !important; /* Keep original font sizes */
+}
 </style>
 
 <script>
 // Initialize dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeKPIRow();
+    initializeMiddleSection();
     startDataUpdates();
 });
 
@@ -322,6 +950,184 @@ function updateKPIData() {
         .catch(error => {
             console.log('KPI update failed:', error);
         });
+}
+
+// Initialize middle section components
+function initializeMiddleSection() {
+    initializePlannedActualChart();
+    initializeDowntimeMicroChart();
+}
+
+// Initialize Planned vs Actual line chart
+function initializePlannedActualChart() {
+    const canvas = document.getElementById('planned-actual-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Sample data for planned vs actual
+    const timePoints = ['0:30', '0:35', '0:40', '0:45', '0:50'];
+    const plannedData = [120, 125, 130, 135, 140];
+    const actualData = [118, 122, 128, 132, 142];
+    const projectedData = [140, 144, 148]; // Future projection
+    
+    // Chart dimensions
+    const padding = 60;
+    const chartWidth = width - (padding * 2);
+    const chartHeight = height - (padding * 2);
+    
+    // Find min/max for scaling
+    const allData = [...plannedData, ...actualData, ...projectedData];
+    const min = Math.min(...allData) - 10;
+    const max = Math.max(...allData) + 10;
+    const range = max - min;
+    
+    // Helper function to get point coordinates
+    function getPoint(index, value, totalPoints) {
+        const x = padding + (index * chartWidth / (totalPoints - 1));
+        const y = padding + chartHeight - ((value - min) / range * chartHeight);
+        return {x, y};
+    }
+    
+    // Draw grid lines
+    ctx.strokeStyle = '#e9ecef';
+    ctx.lineWidth = 1;
+    
+    // Vertical grid lines
+    for (let i = 0; i < timePoints.length; i++) {
+        const x = padding + (i * chartWidth / (timePoints.length - 1));
+        ctx.beginPath();
+        ctx.moveTo(x, padding);
+        ctx.lineTo(x, height - padding);
+        ctx.stroke();
+    }
+    
+    // Horizontal grid lines
+    for (let i = 0; i <= 5; i++) {
+        const y = padding + (i * chartHeight / 5);
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(width - padding, y);
+        ctx.stroke();
+    }
+    
+    // Draw planned line (green)
+    ctx.strokeStyle = '#28a745';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    
+    for (let i = 0; i < plannedData.length; i++) {
+        const point = getPoint(i, plannedData[i], plannedData.length);
+        if (i === 0) {
+            ctx.moveTo(point.x, point.y);
+        } else {
+            ctx.lineTo(point.x, point.y);
+        }
+    }
+    ctx.stroke();
+    
+    // Draw actual line (blue)
+    ctx.strokeStyle = '#007bff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    
+    for (let i = 0; i < actualData.length; i++) {
+        const point = getPoint(i, actualData[i], actualData.length);
+        if (i === 0) {
+            ctx.moveTo(point.x, point.y);
+        } else {
+            ctx.lineTo(point.x, point.y);
+        }
+    }
+    ctx.stroke();
+    
+    // Draw projected line (dotted, orange)
+    ctx.strokeStyle = '#ffc107';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    
+    // Start from last actual point
+    const lastActualPoint = getPoint(actualData.length - 1, actualData[actualData.length - 1], actualData.length);
+    ctx.moveTo(lastActualPoint.x, lastActualPoint.y);
+    
+    for (let i = 0; i < projectedData.length; i++) {
+        const point = getPoint(actualData.length + i, projectedData[i], actualData.length + projectedData.length - 1);
+        ctx.lineTo(point.x, point.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]); // Reset line dash
+    
+    // Add highlighted point (0.5 m annotation)
+    const highlightPoint = getPoint(2, actualData[2], actualData.length);
+    ctx.fillStyle = '#dc3545';
+    ctx.beginPath();
+    ctx.arc(highlightPoint.x, highlightPoint.y, 6, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Draw axes
+    ctx.strokeStyle = '#6c757d';
+    ctx.lineWidth = 2;
+    
+    // X-axis
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.stroke();
+    
+    // Y-axis
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.stroke();
+    
+    // Add time labels
+    ctx.fillStyle = '#6c757d';
+    ctx.font = '12px system-ui';
+    ctx.textAlign = 'center';
+    
+    for (let i = 0; i < timePoints.length; i++) {
+        const x = padding + (i * chartWidth / (timePoints.length - 1));
+        ctx.fillText(timePoints[i], x, height - padding + 20);
+    }
+}
+
+// Initialize downtime micro chart
+function initializeDowntimeMicroChart() {
+    const canvas = document.getElementById('downtime-micro-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Sample downtime data (mini bar chart)
+    const downtimeData = [15, 8, 12, 20, 5, 18, 10];
+    const padding = 10;
+    const chartWidth = width - (padding * 2);
+    const chartHeight = height - (padding * 2);
+    
+    const barWidth = chartWidth / downtimeData.length;
+    const maxValue = Math.max(...downtimeData);
+    
+    // Draw bars
+    for (let i = 0; i < downtimeData.length; i++) {
+        const barHeight = (downtimeData[i] / maxValue) * chartHeight;
+        const x = padding + (i * barWidth);
+        const y = height - padding - barHeight;
+        
+        // Alternate colors
+        ctx.fillStyle = i % 2 === 0 ? '#007bff' : '#28a745';
+        ctx.fillRect(x + 2, y, barWidth - 4, barHeight);
+    }
 }
 </script>
 {% endblock %}
