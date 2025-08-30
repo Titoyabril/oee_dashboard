@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load plotly_dash %}
+
+{% block title %}OEE Dashboard - Dash/Plotly Version{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Embed the Dash app -->
+            {% plotly_app name="OEEDashboard" ratio=1 %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Override any conflicting styles */
+.django-plotly-dash {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100vh !important;
+}
+
+/* Ensure the iframe takes full width */
+.django-plotly-dash iframe {
+    width: 100% !important;
+    border: none !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add any additional JavaScript here if needed for Phase 1 testing
+console.log("Dash Dashboard loaded - Phase 1 Test");
+</script>
+{% endblock %}

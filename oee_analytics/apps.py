@@ -7,3 +7,4 @@ class OeeAnalyticsConfig(AppConfig):
     def ready(self):
         # ensure these modules are imported so they register themselves
         from . import signals  # hooks post_save to push WS events
+        from . import dash_app  # Import Dash app to register it

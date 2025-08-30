@@ -5,6 +5,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('new-dashboard/', views.new_dashboard, name='new_dashboard'),
+    path('dash-dashboard/', views.dash_dashboard, name='dash_dashboard'),  # New Dash dashboard
     path('shifts/', views.dashboard, name='shifts'),  # Placeholder
     path('challenges/', views.dashboard, name='challenges'),  # Placeholder
     path('achievements/', views.dashboard, name='achievements'),  # Placeholder
