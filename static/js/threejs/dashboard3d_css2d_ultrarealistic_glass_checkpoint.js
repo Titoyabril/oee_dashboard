@@ -2356,7 +2356,7 @@ class CSS2DDashboard {
             }
             
             const glassCube = new THREE.Mesh(cubeGeometry, glassMaterial);
-            glassCube.rotation.set(0, 0, 0);
+            glassCube.rotation.set(Math.PI / 6, Math.PI / 4, Math.PI / 8);
             glassCube.castShadow = true;
             glassCube.receiveShadow = true;
             circleGroup.add(glassCube);

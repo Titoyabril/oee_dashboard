@@ -1,61 +1,6 @@
 /**
- * Three.js Dashboard with CSS2DRenderer - CHECKPOINT VERSION
- * 
- * CHECKPOINT NOTES - WORKING STATE WITH TEMPLATE FIX
- * URL: http://localhost:8000/threejs-dashboard/
- * 
- * This checkpoint represents the FINAL WORKING STATE with all template issues resolved.
- * 
- * TEMPLATE FIXES APPLIED:
- * - Added missing {% load static %} to threejs_dashboard.html (line 1)
- * - Removed base.html inheritance to prevent navigation overlay conflicts
- * - Ensured fullscreen Three.js experience without Django UI interference
- * 
- * CHECKPOINT LOGIC IMPLEMENTED:
- * 
- * 1. TOP SECTION - Dynamic L-Bracket KPI Cards:
- *    - 4 KPI cards with irregular bracket variations (random offsets)
- *    - Extension/retraction animations with 75% slower timing
- *    - Hot spots following bracket tips with disappearing periods
- *    - Unified cyan color scheme (#00ffff) for all brackets and text
- *    - CSS2DObject for HTML content overlay (sparklines, values, labels)
- * 
- * 2. MIDDLE SECTION - Chart.js Integration:
- *    - Chart.js planned vs actual performance chart (676x338 pixels)
- *    - Fixed canvas dimensions with responsive: false to solve scaling issues
- *    - 24-hour timeline with downtime hot spots and NOW line indicator
- *    - Position: chartX = -150, chartY = -25 (optimized through arrow key controls)
- *    - NO BACKGROUND CARD - transparent styling applied
- * 
- * 3. RIGHT SIDE CARDS:
- *    - Active Fault Overlay: Machine name + growing line animation + MTTR/MTBF metrics
- *    - Last Downtime Event: Fault details with time/duration info
- *    - Both cards 300x160 pixels with NO BACKGROUNDS - transparent styling
- *    - Growing line represents downtime duration with pulsing glow effect
- * 
- * 4. COORDINATE SYSTEM:
- *    - CSS2DRenderer for HTML overlay positioning
- *    - PerspectiveCamera at (0, 0, 550) looking at origin
- *    - Manual positioning for chart and cards in 3D space
- * 
- * 5. ANIMATION SYSTEMS:
- *    - animateDynamicLightFrames(): Extension/retraction of top section brackets
- *    - animateFaultDurationLine(): Growing line progress bar with pulsing glow
- *    - Hot spot following bracket tips with intensity pulsing
- * 
- * USER FEEDBACK HISTORY:
- * - "ok beautiful" - User approval of subtle frames before 3D attempt
- * - "i dont see any difference" then "i see. i dont liek it. revert the change" - 3D rejection
- * - "why is it opening two pages when i click that link" - Template inheritance issue
- * 
- * WHAT WAS REJECTED:
- * - Complex 3D layered system with multiple Z positions
- * - BoxGeometry instead of PlaneGeometry 
- * - Complex rotations and scaling effects
- * - Higher opacity and thickness changes
- * 
- * CURRENT STATE: Working holographic dashboard with dynamic top section and clean middle section.
- * Template now properly loads without Django navigation interference.
+ * Three.js Dashboard with CSS2DRenderer - Clean rebuild
+ * Using proper coordinate system alignment
  */
 
 import * as THREE from 'three';
@@ -100,6 +45,9 @@ class CSS2DDashboard {
         this.css2dRenderer.domElement.style.pointerEvents = 'none';
         this.container.appendChild(this.css2dRenderer.domElement);
         
+        // Add CSS for animations and effects
+        this.injectHUDStyles();
+        
         // Add grid background
         this.createGridBackground();
         
@@ -108,6 +56,15 @@ class CSS2DDashboard {
         
         // Create middle section with Chart.js (Option 2)
         this.createMiddleSection();
+        
+        // Add environmental effects
+        this.createScanningLine();
+        this.createParticleTrails();
+        
+        // Add initial data callouts after a delay
+        setTimeout(() => {
+            this.addInitialCallouts();
+        }, 2000);
         
         // Start animation loop
         this.animate();
@@ -375,6 +332,229 @@ class CSS2DDashboard {
         this.scene.add(grid);
     }
     
+    injectHUDStyles() {
+        console.log('INJECTING HUD STYLES - Fighter Jet Mode Active');
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulseRed {
+                0% { opacity: 0.4; }
+                50% { opacity: 1; }
+                100% { opacity: 0.4; }
+            }
+            
+            @keyframes warningPulse {
+                0% { transform: scale(1); }
+                100% { transform: scale(1.2); }
+            }
+            
+            @keyframes scanLine {
+                0% { transform: translateY(-100%); }
+                100% { transform: translateY(calc(100vh + 100%)); }
+            }
+            
+            @keyframes dataStream {
+                0% { transform: translateX(-100%); opacity: 0; }
+                10% { opacity: 1; }
+                90% { opacity: 1; }
+                100% { transform: translateX(100%); opacity: 0; }
+            }
+            
+            @keyframes typewriter {
+                from { width: 0; }
+                to { width: 100%; }
+            }
+            
+            .military-panel::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(
+                    135deg,
+                    transparent 0%,
+                    rgba(0, 255, 65, 0.05) 50%,
+                    transparent 100%
+                );
+                pointer-events: none;
+            }
+            
+            .military-panel::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, #00ff41, transparent);
+                animation: scanLine 4s linear infinite;
+                pointer-events: none;
+            }
+            
+            .data-callout {
+                position: absolute;
+                background: rgba(0, 20, 0, 0.9);
+                border: 1px solid #00ff41;
+                padding: 5px 10px;
+                color: #00ff41;
+                font-family: 'Courier New', monospace;
+                font-size: 10px;
+                white-space: nowrap;
+                z-index: 1000;
+                pointer-events: none;
+            }
+            
+            .leader-line {
+                position: absolute;
+                height: 1px;
+                background: #00ff41;
+                transform-origin: left center;
+                pointer-events: none;
+            }
+            
+            .info-typewriter {
+                overflow: hidden;
+                white-space: nowrap;
+                animation: typewriter 2s steps(40) 1s normal both;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    createScanningLine() {
+        console.log('CREATING SCANNING LINE - Environmental Effects Active');
+        const scanLine = document.createElement('div');
+        scanLine.style.position = 'fixed';
+        scanLine.style.left = '0';
+        scanLine.style.right = '0';
+        scanLine.style.height = '2px';
+        scanLine.style.background = 'linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.8), transparent)';
+        scanLine.style.boxShadow = '0 0 10px rgba(0, 255, 65, 0.8)';
+        scanLine.style.animation = 'scanLine 3s linear infinite';
+        scanLine.style.pointerEvents = 'none';
+        scanLine.style.zIndex = '999';
+        document.body.appendChild(scanLine);
+    }
+    
+    createParticleTrails() {
+        // Create particle system for mouse trails
+        const particleGeometry = new THREE.BufferGeometry();
+        const particleCount = 50;
+        const positions = new Float32Array(particleCount * 3);
+        
+        for (let i = 0; i < particleCount * 3; i++) {
+            positions[i] = 0;
+        }
+        
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        
+        const particleMaterial = new THREE.PointsMaterial({
+            size: 2,
+            color: 0x00ff41,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        
+        this.mouseParticles = new THREE.Points(particleGeometry, particleMaterial);
+        this.scene.add(this.mouseParticles);
+        
+        // Track mouse movement
+        this.mouseTrail = [];
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth) * 2 - 1;
+            const y = -(e.clientY / window.innerHeight) * 2 + 1;
+            this.mouseTrail.push({ x: x * 500, y: y * 300, z: 0, life: 1.0 });
+            if (this.mouseTrail.length > particleCount) {
+                this.mouseTrail.shift();
+            }
+        });
+    }
+    
+    createDataCallout(x, y, text, targetElement) {
+        const callout = document.createElement('div');
+        callout.className = 'data-callout info-typewriter';
+        callout.textContent = text;
+        callout.style.left = x + 'px';
+        callout.style.top = y + 'px';
+        
+        // Create leader line
+        const line = document.createElement('div');
+        line.className = 'leader-line';
+        
+        // Calculate line angle and length
+        const targetRect = targetElement.getBoundingClientRect();
+        const dx = targetRect.left + targetRect.width / 2 - x;
+        const dy = targetRect.top + targetRect.height / 2 - y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        
+        line.style.width = length + 'px';
+        line.style.left = x + 'px';
+        line.style.top = y + 'px';
+        line.style.transform = `rotate(${angle}deg)`;
+        
+        document.body.appendChild(line);
+        document.body.appendChild(callout);
+        
+        return { callout, line };
+    }
+    
+    addInitialCallouts() {
+        // Add callouts for chart
+        const chartCallout = this.createDataCallout(
+            window.innerWidth * 0.3, 
+            window.innerHeight * 0.4, 
+            'PERFORMANCE TRACKING ACTIVE',
+            document.getElementById('main-chart-panel')
+        );
+        
+        // Add callout for active fault
+        const faultCallout = this.createDataCallout(
+            window.innerWidth * 0.85, 
+            window.innerHeight * 0.25, 
+            'FAULT SYSTEM ONLINE',
+            document.getElementById('active-fault-card')
+        );
+        
+        // Store callouts for cleanup
+        this.activeCallouts = [chartCallout, faultCallout];
+    }
+    
+    triggerAlertState(severity = 'high') {
+        const activeFaultCard = document.getElementById('active-fault-card');
+        const warningIndicator = activeFaultCard.querySelector('.warning-indicator');
+        
+        if (severity === 'high') {
+            // Flash red overlay
+            const alertOverlay = document.createElement('div');
+            alertOverlay.style.position = 'absolute';
+            alertOverlay.style.top = '0';
+            alertOverlay.style.left = '0';
+            alertOverlay.style.right = '0';
+            alertOverlay.style.bottom = '0';
+            alertOverlay.style.backgroundColor = 'rgba(255, 68, 68, 0.3)';
+            alertOverlay.style.pointerEvents = 'none';
+            alertOverlay.style.animation = 'pulseRed 0.5s infinite';
+            activeFaultCard.appendChild(alertOverlay);
+            
+            // Enhance warning triangle
+            if (warningIndicator) {
+                warningIndicator.style.animation = 'warningPulse 0.3s infinite alternate';
+                warningIndicator.style.color = '#ff4444';
+            }
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                alertOverlay.remove();
+                if (warningIndicator) {
+                    warningIndicator.style.animation = 'warningPulse 0.5s infinite alternate';
+                }
+            }, 5000);
+        }
+    }
+    
     setupCameraControls() {
         // Camera position display
         const positionDisplay = document.createElement('div');
@@ -475,9 +655,51 @@ class CSS2DDashboard {
         // Animate growing fault duration line
         this.animateFaultDurationLine();
         
+        // Update mouse particle trails
+        this.updateMouseParticles();
+        
+        // Trigger periodic alert demonstrations
+        this.handlePeriodicAlerts();
+        
         // Render both WebGL and CSS2D
         this.renderer.render(this.scene, this.camera);
         this.css2dRenderer.render(this.scene, this.camera);
+    }
+    
+    updateMouseParticles() {
+        if (this.mouseParticles && this.mouseTrail) {
+            const positions = this.mouseParticles.geometry.attributes.position.array;
+            
+            for (let i = 0; i < this.mouseTrail.length; i++) {
+                const particle = this.mouseTrail[i];
+                positions[i * 3] = particle.x;
+                positions[i * 3 + 1] = particle.y;
+                positions[i * 3 + 2] = particle.z;
+                
+                // Fade out particles over time
+                particle.life -= 0.02;
+                if (particle.life <= 0) {
+                    this.mouseTrail.splice(i, 1);
+                    i--;
+                }
+            }
+            
+            // Clear remaining positions
+            for (let i = this.mouseTrail.length * 3; i < positions.length; i++) {
+                positions[i] = 0;
+            }
+            
+            this.mouseParticles.geometry.attributes.position.needsUpdate = true;
+        }
+    }
+    
+    handlePeriodicAlerts() {
+        const time = Date.now() * 0.001;
+        
+        // Trigger demo alert every 15 seconds
+        if (Math.floor(time) % 15 === 0 && Math.floor(time * 10) % 10 === 0) {
+            this.triggerAlertState('high');
+        }
     }
     
     animateDynamicLightFrames() {
@@ -601,17 +823,21 @@ class CSS2DDashboard {
         const chartX = -150; // Optimized position
         const chartY = -25;  // Optimized position
         
-        // Create chart container with enhanced size enforcement (Solution 2)
+        // Create chart container with military HUD styling
         const chartContainer = document.createElement('div');
         chartContainer.style.width = chartWidth + 'px';
         chartContainer.style.height = chartHeight + 'px';
-        chartContainer.style.backgroundColor = 'transparent';
-        chartContainer.style.border = 'none';
+        chartContainer.style.backgroundColor = 'rgba(0, 20, 0, 0.3)';
+        chartContainer.style.border = '2px solid #00ff41';
         chartContainer.style.borderRadius = '0';
         chartContainer.style.padding = '15px';
         chartContainer.style.boxSizing = 'border-box';
         chartContainer.style.position = 'relative';
         chartContainer.style.overflow = 'hidden';
+        chartContainer.style.clipPath = 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)';
+        chartContainer.style.boxShadow = 'inset 0 0 20px rgba(0, 255, 65, 0.2), 0 0 30px rgba(0, 255, 65, 0.3)';
+        chartContainer.className = 'military-panel chart-panel';
+        chartContainer.id = 'main-chart-panel';
         chartContainer.style.maxWidth = chartWidth + 'px';
         chartContainer.style.maxHeight = chartHeight + 'px';
         chartContainer.style.minWidth = chartWidth + 'px';
@@ -633,6 +859,7 @@ class CSS2DDashboard {
         chartContainer.appendChild(canvas);
         
         // Create Chart.js chart with responsive disabled
+        console.log('CREATING CHART.JS WITH HUD STYLING');
         const ctx = canvas.getContext('2d');
         const chart = new window.Chart(ctx, {
             type: 'line',
@@ -642,8 +869,8 @@ class CSS2DDashboard {
                     {
                         label: 'Planned',
                         data: [100, 110, 120, 130, 125, 115, 105],
-                        borderColor: '#00ffff',
-                        backgroundColor: 'rgba(0, 255, 255, 0.1)',
+                        borderColor: '#00ff41',
+                        backgroundColor: 'rgba(0, 255, 65, 0.1)',
                         borderWidth: 2,
                         fill: false,
                         tension: 0.1
@@ -722,7 +949,7 @@ class CSS2DDashboard {
                     title: {
                         display: true,
                         text: 'Planned vs Actual Performance',
-                        color: 'rgba(0, 255, 255, 0.7)',
+                        color: 'rgba(0, 255, 65, 0.7)',
                         font: {
                             size: 14,
                             weight: 'bold'
@@ -745,7 +972,7 @@ class CSS2DDashboard {
                 scales: {
                     x: {
                         grid: {
-                            color: 'rgba(0, 255, 255, 0.1)',
+                            color: 'rgba(0, 255, 65, 0.1)',
                             lineWidth: 1
                         },
                         ticks: {
@@ -757,7 +984,7 @@ class CSS2DDashboard {
                     },
                     y: {
                         grid: {
-                            color: 'rgba(0, 255, 255, 0.1)',
+                            color: 'rgba(0, 255, 65, 0.1)',
                             lineWidth: 1
                         },
                         ticks: {
@@ -788,6 +1015,9 @@ class CSS2DDashboard {
         // Add right side cards
         this.createRightSideCards(chartGroup);
         
+        // Add geometric HUD frames around all middle section elements
+        this.createGeometricFrames(chartGroup, chartX, chartY, chartWidth, chartHeight);
+        
         this.scene.add(chartGroup);
     }
     
@@ -808,13 +1038,55 @@ class CSS2DDashboard {
         const faultDiv = document.createElement('div');
         faultDiv.style.width = width + 'px';
         faultDiv.style.height = height + 'px';
-        faultDiv.style.backgroundColor = 'transparent';
-        faultDiv.style.border = 'none';
+        faultDiv.style.backgroundColor = 'rgba(0, 20, 0, 0.3)';
+        faultDiv.style.border = '2px solid #00ff41';
         faultDiv.style.borderRadius = '0';
         faultDiv.style.padding = '15px';
         faultDiv.style.boxSizing = 'border-box';
         faultDiv.style.display = 'flex';
         faultDiv.style.flexDirection = 'column';
+        faultDiv.style.position = 'relative';
+        faultDiv.style.clipPath = 'polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))';
+        faultDiv.style.boxShadow = 'inset 0 0 20px rgba(0, 255, 65, 0.2), 0 0 30px rgba(0, 255, 65, 0.3)';
+        faultDiv.className = 'military-panel';
+        faultDiv.id = 'active-fault-card';
+        
+        // Add status light strip at top
+        const statusLightStrip = document.createElement('div');
+        statusLightStrip.style.position = 'absolute';
+        statusLightStrip.style.top = '5px';
+        statusLightStrip.style.right = '20px';
+        statusLightStrip.style.display = 'flex';
+        statusLightStrip.style.gap = '5px';
+        
+        // Create 3 status lights
+        for (let i = 0; i < 3; i++) {
+            const light = document.createElement('div');
+            light.style.width = '8px';
+            light.style.height = '8px';
+            light.style.borderRadius = '50%';
+            light.style.border = '1px solid #00ff41';
+            light.style.backgroundColor = i === 0 ? '#ff4444' : (i === 1 ? '#ffff00' : '#00ff41');
+            light.style.boxShadow = i === 0 ? '0 0 10px #ff4444' : (i === 1 ? '0 0 10px #ffff00' : '0 0 10px #00ff41');
+            if (i === 0) {
+                light.style.animation = 'pulseRed 1s infinite';
+            }
+            statusLightStrip.appendChild(light);
+        }
+        faultDiv.appendChild(statusLightStrip);
+        
+        // Add warning triangle for critical faults
+        const warningTriangle = document.createElement('div');
+        warningTriangle.innerHTML = '⚠';
+        warningTriangle.style.position = 'absolute';
+        warningTriangle.style.top = '5px';
+        warningTriangle.style.left = '15px';
+        warningTriangle.style.color = '#ff4444';
+        warningTriangle.style.fontSize = '20px';
+        warningTriangle.style.textShadow = '0 0 10px #ff4444';
+        warningTriangle.style.animation = 'warningPulse 0.5s infinite alternate';
+        warningTriangle.className = 'warning-indicator';
+        faultDiv.appendChild(warningTriangle);
         
         // Header
         const header = document.createElement('div');
@@ -902,13 +1174,37 @@ class CSS2DDashboard {
         const downtimeDiv = document.createElement('div');
         downtimeDiv.style.width = width + 'px';
         downtimeDiv.style.height = height + 'px';
-        downtimeDiv.style.backgroundColor = 'transparent';
-        downtimeDiv.style.border = 'none';
+        downtimeDiv.style.backgroundColor = 'rgba(0, 20, 0, 0.3)';
+        downtimeDiv.style.border = '2px solid #00ff41';
         downtimeDiv.style.borderRadius = '0';
         downtimeDiv.style.padding = '15px';
         downtimeDiv.style.boxSizing = 'border-box';
         downtimeDiv.style.display = 'flex';
         downtimeDiv.style.flexDirection = 'column';
+        downtimeDiv.style.position = 'relative';
+        downtimeDiv.style.clipPath = 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)';
+        downtimeDiv.style.boxShadow = 'inset 0 0 20px rgba(0, 255, 65, 0.2), 0 0 30px rgba(0, 255, 65, 0.3)';
+        downtimeDiv.className = 'military-panel';
+        
+        // Add status light strip
+        const statusLightStrip = document.createElement('div');
+        statusLightStrip.style.position = 'absolute';
+        statusLightStrip.style.top = '5px';
+        statusLightStrip.style.right = '20px';
+        statusLightStrip.style.display = 'flex';
+        statusLightStrip.style.gap = '5px';
+        
+        for (let i = 0; i < 3; i++) {
+            const light = document.createElement('div');
+            light.style.width = '8px';
+            light.style.height = '8px';
+            light.style.borderRadius = '50%';
+            light.style.border = '1px solid #00ff41';
+            light.style.backgroundColor = '#00ff41';
+            light.style.boxShadow = '0 0 10px #00ff41';
+            statusLightStrip.appendChild(light);
+        }
+        downtimeDiv.appendChild(statusLightStrip);
         
         // Header
         const header = document.createElement('div');
@@ -955,6 +1251,132 @@ class CSS2DDashboard {
         downtimeObject.position.set(x, y, 0);
         downtimeObject.center.set(0.5, 0.5);
         chartGroup.add(downtimeObject);
+    }
+    
+    createGeometricFrames(chartGroup, chartX, chartY, chartWidth, chartHeight) {
+        console.log('CREATING GEOMETRIC FRAMES - Military HUD Mode Active');
+        // Create angled HUD frames around chart
+        this.createAngledFrame(chartGroup, chartX, chartY, chartWidth, chartHeight, 'chart');
+        
+        // Create frames around right side cards
+        this.createAngledFrame(chartGroup, 380, 60, 300, 160, 'fault-card');
+        this.createAngledFrame(chartGroup, 380, -110, 300, 160, 'downtime-card');
+    }
+    
+    createAngledFrame(parent, x, y, width, height, frameId) {
+        console.log(`Creating angled frame for ${frameId} at position (${x}, ${y})`);
+        const frameGroup = new THREE.Group();
+        const frameWidth = 1.5; // Thicker than top section brackets
+        
+        // Create angled corner brackets (military style)
+        const bracketLength = 25;
+        const cornerOffset = 10;
+        
+        // Corner notch dimensions
+        const notchSize = 8;
+        
+        // Frame material with military green
+        const frameMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ff41, // Military HUD green
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        
+        // TOP-LEFT angled bracket
+        const tlHorizontal = new THREE.PlaneGeometry(bracketLength, frameWidth);
+        const tlHMesh = new THREE.Mesh(tlHorizontal, frameMaterial.clone());
+        tlHMesh.position.set(-width/2 + bracketLength/2 + cornerOffset, height/2 - cornerOffset, 2);
+        tlHMesh.rotation.z = -0.2; // Angled like fighter jet displays
+        
+        const tlVertical = new THREE.PlaneGeometry(frameWidth, bracketLength);
+        const tlVMesh = new THREE.Mesh(tlVertical, frameMaterial.clone());
+        tlVMesh.position.set(-width/2 + cornerOffset, height/2 - bracketLength/2 - cornerOffset, 2);
+        tlVMesh.rotation.z = 0.2;
+        
+        // TOP-RIGHT angled bracket
+        const trHorizontal = new THREE.PlaneGeometry(bracketLength, frameWidth);
+        const trHMesh = new THREE.Mesh(trHorizontal, frameMaterial.clone());
+        trHMesh.position.set(width/2 - bracketLength/2 - cornerOffset, height/2 - cornerOffset, 2);
+        trHMesh.rotation.z = 0.2;
+        
+        const trVertical = new THREE.PlaneGeometry(frameWidth, bracketLength);
+        const trVMesh = new THREE.Mesh(trVertical, frameMaterial.clone());
+        trVMesh.position.set(width/2 - cornerOffset, height/2 - bracketLength/2 - cornerOffset, 2);
+        trVMesh.rotation.z = -0.2;
+        
+        // BOTTOM-LEFT angled bracket
+        const blHorizontal = new THREE.PlaneGeometry(bracketLength, frameWidth);
+        const blHMesh = new THREE.Mesh(blHorizontal, frameMaterial.clone());
+        blHMesh.position.set(-width/2 + bracketLength/2 + cornerOffset, -height/2 + cornerOffset, 2);
+        blHMesh.rotation.z = 0.2;
+        
+        const blVertical = new THREE.PlaneGeometry(frameWidth, bracketLength);
+        const blVMesh = new THREE.Mesh(blVertical, frameMaterial.clone());
+        blVMesh.position.set(-width/2 + cornerOffset, -height/2 + bracketLength/2 + cornerOffset, 2);
+        blVMesh.rotation.z = -0.2;
+        
+        // BOTTOM-RIGHT angled bracket
+        const brHorizontal = new THREE.PlaneGeometry(bracketLength, frameWidth);
+        const brHMesh = new THREE.Mesh(brHorizontal, frameMaterial.clone());
+        brHMesh.position.set(width/2 - bracketLength/2 - cornerOffset, -height/2 + cornerOffset, 2);
+        brHMesh.rotation.z = -0.2;
+        
+        const brVertical = new THREE.PlaneGeometry(frameWidth, bracketLength);
+        const brVMesh = new THREE.Mesh(brVertical, frameMaterial.clone());
+        brVMesh.position.set(width/2 - cornerOffset, -height/2 + bracketLength/2 + cornerOffset, 2);
+        brVMesh.rotation.z = 0.2;
+        
+        // Add technical markings
+        for (let i = 0; i < 4; i++) {
+            const marking = new THREE.PlaneGeometry(3, 0.5);
+            const markingMesh = new THREE.Mesh(marking, frameMaterial.clone());
+            const angle = (i * Math.PI / 2);
+            const markingRadius = Math.min(width, height) * 0.6;
+            markingMesh.position.set(
+                Math.cos(angle) * markingRadius,
+                Math.sin(angle) * markingRadius,
+                2
+            );
+            markingMesh.rotation.z = angle + Math.PI/2;
+            frameGroup.add(markingMesh);
+        }
+        
+        // Add corner notches
+        const notchPositions = [
+            [-width/2 + notchSize, height/2 - notchSize],
+            [width/2 - notchSize, height/2 - notchSize],
+            [-width/2 + notchSize, -height/2 + notchSize],
+            [width/2 - notchSize, -height/2 + notchSize]
+        ];
+        
+        notchPositions.forEach(([nx, ny]) => {
+            const notch = new THREE.PlaneGeometry(notchSize, notchSize);
+            const notchMesh = new THREE.Mesh(notch, frameMaterial.clone());
+            notchMesh.position.set(nx, ny, 1.5);
+            notchMesh.material.opacity = 0.6;
+            frameGroup.add(notchMesh);
+        });
+        
+        // Add all bracket pieces
+        frameGroup.add(tlHMesh);
+        frameGroup.add(tlVMesh);
+        frameGroup.add(trHMesh);
+        frameGroup.add(trVMesh);
+        frameGroup.add(blHMesh);
+        frameGroup.add(blVMesh);
+        frameGroup.add(brHMesh);
+        frameGroup.add(brVMesh);
+        
+        // Store for animation
+        frameGroup.userData.frameId = frameId;
+        frameGroup.userData.animPhase = Math.random() * Math.PI * 2;
+        
+        // Position frame group
+        frameGroup.position.set(x, y, 0);
+        parent.add(frameGroup);
+        
+        return frameGroup;
     }
 }
 

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load plotly_dash %}
+
+{% block title %}OEE Dashboard - Phase 2 KPI Section{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Embed the Phase 2 Dash app -->
+    {% plotly_app name="OEEDashboardPhase2" ratio=1 %}
+</div>
+
+<style>
+/* CRITICAL: Prevent chart stretching - Apply original dashboard height constraints */
+.django-plotly-dash {
+    width: 100% !important;
+    height: 100vh !important; /* Fixed viewport height */
+    max-height: 100vh !important; /* Prevent stretching beyond viewport */
+    min-height: 100vh !important;
+    overflow: hidden !important; /* Prevent content overflow */
+}
+
+.django-plotly-dash iframe {
+    width: 100% !important;
+    height: 100vh !important; /* Fixed iframe height */
+    max-height: 100vh !important; /* Prevent iframe stretching */
+    border: none !important;
+    overflow: hidden !important;
+}
+
+/* Force strict height distribution - Match original dashboard approach */
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 100vh !important; /* Fixed body height */
+    max-height: 100vh !important;
+    overflow: hidden !important;
+}
+
+.content-area {
+    padding: 0 !important;
+    height: 100vh !important; /* Fixed content area height */
+    max-height: 100vh !important;
+    overflow: hidden !important;
+}
+
+/* Apply original dashboard section height constraints to Dash app */
+/* These are the exact values from the working HTML dashboard */
+._dash-renderer > div {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+}
+
+/* Force Dash container to respect viewport limits - matching original approach */
+._dash-renderer > div > div {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow-y: auto !important;
+}
+
+/* Apply the original KPI row height constraints */
+.kpi-row {
+    height: 22vh !important;
+    min-height: 170px !important;
+    max-height: 220px !important;
+}
+
+/* Future: Middle section constraints (when implemented) */
+.middle-section {
+    height: 23vh !important;
+    min-height: 200px !important;
+    max-height: 200px !important;
+}
+
+/* Future: Machine rail constraints (when implemented) */
+.machine-rail-section {
+    height: 18vh !important;
+    min-height: 120px !important;
+    max-height: 180px !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log("Phase 2 Dashboard loaded - Top KPI Section with Dash components");
+</script>
+{% endblock %}

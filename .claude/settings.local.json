@@ -12,7 +12,14 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git checkout:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "WebFetch(domain:threejsfundamentals.org)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:www.chartjs.org)",
+      "Bash(git switch:*)",
+      "WebFetch(domain:pierfrancesco-soffritti.medium.com)",
+      "WebFetch(domain:sbcode.net)",
+      "WebFetch(domain:medium.com)"
     ],
     "deny": [],
     "ask": []
