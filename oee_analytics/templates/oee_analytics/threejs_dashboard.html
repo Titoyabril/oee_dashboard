@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OEE Dashboard - Three.js</title>
+    
+    <!-- Chart.js for dashboard charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Three.js Import Map for Modern ES6 Modules -->
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.155.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.155.0/examples/jsm/"
+      }
+    }
+    </script>
+</head>
+<body style="margin: 0; padding: 0; overflow: hidden; background: #0a0a15; font-family: system-ui, -apple-system, sans-serif;">
+<!-- Three.js Container - Full viewport -->
+<div id="threejs-container" style="
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+"></div>
+
+
+<!-- CSS2DRenderer Dashboard -->
+<script type="module" src="{% static 'js/threejs/dashboard3d_css2d.js' %}"></script>
+
+<style>
+/* Remove all padding from content area for full Three.js control */
+.content-area {
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Ensure Three.js canvas takes full control */
+#threejs-container canvas {
+    display: block !important;
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+/* Text overlay positioning for Phase 1 hybrid approach */
+.threejs-text-overlay {
+    position: absolute;
+    pointer-events: none;
+    font-family: system-ui, -apple-system, sans-serif;
+    transition: transform 0.2s ease;
+}
+</style>
+
+</body>
+</html>

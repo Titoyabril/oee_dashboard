@@ -30,6 +30,10 @@ def new_dashboard(request):
     """New dashboard with top KPI row"""
     return render(request, 'oee_analytics/new_dashboard.html')
 
+def threejs_dashboard(request):
+    """Three.js version of the dashboard - identical recreation"""
+    return render(request, 'oee_analytics/threejs_dashboard.html')
+
 def current_metrics_api(request):
     """API endpoint for real-time metrics"""
     # Calculate current OEE metrics
