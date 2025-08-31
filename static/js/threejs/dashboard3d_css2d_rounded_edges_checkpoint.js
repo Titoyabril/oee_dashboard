@@ -2308,37 +2308,7 @@ class CSS2DDashboard {
             
             // Create ultra-realistic glass cube with softly rounded edges
             const cubeSize = circleRadius * 1.2;
-            const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize, 20, 20, 20);
-            
-            // Apply subtle vertex displacement for rounded edges
-            const positions = cubeGeometry.attributes.position.array;
-            for (let i = 0; i < positions.length; i += 3) {
-                const x = positions[i];
-                const y = positions[i + 1];
-                const z = positions[i + 2];
-                
-                // Calculate distance from center of each face
-                const absX = Math.abs(x);
-                const absY = Math.abs(y);
-                const absZ = Math.abs(z);
-                
-                // Apply subtle smoothing to edges and corners
-                const maxDist = cubeSize / 2;
-                const smoothFactor = 0.85; // Controls how rounded the edges are
-                
-                if (absX > maxDist * smoothFactor) {
-                    positions[i] = x * smoothFactor + x * (1 - smoothFactor) * Math.cos(Math.PI * (absY / maxDist + absZ / maxDist) / 4);
-                }
-                if (absY > maxDist * smoothFactor) {
-                    positions[i + 1] = y * smoothFactor + y * (1 - smoothFactor) * Math.cos(Math.PI * (absX / maxDist + absZ / maxDist) / 4);
-                }
-                if (absZ > maxDist * smoothFactor) {
-                    positions[i + 2] = z * smoothFactor + z * (1 - smoothFactor) * Math.cos(Math.PI * (absX / maxDist + absY / maxDist) / 4);
-                }
-            }
-            
-            cubeGeometry.attributes.position.needsUpdate = true;
-            cubeGeometry.computeVertexNormals();
+            const cubeGeometry = this.createRoundedBoxGeometry(cubeSize, cubeSize, cubeSize, 4, 8);
             let glassMaterial;
             
             if (machine.status === 'fault') {
