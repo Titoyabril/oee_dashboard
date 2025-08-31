@@ -19,7 +19,11 @@
       "Bash(git switch:*)",
       "WebFetch(domain:pierfrancesco-soffritti.medium.com)",
       "WebFetch(domain:sbcode.net)",
-      "WebFetch(domain:medium.com)"
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:tympanus.net)",
+      "WebFetch(domain:blog.maximeheckel.com)",
+      "WebFetch(domain:threejs.org)",
+      "WebFetch(domain:discourse.threejs.org)"
     ],
     "deny": [],
     "ask": []
