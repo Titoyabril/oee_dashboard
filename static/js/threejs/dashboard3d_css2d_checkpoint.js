@@ -1,6 +1,61 @@
 /**
- * Three.js Dashboard with CSS2DRenderer - Clean rebuild
- * Using proper coordinate system alignment
+ * Three.js Dashboard with CSS2DRenderer - CHECKPOINT VERSION
+ * 
+ * CHECKPOINT NOTES - WORKING STATE WITH TEMPLATE FIX
+ * URL: http://localhost:8000/threejs-dashboard/
+ * 
+ * This checkpoint represents the FINAL WORKING STATE with all template issues resolved.
+ * 
+ * TEMPLATE FIXES APPLIED:
+ * - Added missing {% load static %} to threejs_dashboard.html (line 1)
+ * - Removed base.html inheritance to prevent navigation overlay conflicts
+ * - Ensured fullscreen Three.js experience without Django UI interference
+ * 
+ * CHECKPOINT LOGIC IMPLEMENTED:
+ * 
+ * 1. TOP SECTION - Dynamic L-Bracket KPI Cards:
+ *    - 4 KPI cards with irregular bracket variations (random offsets)
+ *    - Extension/retraction animations with 75% slower timing
+ *    - Hot spots following bracket tips with disappearing periods
+ *    - Unified cyan color scheme (#00ffff) for all brackets and text
+ *    - CSS2DObject for HTML content overlay (sparklines, values, labels)
+ * 
+ * 2. MIDDLE SECTION - Chart.js Integration:
+ *    - Chart.js planned vs actual performance chart (676x338 pixels)
+ *    - Fixed canvas dimensions with responsive: false to solve scaling issues
+ *    - 24-hour timeline with downtime hot spots and NOW line indicator
+ *    - Position: chartX = -150, chartY = -25 (optimized through arrow key controls)
+ *    - NO BACKGROUND CARD - transparent styling applied
+ * 
+ * 3. RIGHT SIDE CARDS:
+ *    - Active Fault Overlay: Machine name + growing line animation + MTTR/MTBF metrics
+ *    - Last Downtime Event: Fault details with time/duration info
+ *    - Both cards 300x160 pixels with NO BACKGROUNDS - transparent styling
+ *    - Growing line represents downtime duration with pulsing glow effect
+ * 
+ * 4. COORDINATE SYSTEM:
+ *    - CSS2DRenderer for HTML overlay positioning
+ *    - PerspectiveCamera at (0, 0, 550) looking at origin
+ *    - Manual positioning for chart and cards in 3D space
+ * 
+ * 5. ANIMATION SYSTEMS:
+ *    - animateDynamicLightFrames(): Extension/retraction of top section brackets
+ *    - animateFaultDurationLine(): Growing line progress bar with pulsing glow
+ *    - Hot spot following bracket tips with intensity pulsing
+ * 
+ * USER FEEDBACK HISTORY:
+ * - "ok beautiful" - User approval of subtle frames before 3D attempt
+ * - "i dont see any difference" then "i see. i dont liek it. revert the change" - 3D rejection
+ * - "why is it opening two pages when i click that link" - Template inheritance issue
+ * 
+ * WHAT WAS REJECTED:
+ * - Complex 3D layered system with multiple Z positions
+ * - BoxGeometry instead of PlaneGeometry 
+ * - Complex rotations and scaling effects
+ * - Higher opacity and thickness changes
+ * 
+ * CURRENT STATE: Working holographic dashboard with dynamic top section and clean middle section.
+ * Template now properly loads without Django navigation interference.
  */
 
 import * as THREE from 'three';
@@ -50,6 +105,9 @@ class CSS2DDashboard {
         
         // Create KPI cards with proper CSS2D positioning
         this.createKPICards();
+        
+        // Create middle section with Chart.js (Option 2)
+        this.createMiddleSection();
         
         // Start animation loop
         this.animate();
@@ -337,6 +395,7 @@ class CSS2DDashboard {
         // Keyboard controls
         document.addEventListener('keydown', (event) => {
             const step = 50;
+            const chartStep = 25;
             switch(event.key.toLowerCase()) {
                 case 'w': this.camera.position.y += step; break;
                 case 's': this.camera.position.y -= step; break;
@@ -345,9 +404,37 @@ class CSS2DDashboard {
                 case 'q': this.camera.position.z += step; break;
                 case 'e': this.camera.position.z -= step; break;
                 case 'r': this.camera.position.set(0, 0, 550); break;
+                // Chart positioning controls
+                case 'arrowup': 
+                    if (this.chartObject) {
+                        this.chartObject.position.y += chartStep;
+                        console.log('Chart Y position:', this.chartObject.position.y);
+                    }
+                    break;
+                case 'arrowdown':
+                    if (this.chartObject) {
+                        this.chartObject.position.y -= chartStep;
+                        console.log('Chart Y position:', this.chartObject.position.y);
+                    }
+                    break;
+                case 'arrowleft':
+                    if (this.chartObject) {
+                        this.chartObject.position.x -= chartStep;
+                        console.log('Chart X position:', this.chartObject.position.x);
+                    }
+                    break;
+                case 'arrowright':
+                    if (this.chartObject) {
+                        this.chartObject.position.x += chartStep;
+                        console.log('Chart X position:', this.chartObject.position.x);
+                    }
+                    break;
                 case ' ': 
                     event.preventDefault();
                     console.log('Current camera position:', this.camera.position);
+                    if (this.chartObject) {
+                        console.log('Current chart position:', this.chartObject.position);
+                    }
                     break;
             }
             this.camera.lookAt(0, 0, 0);
@@ -358,10 +445,13 @@ class CSS2DDashboard {
     updatePositionDisplay() {
         const display = document.getElementById('camera-position');
         if (display) {
+            const chartPos = this.chartObject ? this.chartObject.position : { x: 'N/A', y: 'N/A' };
             display.innerHTML = `
                 Camera: x=${Math.round(this.camera.position.x)}, y=${Math.round(this.camera.position.y)}, z=${Math.round(this.camera.position.z)}<br>
+                Chart: x=${Math.round(chartPos.x)}, y=${Math.round(chartPos.y)}<br>
                 <strong>Controls:</strong><br>
                 WASD: Move camera<br>
+                Arrow Keys: Move chart<br>
                 QE: Forward/Back<br>
                 R: Reset<br>
                 Space: Log position
@@ -381,6 +471,9 @@ class CSS2DDashboard {
         
         // Animate dynamic light brackets
         this.animateDynamicLightFrames();
+        
+        // Animate growing fault duration line
+        this.animateFaultDurationLine();
         
         // Render both WebGL and CSS2D
         this.renderer.render(this.scene, this.camera);
@@ -477,6 +570,391 @@ class CSS2DDashboard {
                 });
             }
         });
+    }
+    
+    animateFaultDurationLine() {
+        if (this.faultDurationLine && this.faultStartTime) {
+            const currentTime = Date.now();
+            const elapsedSeconds = (currentTime - this.faultStartTime) / 1000;
+            
+            // Simulate 10 minutes downtime, growing the line over 10 seconds for demo
+            const maxDurationSeconds = 10; // 10 second demo cycle
+            const progressPercent = Math.min((elapsedSeconds % maxDurationSeconds) / maxDurationSeconds * 100, 100);
+            
+            this.faultDurationLine.style.width = progressPercent + '%';
+            
+            // Add pulsing glow effect when line is growing
+            if (progressPercent < 100) {
+                const pulseIntensity = Math.sin(elapsedSeconds * 3) * 0.5 + 0.5;
+                this.faultDurationLine.style.boxShadow = `0 0 ${10 + pulseIntensity * 15}px #00ffff`;
+            }
+        }
+    }
+    
+    createMiddleSection() {
+        // Chart section positioned in middle of screen
+        const chartGroup = new THREE.Group();
+        
+        // Chart container positioned on left side (69% larger total)
+        const chartWidth = 676;  // 520 * 1.3
+        const chartHeight = 338; // 260 * 1.3
+        const chartX = -150; // Optimized position
+        const chartY = -25;  // Optimized position
+        
+        // Create chart container with enhanced size enforcement (Solution 2)
+        const chartContainer = document.createElement('div');
+        chartContainer.style.width = chartWidth + 'px';
+        chartContainer.style.height = chartHeight + 'px';
+        chartContainer.style.backgroundColor = 'transparent';
+        chartContainer.style.border = 'none';
+        chartContainer.style.borderRadius = '0';
+        chartContainer.style.padding = '15px';
+        chartContainer.style.boxSizing = 'border-box';
+        chartContainer.style.position = 'relative';
+        chartContainer.style.overflow = 'hidden';
+        chartContainer.style.maxWidth = chartWidth + 'px';
+        chartContainer.style.maxHeight = chartHeight + 'px';
+        chartContainer.style.minWidth = chartWidth + 'px';
+        chartContainer.style.minHeight = chartHeight + 'px';
+        chartContainer.style.display = 'block';
+        chartContainer.style.flex = 'none';
+        chartContainer.style.transform = 'none';
+        chartContainer.style.zIndex = '1';
+        
+        // Create canvas for Chart.js with explicit size constraints
+        const canvas = document.createElement('canvas');
+        canvas.id = 'plannedActualChart';
+        canvas.width = 625;  // 481 * 1.3
+        canvas.height = 287;  // 221 * 1.3
+        canvas.style.width = '625px';  // Fixed display size
+        canvas.style.height = '287px';
+        canvas.style.maxWidth = '625px';
+        canvas.style.maxHeight = '287px';
+        chartContainer.appendChild(canvas);
+        
+        // Create Chart.js chart with responsive disabled
+        const ctx = canvas.getContext('2d');
+        const chart = new window.Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                datasets: [
+                    {
+                        label: 'Planned',
+                        data: [100, 110, 120, 130, 125, 115, 105],
+                        borderColor: '#00ffff',
+                        backgroundColor: 'rgba(0, 255, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Actual',
+                        data: [98, 108, 118, 128, 122, 112, 102],
+                        borderColor: '#ffffff',
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    }
+                ]
+            },
+            plugins: [{
+                id: 'downtimeHotSpots',
+                afterDatasetsDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    const chartArea = chart.chartArea;
+                    
+                    // Define downtime events
+                    const downtimeEvents = [
+                        { timeIndex: 2.3, severity: 'high' },   // Around 08:00-12:00
+                        { timeIndex: 4.7, severity: 'medium' }  // Around 16:00-20:00
+                    ];
+                    
+                    // Draw downtime hot spots
+                    downtimeEvents.forEach(event => {
+                        const xPosition = chartArea.left + (event.timeIndex / 6) * (chartArea.right - chartArea.left);
+                        const yPosition = chartArea.top + (chartArea.bottom - chartArea.top) * 0.5;
+                        
+                        const hotSpotColor = event.severity === 'high' ? '#ff4444' : '#ff8844';
+                        
+                        // Create layered glow effect
+                        ctx.save();
+                        for (let i = 3; i >= 1; i--) {
+                            ctx.shadowColor = hotSpotColor;
+                            ctx.shadowBlur = i * 8;
+                            ctx.globalAlpha = 0.4 / i;
+                            ctx.fillStyle = hotSpotColor;
+                            ctx.beginPath();
+                            ctx.arc(xPosition, yPosition, i * 3, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        ctx.restore();
+                    });
+                    
+                    // Draw current time "NOW" line
+                    const currentTimeIndex = 3.5; // Around 14:00 (current time)
+                    const nowX = chartArea.left + (currentTimeIndex / 6) * (chartArea.right - chartArea.left);
+                    
+                    // Draw dashed vertical line
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(nowX, chartArea.top);
+                    ctx.lineTo(nowX, chartArea.bottom);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    // Draw NOW label
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.font = '10px system-ui';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('NOW', nowX, chartArea.top - 8);
+                    ctx.restore();
+                }
+            }],
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Planned vs Actual Performance',
+                        color: 'rgba(0, 255, 255, 0.7)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            font: {
+                                size: 10
+                            },
+                            filter: function(legendItem) {
+                                return legendItem.text === 'Planned' || legendItem.text === 'Actual';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 255, 255, 0.1)',
+                            lineWidth: 1
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.5)',
+                            font: {
+                                size: 10
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(0, 255, 255, 0.1)',
+                            lineWidth: 1
+                        },
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.5)',
+                            font: {
+                                size: 9
+                            }
+                        }
+                    }
+                },
+                elements: {
+                    point: {
+                        radius: 3,
+                        hoverRadius: 5
+                    }
+                }
+            }
+        });
+        
+        const chartObject = new CSS2DObject(chartContainer);
+        chartObject.position.set(chartX, chartY, 0);
+        chartObject.center.set(0.5, 0.5);
+        chartGroup.add(chartObject);
+        
+        // Store chart object for positioning controls
+        this.chartObject = chartObject;
+        
+        // Add right side cards
+        this.createRightSideCards(chartGroup);
+        
+        this.scene.add(chartGroup);
+    }
+    
+    createRightSideCards(chartGroup) {
+        const cardWidth = 300;
+        const cardHeight = 160;
+        const cardSpacing = 140;
+        const rightX = 380; // Right side of middle section
+        
+        // Active Fault Overlay Card (top)
+        this.createActiveFaultCard(chartGroup, cardWidth, cardHeight, rightX, 60);
+        
+        // Last Downtime Event Card (bottom)
+        this.createLastDowntimeCard(chartGroup, cardWidth, cardHeight, rightX, -110);
+    }
+    
+    createActiveFaultCard(chartGroup, width, height, x, y) {
+        const faultDiv = document.createElement('div');
+        faultDiv.style.width = width + 'px';
+        faultDiv.style.height = height + 'px';
+        faultDiv.style.backgroundColor = 'transparent';
+        faultDiv.style.border = 'none';
+        faultDiv.style.borderRadius = '0';
+        faultDiv.style.padding = '15px';
+        faultDiv.style.boxSizing = 'border-box';
+        faultDiv.style.display = 'flex';
+        faultDiv.style.flexDirection = 'column';
+        
+        // Header
+        const header = document.createElement('div');
+        header.style.color = '#00ffff';
+        header.style.fontSize = '12px';
+        header.style.fontWeight = '600';
+        header.style.textTransform = 'uppercase';
+        header.style.letterSpacing = '1px';
+        header.style.marginBottom = '12px';
+        header.textContent = 'Active Fault Overlay';
+        
+        // Machine name that caused the fault
+        const machineName = document.createElement('div');
+        machineName.style.color = '#ffffff';
+        machineName.style.fontSize = '14px';
+        machineName.style.fontWeight = '700';
+        machineName.style.marginBottom = '8px';
+        machineName.style.textShadow = '0 0 8px #00ffff';
+        machineName.textContent = 'Machine: PRESS-001';
+        
+        // Growing line container representing downtime duration
+        const downtimeLineContainer = document.createElement('div');
+        downtimeLineContainer.style.width = '100%';
+        downtimeLineContainer.style.height = '6px';
+        downtimeLineContainer.style.backgroundColor = 'rgba(0, 255, 255, 0.1)';
+        downtimeLineContainer.style.borderRadius = '3px';
+        downtimeLineContainer.style.marginBottom = '12px';
+        downtimeLineContainer.style.position = 'relative';
+        downtimeLineContainer.style.overflow = 'hidden';
+        
+        // Growing line bar
+        const growingLine = document.createElement('div');
+        growingLine.style.height = '100%';
+        growingLine.style.backgroundColor = '#00ffff';
+        growingLine.style.borderRadius = '3px';
+        growingLine.style.boxShadow = '0 0 10px #00ffff';
+        growingLine.style.transition = 'width 1s ease-out';
+        growingLine.style.width = '0%';
+        growingLine.id = 'fault-duration-line';
+        
+        downtimeLineContainer.appendChild(growingLine);
+        
+        // MTTR/MTBF columns
+        const metricsContainer = document.createElement('div');
+        metricsContainer.style.display = 'flex';
+        metricsContainer.style.justifyContent = 'space-between';
+        
+        // MTTR column
+        const mttrColumn = document.createElement('div');
+        mttrColumn.style.textAlign = 'center';
+        mttrColumn.innerHTML = `
+            <div style="color: #00ffff; font-size: 10px; font-weight: 600; margin-bottom: 4px;">MTTR</div>
+            <div style="color: #ffffff; font-size: 16px; font-weight: 700;">8.2</div>
+            <div style="color: rgba(255,255,255,0.6); font-size: 9px;">minutes</div>
+        `;
+        
+        // MTBF column
+        const mtbfColumn = document.createElement('div');
+        mtbfColumn.style.textAlign = 'center';
+        mtbfColumn.innerHTML = `
+            <div style="color: #00ffff; font-size: 10px; font-weight: 600; margin-bottom: 4px;">MTBF</div>
+            <div style="color: #ffffff; font-size: 16px; font-weight: 700;">142</div>
+            <div style="color: rgba(255,255,255,0.6); font-size: 9px;">hours</div>
+        `;
+        
+        metricsContainer.appendChild(mttrColumn);
+        metricsContainer.appendChild(mtbfColumn);
+        
+        faultDiv.appendChild(header);
+        faultDiv.appendChild(machineName);
+        faultDiv.appendChild(downtimeLineContainer);
+        faultDiv.appendChild(metricsContainer);
+        
+        const faultObject = new CSS2DObject(faultDiv);
+        faultObject.position.set(x, y, 0);
+        faultObject.center.set(0.5, 0.5);
+        chartGroup.add(faultObject);
+        
+        // Store reference for growing line animation
+        this.faultDurationLine = growingLine;
+        this.faultStartTime = Date.now();
+    }
+    
+    createLastDowntimeCard(chartGroup, width, height, x, y) {
+        const downtimeDiv = document.createElement('div');
+        downtimeDiv.style.width = width + 'px';
+        downtimeDiv.style.height = height + 'px';
+        downtimeDiv.style.backgroundColor = 'transparent';
+        downtimeDiv.style.border = 'none';
+        downtimeDiv.style.borderRadius = '0';
+        downtimeDiv.style.padding = '15px';
+        downtimeDiv.style.boxSizing = 'border-box';
+        downtimeDiv.style.display = 'flex';
+        downtimeDiv.style.flexDirection = 'column';
+        
+        // Header
+        const header = document.createElement('div');
+        header.style.color = '#00ffff';
+        header.style.fontSize = '12px';
+        header.style.fontWeight = '600';
+        header.style.textTransform = 'uppercase';
+        header.style.letterSpacing = '1px';
+        header.style.marginBottom = '12px';
+        header.textContent = 'Last Downtime Event';
+        
+        // Fault details
+        const faultDetails = document.createElement('div');
+        faultDetails.style.display = 'flex';
+        faultDetails.style.flexDirection = 'column';
+        faultDetails.style.gap = '8px';
+        
+        // Fault name
+        const faultNameDiv = document.createElement('div');
+        faultNameDiv.style.color = '#ffffff';
+        faultNameDiv.style.fontSize = '11px';
+        faultNameDiv.innerHTML = '<strong>Fault:</strong> Conveyor Belt Jam';
+        
+        // Duration
+        const durationDiv = document.createElement('div');
+        durationDiv.style.color = '#ffffff';
+        durationDiv.style.fontSize = '11px';
+        durationDiv.innerHTML = '<strong>Duration:</strong> 12.5 minutes';
+        
+        // Time occurred
+        const timeDiv = document.createElement('div');
+        timeDiv.style.color = 'rgba(255, 255, 255, 0.7)';
+        timeDiv.style.fontSize = '10px';
+        timeDiv.innerHTML = '<strong>Time:</strong> 13:45:22';
+        
+        faultDetails.appendChild(faultNameDiv);
+        faultDetails.appendChild(durationDiv);
+        faultDetails.appendChild(timeDiv);
+        
+        downtimeDiv.appendChild(header);
+        downtimeDiv.appendChild(faultDetails);
+        
+        const downtimeObject = new CSS2DObject(downtimeDiv);
+        downtimeObject.position.set(x, y, 0);
+        downtimeObject.center.set(0.5, 0.5);
+        chartGroup.add(downtimeObject);
     }
 }
 
