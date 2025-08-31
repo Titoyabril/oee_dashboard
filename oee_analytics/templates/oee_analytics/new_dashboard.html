@@ -344,6 +344,27 @@
 
 {% block extra_js %}
 <style>
+/* Typewriter animation for diagnostics */
+@keyframes typewriter {
+    0% { 
+        width: 0; 
+        opacity: 0;
+    }
+    1% {
+        opacity: 1;
+    }
+    100% { 
+        width: 100%; 
+        opacity: 1;
+    }
+}
+
+.typewriter-line {
+    overflow: hidden;
+    white-space: nowrap;
+    width: 0;
+    animation: typewriter 0.8s ease-out forwards;
+}
 .kpi-value {
     font-size: 4.5rem !important;
     font-weight: 700 !important;

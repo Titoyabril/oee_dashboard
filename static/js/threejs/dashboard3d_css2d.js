@@ -57,9 +57,20 @@ class CSS2DDashboard {
         // Create middle section with Chart.js (Option 2)
         this.createMiddleSection();
         
+        // Create bottom section with machine status and data readouts
+        this.createBottomSection();
+        
         // Add environmental effects
         this.createIndividualScanLines();
         
+        
+        // Add reflection effects like Minority Report
+        this.createReflectionEffects();
+        
+        // Phase 1: Add system status indicators (last so they're on top)
+        setTimeout(() => {
+            this.createSystemStatusIndicators();
+        }, 100);
         
         // Start animation loop
         this.animate();
@@ -71,10 +82,10 @@ class CSS2DDashboard {
     
     createKPICards() {
         const cardData = [
-            { label: 'Availability', value: '95%', color: 0x00ffff },
-            { label: 'Performance', value: '88%', color: 0x00ffff },
-            { label: 'Quality', value: '98%', color: 0x00ffff },
-            { label: 'Overall OEE', value: '82%', color: 0x00ffff }
+            { label: 'Availability', value: '95%', color: 0x00d4ff },
+            { label: 'Performance', value: '88%', color: 0x00d4ff },
+            { label: 'Quality', value: '98%', color: 0x00d4ff },
+            { label: 'Overall OEE', value: '82%', color: 0x00d4ff }
         ];
         
         const cardWidth = 200;
@@ -216,7 +227,7 @@ class CSS2DDashboard {
         
         // Header
         const header = document.createElement('div');
-        header.style.color = '#00ffff';
+        header.style.color = '#66ccff';
         header.style.fontSize = '12px';
         header.style.fontWeight = '600';
         header.style.textTransform = 'uppercase';
@@ -225,11 +236,11 @@ class CSS2DDashboard {
         
         // Main value
         const value = document.createElement('div');
-        value.style.color = '#00ffff';
+        value.style.color = '#00d4ff';
         value.style.fontSize = '3rem';
         value.style.fontWeight = '700';
         value.style.textAlign = 'center';
-        value.style.textShadow = '0 0 15px #00ffff';
+        value.style.textShadow = '0 0 15px #00d4ff';
         value.textContent = cardData.value;
         
         contentDiv.appendChild(header);
@@ -379,9 +390,9 @@ class CSS2DDashboard {
             .data-callout {
                 position: absolute;
                 background: rgba(0, 20, 0, 0.9);
-                border: 1px solid #00ffff;
+                border: 1px solid #00d4ff;
                 padding: 5px 10px;
-                color: #00ffff;
+                color: #00d4ff;
                 font-family: 'Courier New', monospace;
                 font-size: 10px;
                 white-space: nowrap;
@@ -392,7 +403,7 @@ class CSS2DDashboard {
             .leader-line {
                 position: absolute;
                 height: 1px;
-                background: #00ffff;
+                background: #00d4ff;
                 transform-origin: left center;
                 pointer-events: none;
             }
@@ -403,6 +414,609 @@ class CSS2DDashboard {
                 width: 0;
                 max-width: 200px;
                 animation: typewriter 2s steps(40) 1s normal both;
+            }
+            
+            /* Phase 1: System Status Indicators */
+            .system-status-panel {
+                position: fixed;
+                background: rgba(0, 20, 20, 0.9);
+                border: 1px solid #00d4ff;
+                border-radius: 0;
+                color: #00d4ff;
+                font-family: 'Courier New', monospace;
+                font-size: 11px;
+                padding: 10px;
+                z-index: 1005;
+                backdrop-filter: blur(2px);
+            }
+            
+            .status-indicator {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin: 3px 0;
+                padding: 2px 0;
+            }
+            
+            .status-light {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                margin-left: 8px;
+            }
+            
+            .status-green { background: #00ff00; box-shadow: 0 0 8px #00ff00; }
+            .status-yellow { background: #ffff00; box-shadow: 0 0 8px #ffff00; animation: pulseYellow 2s infinite; }
+            .status-red { background: #ff4444; box-shadow: 0 0 8px #ff4444; animation: pulseRed 1s infinite; }
+            
+            @keyframes pulseYellow {
+                0% { opacity: 0.6; }
+                50% { opacity: 1; }
+                100% { opacity: 0.6; }
+            }
+            
+            .progress-bar {
+                width: 60px;
+                height: 8px;
+                background: rgba(0, 255, 255, 0.2);
+                border: 1px solid #00d4ff;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #00d4ff, #00aaaa);
+                transition: width 0.5s ease;
+                box-shadow: 0 0 6px #00d4ff;
+            }
+            
+            .signal-bars {
+                display: flex;
+                gap: 2px;
+                align-items: flex-end;
+            }
+            
+            .signal-bar {
+                width: 3px;
+                background: #00d4ff;
+                box-shadow: 0 0 4px #00d4ff;
+            }
+            
+            /* Phase 2: Holographic Distortion Effects */
+            @keyframes holographicShimmer {
+                0% { background-position: -100% 0; }
+                100% { background-position: 100% 0; }
+            }
+            
+            @keyframes chromaticShift {
+                0% { filter: hue-rotate(0deg); }
+                25% { filter: hue-rotate(2deg); }
+                75% { filter: hue-rotate(-2deg); }
+                100% { filter: hue-rotate(0deg); }
+            }
+            
+            @keyframes interference {
+                0% { opacity: 1; }
+                92% { opacity: 1; }
+                93% { opacity: 0.8; }
+                94% { opacity: 1; }
+                96% { opacity: 0.9; }
+                97% { opacity: 1; }
+                100% { opacity: 1; }
+            }
+            
+            @keyframes staticNoise {
+                0% { transform: translateX(0) translateY(0); }
+                10% { transform: translateX(-1px) translateY(1px); }
+                20% { transform: translateX(1px) translateY(-1px); }
+                30% { transform: translateX(-1px) translateY(-1px); }
+                40% { transform: translateX(1px) translateY(1px); }
+                50% { transform: translateX(0) translateY(-1px); }
+                60% { transform: translateX(-1px) translateY(0); }
+                70% { transform: translateX(1px) translateY(0); }
+                80% { transform: translateX(0) translateY(1px); }
+                90% { transform: translateX(-1px) translateY(-1px); }
+                100% { transform: translateX(0) translateY(0); }
+            }
+            
+            .holographic-element {
+                position: relative;
+            }
+            
+            
+            .holographic-element::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(
+                    90deg,
+                    rgba(255, 0, 0, 0.02) 0%,
+                    rgba(0, 255, 0, 0.02) 50%,
+                    rgba(0, 0, 255, 0.02) 100%
+                );
+                animation: chromaticShift 4s ease-in-out infinite;
+                pointer-events: none;
+                mix-blend-mode: soft-light;
+            }
+            
+            .interference-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: 
+                    repeating-linear-gradient(
+                        0deg,
+                        transparent,
+                        transparent 2px,
+                        rgba(0, 255, 255, 0.01) 2px,
+                        rgba(0, 255, 255, 0.01) 4px
+                    );
+                animation: interference 8s infinite;
+                pointer-events: none;
+                z-index: 500;
+                mix-blend-mode: overlay;
+            }
+            
+            .depth-blur {
+                filter: blur(0.5px);
+                opacity: 0.7;
+            }
+            
+            /* Phase 3: Hexagonal Pattern System */
+            .hexagonal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-image: 
+                    radial-gradient(circle at 50px 50px, rgba(0, 212, 255, 0.1) 2px, transparent 2px);
+                background-size: 100px 87px;
+                background-position: 0 0, 50px 43px;
+                pointer-events: none;
+                z-index: 1;
+                opacity: 0.3;
+            }
+            
+            .hex-container {
+                clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+                background: rgba(0, 255, 255, 0.05);
+                border: 1px solid #00d4ff;
+                position: relative;
+            }
+            
+            .hex-ripple {
+                position: absolute;
+                border: 2px solid #00d4ff;
+                border-radius: 50%;
+                pointer-events: none;
+            }
+            
+            @keyframes hexRipple {
+                0% {
+                    transform: scale(0);
+                    opacity: 1;
+                }
+                100% {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+            
+            @keyframes tessellate {
+                0% { background-position: 0 0, 50px 43px; }
+                100% { background-position: 100px 87px, 150px 130px; }
+            }
+            
+            .honeycomb-grid {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: 
+                    linear-gradient(90deg, transparent 74%, rgba(0, 255, 255, 0.08) 75%, rgba(0, 255, 255, 0.08) 76%, transparent 77%),
+                    linear-gradient(30deg, transparent 74%, rgba(0, 255, 255, 0.08) 75%, rgba(0, 255, 255, 0.08) 76%, transparent 77%),
+                    linear-gradient(-30deg, transparent 74%, rgba(0, 255, 255, 0.08) 75%, rgba(0, 255, 255, 0.08) 76%, transparent 77%);
+                background-size: 60px 104px;
+                animation: tessellate 20s linear infinite;
+                pointer-events: none;
+                z-index: 2;
+                opacity: 0.4;
+            }
+            
+            /* Phase 4: Advanced Visual Effects */
+            .particle-field {
+                position: fixed;
+                width: 6px;
+                height: 6px;
+                background: #00d4ff;
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 1003;
+                opacity: 1;
+                box-shadow: 0 0 12px #00d4ff;
+            }
+            
+            @keyframes floatParticle {
+                0% { transform: translateY(0) scale(1); opacity: 1; }
+                100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+            }
+            
+            .electromagnetic-field {
+                position: absolute;
+                border: 1px solid rgba(0, 255, 255, 0.3);
+                border-radius: 50%;
+                pointer-events: none;
+            }
+            
+            @keyframes electromagnet {
+                0% { transform: scale(1) rotate(0deg); opacity: 0.3; }
+                50% { transform: scale(1.2) rotate(180deg); opacity: 0.6; }
+                100% { transform: scale(1) rotate(360deg); opacity: 0.3; }
+            }
+            
+            .edge-glow {
+                position: relative;
+            }
+            
+            .edge-glow::before {
+                content: '';
+                position: absolute;
+                top: -2px;
+                left: -2px;
+                right: -2px;
+                bottom: -2px;
+                background: linear-gradient(45deg, transparent, rgba(0, 255, 255, 0.4), transparent);
+                border-radius: inherit;
+                z-index: -1;
+                animation: edgeGlow 3s ease-in-out infinite alternate;
+                pointer-events: none;
+            }
+            
+            @keyframes edgeGlow {
+                0% { opacity: 0.2; transform: scale(1); }
+                100% { opacity: 0.8; transform: scale(1.05); }
+            }
+            
+            /* Minority Report Reflection Effects */
+            .glass-reflection {
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .glass-reflection::before {
+                content: '';
+                position: absolute;
+                top: 5%;
+                left: 5%;
+                width: 30%;
+                height: 30%;
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 10;
+                animation: reflectionShimmer 4s ease-in-out infinite;
+            }
+            
+            @keyframes reflectionShimmer {
+                0% { opacity: 0.3; transform: scale(0.8) rotate(0deg); }
+                50% { opacity: 0.8; transform: scale(1.2) rotate(180deg); }
+                100% { opacity: 0.3; transform: scale(0.8) rotate(360deg); }
+            }
+            
+            .surface-highlight {
+                position: relative;
+            }
+            
+            .surface-highlight::after {
+                content: '';
+                position: absolute;
+                top: 10%;
+                right: 15%;
+                width: 25%;
+                height: 25%;
+                background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.2) 40%, transparent 70%);
+                pointer-events: none;
+                z-index: 5;
+                animation: highlightPulse 3s ease-in-out infinite alternate;
+            }
+            
+            @keyframes highlightPulse {
+                0% { opacity: 0.4; transform: scale(0.9); }
+                100% { opacity: 0.8; transform: scale(1.1); }
+            }
+            
+            /* Technical Background Pattern */
+            .technical-background {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: 
+                    /* Circuit traces */
+                    linear-gradient(90deg, transparent 49%, rgba(0, 212, 255, 0.08) 50%, transparent 51%),
+                    linear-gradient(0deg, transparent 49%, rgba(0, 212, 255, 0.08) 50%, transparent 51%),
+                    /* Diagonal grid */
+                    linear-gradient(45deg, transparent 48%, rgba(0, 212, 255, 0.05) 50%, transparent 52%),
+                    linear-gradient(-45deg, transparent 48%, rgba(0, 212, 255, 0.05) 50%, transparent 52%),
+                    /* Fine detail grid */
+                    repeating-linear-gradient(0deg, transparent 0px, transparent 19px, rgba(0, 212, 255, 0.03) 20px),
+                    repeating-linear-gradient(90deg, transparent 0px, transparent 19px, rgba(0, 212, 255, 0.03) 20px);
+                background-size: 
+                    200px 200px,
+                    200px 200px,
+                    100px 100px,
+                    100px 100px,
+                    20px 20px,
+                    20px 20px;
+                pointer-events: none;
+                z-index: 1;
+                opacity: 0.6;
+            }
+            
+            .circuit-trace {
+                position: absolute;
+                height: 1px;
+                background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.4), transparent);
+                pointer-events: none;
+                animation: traceFlow 8s linear infinite;
+            }
+            
+            @keyframes traceFlow {
+                0% { width: 0; opacity: 0; }
+                25% { opacity: 1; }
+                75% { opacity: 1; }
+                100% { width: 100%; opacity: 0; }
+            }
+            
+            /* Minority Report Background Interface - Static, Deep, Blurred */
+            .minority-report-bg {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) scale(1.4);
+                width: 1600px;
+                height: 1600px;
+                pointer-events: none;
+                z-index: 1;
+                opacity: 0.08;
+                filter: blur(1px);
+            }
+            
+            .central-outer-ring {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 900px;
+                height: 900px;
+                border: 8px solid rgba(0, 212, 255, 0.4);
+                border-radius: 50%;
+            }
+            
+            .concentric-ring {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                border: 6px solid rgba(0, 212, 255, 0.2);
+                border-radius: 50%;
+            }
+            
+            .crosshair-lines {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 900px;
+                height: 900px;
+            }
+            
+            .crosshair-lines::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 0;
+                width: 100%;
+                height: 6px;
+                background: rgba(0, 212, 255, 0.3);
+            }
+            
+            .crosshair-lines::after {
+                content: '';
+                position: absolute;
+                left: 50%;
+                top: 0;
+                height: 100%;
+                width: 6px;
+                background: rgba(0, 212, 255, 0.3);
+            }
+            
+            .radial-lines {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 900px;
+                height: 900px;
+                transform: translate(-50%, -50%);
+            }
+            
+            .radial-line {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 4px;
+                height: 450px;
+                background: linear-gradient(to bottom, rgba(0, 212, 255, 0.15), transparent);
+                transform-origin: center top;
+            }
+            
+            .tick-marks {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 100%;
+                height: 100%;
+            }
+            
+            .tick-mark {
+                position: absolute;
+                top: 0;
+                left: 50%;
+                width: 4px;
+                height: 15px;
+                background: rgba(0, 212, 255, 0.2);
+                transform-origin: center 450px;
+            }
+            
+            .center-dot {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 12px;
+                height: 12px;
+                background: rgba(0, 212, 255, 0.6);
+                border-radius: 50%;
+                box-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+            }
+            
+            /* Additional detail elements */
+            .arc-segment {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                border: 8px solid rgba(0, 212, 255, 0.2);
+                border-radius: 50%;
+                border-top-color: transparent;
+                border-right-color: transparent;
+            }
+            
+            .grid-overlay {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 900px;
+                height: 900px;
+                background-image: 
+                    repeating-linear-gradient(0deg, transparent, transparent 29px, rgba(0, 212, 255, 0.1) 30px),
+                    repeating-linear-gradient(90deg, transparent, transparent 29px, rgba(0, 212, 255, 0.1) 30px);
+                background-size: 30px 30px;
+            }
+            
+            .inner-circle {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 100px;
+                height: 100px;
+                border: 1px solid rgba(0, 212, 255, 0.5);
+                border-radius: 50%;
+                background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            }
+            
+            .data-point {
+                position: absolute;
+                width: 4px;
+                height: 4px;
+                background: rgba(0, 212, 255, 0.6);
+                border-radius: 50%;
+                box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
+            }
+            
+            /* Additional complex elements */
+            .sector-divider {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 900px;
+                height: 900px;
+                transform: translate(-50%, -50%);
+                border: 2px dashed rgba(0, 212, 255, 0.15);
+                border-radius: 50%;
+            }
+            
+            .quadrant-marker {
+                position: absolute;
+                width: 20px;
+                height: 20px;
+                background: transparent;
+                border: 3px solid rgba(0, 212, 255, 0.3);
+                transform: rotate(45deg);
+            }
+            
+            .range-indicator {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                border: 1px solid rgba(0, 212, 255, 0.2);
+                border-radius: 50%;
+                border-style: dotted;
+            }
+            
+            .corner-bracket {
+                position: absolute;
+                width: 50px;
+                height: 50px;
+                border: 3px solid rgba(0, 212, 255, 0.25);
+            }
+            
+            .corner-bracket.top-left {
+                top: 20%;
+                left: 20%;
+                border-right: none;
+                border-bottom: none;
+            }
+            
+            .corner-bracket.top-right {
+                top: 20%;
+                right: 20%;
+                border-left: none;
+                border-bottom: none;
+            }
+            
+            .corner-bracket.bottom-left {
+                bottom: 20%;
+                left: 20%;
+                border-right: none;
+                border-top: none;
+            }
+            
+            .corner-bracket.bottom-right {
+                bottom: 20%;
+                right: 20%;
+                border-left: none;
+                border-top: none;
+            }
+            
+            .measurement-text {
+                position: absolute;
+                color: rgba(0, 212, 255, 0.4);
+                font-family: 'Courier New', monospace;
+                font-size: 10px;
+                letter-spacing: 2px;
+            }
+            
+            .orbital-ring {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                border: 2px solid rgba(0, 212, 255, 0.1);
+                border-radius: 50%;
+                transform: translate(-50%, -50%) rotateX(60deg);
             }
         `;
         document.head.appendChild(style);
@@ -424,16 +1038,646 @@ class CSS2DDashboard {
                 position: absolute;
                 top: 0;
                 left: 0;
-                right: 0;
+                width: 100%;
                 height: 2px;
-                background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.8), transparent);
-                box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+                background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.8), transparent);
+                box-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
                 animation: scanLine 5s linear infinite;
                 pointer-events: none;
                 z-index: 10;
             }
         `;
         document.head.appendChild(scanStyle);
+    }
+    
+    createSystemStatusIndicators() {
+        console.log('CREATING SYSTEM STATUS INDICATORS - Military Systems Online');
+        
+        // Weapon Systems Panel (top-left)
+        this.createWeaponSystemsPanel();
+        
+        // Engine Parameters Panel (top-right)
+        this.createEngineParametersPanel();
+        
+        // Fuel/Power Panel (bottom-left)
+        this.createFuelPowerPanel();
+        
+        // Communications Panel (bottom-right)
+        this.createCommunicationsPanel();
+    }
+    
+    createWeaponSystemsPanel() {
+        const panel = document.createElement('div');
+        panel.className = 'system-status-panel';
+        panel.style.top = '80px';
+        panel.style.left = '20px';
+        panel.style.width = '180px';
+        panel.id = 'weapon-systems-panel';
+        
+        panel.innerHTML = `
+            <div style="border-bottom: 1px solid #00d4ff; margin-bottom: 8px; padding-bottom: 4px; font-weight: bold;">WEAPON SYSTEMS</div>
+            <div class="status-indicator">
+                <span>TARGET LOCK</span>
+                <div class="status-light status-green"></div>
+            </div>
+            <div class="status-indicator">
+                <span>RADAR ACTIVE</span>
+                <div class="status-light status-green"></div>
+            </div>
+            <div class="status-indicator">
+                <span>COUNTERMEASURES</span>
+                <div class="status-light status-yellow"></div>
+            </div>
+            <div class="status-indicator">
+                <span>AMMO: 847/1000</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 85%;"></div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(panel);
+    }
+    
+    createEngineParametersPanel() {
+        const panel = document.createElement('div');
+        panel.className = 'system-status-panel';
+        panel.style.top = '80px';
+        panel.style.right = '20px';
+        panel.style.width = '170px';
+        panel.id = 'engine-parameters-panel';
+        
+        panel.innerHTML = `
+            <div style="border-bottom: 1px solid #00d4ff; margin-bottom: 8px; padding-bottom: 4px; font-weight: bold;">ENGINE STATUS</div>
+            <div class="status-indicator">
+                <span>TEMP: 742°C</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 74%;"></div>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <span>RPM: 8,450</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 82%;"></div>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <span>THRUST: 95%</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 95%;"></div>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <span>HYDRAULICS</span>
+                <div class="status-light status-green"></div>
+            </div>
+        `;
+        
+        document.body.appendChild(panel);
+    }
+    
+    createFuelPowerPanel() {
+        const panel = document.createElement('div');
+        panel.className = 'system-status-panel';
+        panel.style.bottom = '20px';
+        panel.style.left = '20px';
+        panel.style.width = '160px';
+        panel.id = 'fuel-power-panel';
+        
+        panel.innerHTML = `
+            <div style="border-bottom: 1px solid #00d4ff; margin-bottom: 8px; padding-bottom: 4px; font-weight: bold;">FUEL/POWER</div>
+            <div class="status-indicator">
+                <span>FUEL: 68%</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 68%;"></div>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <span>BATTERY: 92%</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 92%;"></div>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <span>CONSUMPTION</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 45%;"></div>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <span>GENERATOR</span>
+                <div class="status-light status-green"></div>
+            </div>
+        `;
+        
+        document.body.appendChild(panel);
+    }
+    
+    createCommunicationsPanel() {
+        const panel = document.createElement('div');
+        panel.className = 'system-status-panel';
+        panel.style.bottom = '20px';
+        panel.style.right = '20px';
+        panel.style.width = '170px';
+        panel.id = 'communications-panel';
+        
+        panel.innerHTML = `
+            <div style="border-bottom: 1px solid #00d4ff; margin-bottom: 8px; padding-bottom: 4px; font-weight: bold;">COMMUNICATIONS</div>
+            <div class="status-indicator">
+                <span>SIGNAL STRENGTH</span>
+                <div class="signal-bars">
+                    <div class="signal-bar" style="height: 6px;"></div>
+                    <div class="signal-bar" style="height: 10px;"></div>
+                    <div class="signal-bar" style="height: 14px;"></div>
+                    <div class="signal-bar" style="height: 18px;"></div>
+                    <div class="signal-bar" style="height: 12px;"></div>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <span>DATALINK</span>
+                <div class="status-light status-green"></div>
+            </div>
+            <div class="status-indicator">
+                <span>ENCRYPTION</span>
+                <div class="status-light status-green"></div>
+            </div>
+            <div class="status-indicator">
+                <span>FREQ: 251.7MHz</span>
+                <div class="status-light status-yellow"></div>
+            </div>
+        `;
+        
+        document.body.appendChild(panel);
+    }
+    
+    createHolographicDistortion() {
+        console.log('CREATING HOLOGRAPHIC DISTORTION EFFECTS - Phase 2 Active');
+        
+        // Add global interference overlay
+        this.createInterferenceOverlay();
+        
+        // Apply holographic effects to existing elements
+        this.applyHolographicEffects();
+        
+        // Add chromatic aberration to text elements
+        this.addChromaticAberration();
+        
+        // Apply depth blur to background elements
+        this.applyDepthBlur();
+    }
+    
+    createInterferenceOverlay() {
+        const interferenceOverlay = document.createElement('div');
+        interferenceOverlay.className = 'interference-overlay';
+        interferenceOverlay.id = 'global-interference';
+        document.body.appendChild(interferenceOverlay);
+        
+        // Add additional static noise overlay
+        const noiseOverlay = document.createElement('div');
+        noiseOverlay.style.position = 'fixed';
+        noiseOverlay.style.top = '0';
+        noiseOverlay.style.left = '0';
+        noiseOverlay.style.right = '0';
+        noiseOverlay.style.bottom = '0';
+        noiseOverlay.style.background = `
+            radial-gradient(circle at 25% 25%, rgba(0, 255, 255, 0.02) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(0, 255, 255, 0.02) 0%, transparent 50%)
+        `;
+        noiseOverlay.style.animation = 'staticNoise 0.1s infinite';
+        noiseOverlay.style.pointerEvents = 'none';
+        noiseOverlay.style.zIndex = '499';
+        noiseOverlay.id = 'static-noise';
+        document.body.appendChild(noiseOverlay);
+    }
+    
+    applyHolographicEffects() {
+        // Apply holographic effects after elements are created
+        setTimeout(() => {
+            const chartPanel = document.getElementById('main-chart-panel');
+            if (chartPanel) {
+                chartPanel.classList.add('holographic-element');
+                console.log('Applied holographic effects to chart panel');
+            } else {
+                console.log('Chart panel not found for holographic effects');
+            }
+            
+            const activeFault = document.getElementById('active-fault-card');
+            if (activeFault) {
+                activeFault.classList.add('holographic-element');
+                console.log('Applied holographic effects to active fault card');
+            }
+        }, 500);
+    }
+    
+    addChromaticAberration() {
+        // Add chromatic aberration to KPI values
+        const kpiValues = document.querySelectorAll('[style*="font-size: 3rem"]');
+        kpiValues.forEach(value => {
+            value.style.textShadow = `
+                2px 0px 0px rgba(255, 0, 0, 0.3),
+                -2px 0px 0px rgba(0, 0, 255, 0.3),
+                0px 0px 15px #00d4ff
+            `;
+            value.style.animation = 'chromaticShift 6s ease-in-out infinite';
+        });
+        
+        // Add chromatic aberration to panel headers
+        const panelHeaders = document.querySelectorAll('.system-status-panel div:first-child');
+        panelHeaders.forEach(header => {
+            header.style.textShadow = `
+                1px 0px 0px rgba(255, 0, 0, 0.2),
+                -1px 0px 0px rgba(0, 0, 255, 0.2)
+            `;
+        });
+    }
+    
+    applyDepthBlur() {
+        // Apply depth blur to background grid
+        setTimeout(() => {
+            const cameraPosition = document.getElementById('camera-position');
+            if (cameraPosition) {
+                cameraPosition.classList.add('depth-blur');
+            }
+        }, 100);
+    }
+    
+    createHexagonalPatterns() {
+        console.log('CREATING HEXAGONAL PATTERN SYSTEM - Phase 3 Active');
+        
+        // Create honeycomb background grid
+        this.createHoneycombGrid();
+        
+        // Convert some elements to hexagonal containers
+        this.createHexagonalContainers();
+        
+        // Add expanding ripple effects
+        this.setupHexagonalRipples();
+    }
+    
+    createHoneycombGrid() {
+        // Honeycomb grid disabled per user preference
+        console.log('Honeycomb grid disabled');
+    }
+    
+    createHexagonalContainers() {
+        // Hexagonal containers disabled per user preference
+        console.log('Hexagonal containers disabled');
+    }
+    
+    setupHexagonalRipples() {
+        // Add click ripple effects to hexagonal elements
+        document.addEventListener('click', (event) => {
+            this.createHexRipple(event.clientX, event.clientY);
+        });
+        
+        // Add periodic automatic ripples near important elements
+        setInterval(() => {
+            const activeFault = document.getElementById('active-fault-card');
+            if (activeFault) {
+                const rect = activeFault.getBoundingClientRect();
+                this.createHexRipple(
+                    rect.left + rect.width / 2,
+                    rect.top + rect.height / 2
+                );
+            }
+        }, 8000);
+    }
+    
+    createHexRipple(x, y) {
+        const ripple = document.createElement('div');
+        ripple.className = 'hex-ripple';
+        ripple.style.left = (x - 20) + 'px';
+        ripple.style.top = (y - 20) + 'px';
+        ripple.style.width = '40px';
+        ripple.style.height = '40px';
+        ripple.style.animation = 'hexRipple 2s ease-out';
+        ripple.style.zIndex = '1000';
+        
+        document.body.appendChild(ripple);
+        
+        // Remove after animation
+        setTimeout(() => {
+            ripple.remove();
+        }, 2000);
+    }
+    
+    createReflectionEffects() {
+        console.log('CREATING MINORITY REPORT REFLECTION EFFECTS');
+        
+        // Don't apply glass reflection to system status panels - it might hide them
+        // setTimeout(() => {
+        //     const panels = document.querySelectorAll('.system-status-panel');
+        //     panels.forEach(panel => {
+        //         panel.classList.add('glass-reflection');
+        //     });
+        // }, 300);
+        
+        // Apply surface highlights to charts and cards
+        setTimeout(() => {
+            const surfaceElements = [
+                document.getElementById('main-chart-panel'),
+                document.getElementById('active-fault-card')
+            ];
+            
+            surfaceElements.forEach(element => {
+                if (element) {
+                    element.classList.add('surface-highlight');
+                }
+            });
+        }, 500);
+    }
+    
+    animateBackgroundDial() {
+        // Removed - no animation needed for static background
+    }
+    
+    createMinorityReportBackground() {
+        console.log('CREATING STATIC MINORITY REPORT BACKGROUND - Deep and Blurred - V2 with more elements', Date.now());
+        
+        // Create the main background container
+        const bgContainer = document.createElement('div');
+        bgContainer.className = 'minority-report-bg';
+        bgContainer.id = 'minority-report-interface';
+        
+        // Outer ring
+        const outerRing = document.createElement('div');
+        outerRing.className = 'central-outer-ring';
+        bgContainer.appendChild(outerRing);
+        
+        // Multiple concentric rings
+        const ringRadii = [150, 250, 350, 450, 550, 650, 750];
+        ringRadii.forEach(radius => {
+            const ring = document.createElement('div');
+            ring.className = 'concentric-ring';
+            ring.style.width = radius + 'px';
+            ring.style.height = radius + 'px';
+            bgContainer.appendChild(ring);
+        });
+        
+        // Crosshair lines
+        const crosshair = document.createElement('div');
+        crosshair.className = 'crosshair-lines';
+        bgContainer.appendChild(crosshair);
+        
+        // Radial lines container
+        const radialContainer = document.createElement('div');
+        radialContainer.className = 'radial-lines';
+        
+        // Add 24 radial lines (every 15 degrees)
+        for (let i = 0; i < 24; i++) {
+            const radialLine = document.createElement('div');
+            radialLine.className = 'radial-line';
+            radialLine.style.transform = `rotate(${i * 15}deg)`;
+            radialContainer.appendChild(radialLine);
+        }
+        bgContainer.appendChild(radialContainer);
+        
+        // Tick marks around the outer ring
+        const tickContainer = document.createElement('div');
+        tickContainer.className = 'tick-marks';
+        
+        // Add 72 tick marks (every 5 degrees)
+        for (let i = 0; i < 72; i++) {
+            const tick = document.createElement('div');
+            tick.className = 'tick-mark';
+            const isLargeTick = i % 6 === 0;
+            tick.style.height = isLargeTick ? '15px' : '8px';
+            tick.style.transform = `rotate(${i * 5}deg)`;
+            tickContainer.appendChild(tick);
+        }
+        bgContainer.appendChild(tickContainer);
+        
+        // Grid overlay
+        const gridOverlay = document.createElement('div');
+        gridOverlay.className = 'grid-overlay';
+        bgContainer.appendChild(gridOverlay);
+        
+        // Inner circle with glow
+        const innerCircle = document.createElement('div');
+        innerCircle.className = 'inner-circle';
+        bgContainer.appendChild(innerCircle);
+        
+        // Arc segments (partial circles)
+        for (let i = 0; i < 4; i++) {
+            const arc = document.createElement('div');
+            arc.className = 'arc-segment';
+            arc.style.width = (300 + i * 100) + 'px';
+            arc.style.height = (300 + i * 100) + 'px';
+            arc.style.transform = `translate(-50%, -50%) rotate(${i * 45}deg)`;
+            bgContainer.appendChild(arc);
+        }
+        
+        // Add random data points around the circles
+        for (let i = 0; i < 30; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 200 + Math.random() * 250;
+            const dataPoint = document.createElement('div');
+            dataPoint.className = 'data-point';
+            dataPoint.style.left = (50 + Math.cos(angle) * radius / 16) + '%';
+            dataPoint.style.top = (50 + Math.sin(angle) * radius / 16) + '%';
+            bgContainer.appendChild(dataPoint);
+        }
+        
+        // Add sector dividers (dashed circles)
+        console.log('Adding sector dividers...');
+        for (let i = 0; i < 3; i++) {
+            const sectorDivider = document.createElement('div');
+            sectorDivider.className = 'sector-divider';
+            sectorDivider.style.width = (400 + i * 150) + 'px';
+            sectorDivider.style.height = (400 + i * 150) + 'px';
+            sectorDivider.style.transform = `translate(-50%, -50%) rotate(${i * 30}deg)`;
+            bgContainer.appendChild(sectorDivider);
+        }
+        
+        // Add quadrant markers at key positions
+        const quadrantPositions = [
+            { top: '25%', left: '25%' },
+            { top: '25%', right: '25%' },
+            { bottom: '25%', left: '25%' },
+            { bottom: '25%', right: '25%' }
+        ];
+        
+        quadrantPositions.forEach(pos => {
+            const marker = document.createElement('div');
+            marker.className = 'quadrant-marker';
+            Object.assign(marker.style, pos);
+            bgContainer.appendChild(marker);
+        });
+        
+        // Add range indicators (dotted circles)
+        [200, 400, 600].forEach(radius => {
+            const rangeIndicator = document.createElement('div');
+            rangeIndicator.className = 'range-indicator';
+            rangeIndicator.style.width = radius + 'px';
+            rangeIndicator.style.height = radius + 'px';
+            bgContainer.appendChild(rangeIndicator);
+        });
+        
+        // Add corner brackets
+        ['top-left', 'top-right', 'bottom-left', 'bottom-right'].forEach(corner => {
+            const bracket = document.createElement('div');
+            bracket.className = `corner-bracket ${corner}`;
+            bgContainer.appendChild(bracket);
+        });
+        
+        // Add measurement text at various angles
+        const measurements = ['090°', '180°', '270°', '360°'];
+        measurements.forEach((text, index) => {
+            const measureText = document.createElement('div');
+            measureText.className = 'measurement-text';
+            measureText.textContent = text;
+            const angle = (index * 90) * Math.PI / 180;
+            measureText.style.left = (50 + Math.cos(angle) * 35) + '%';
+            measureText.style.top = (50 + Math.sin(angle) * 35) + '%';
+            bgContainer.appendChild(measureText);
+        });
+        
+        // Add orbital rings (3D effect)
+        for (let i = 0; i < 2; i++) {
+            const orbitalRing = document.createElement('div');
+            orbitalRing.className = 'orbital-ring';
+            orbitalRing.style.width = (500 + i * 200) + 'px';
+            orbitalRing.style.height = (500 + i * 200) + 'px';
+            orbitalRing.style.transform = `translate(-50%, -50%) rotateX(${60 + i * 30}deg)`;
+            bgContainer.appendChild(orbitalRing);
+        }
+        
+        // Center dot (last so it's on top)
+        const centerDot = document.createElement('div');
+        centerDot.className = 'center-dot';
+        bgContainer.appendChild(centerDot);
+        
+        document.body.appendChild(bgContainer);
+        console.log('Minority Report background added to DOM:', bgContainer);
+        console.log('Total child elements:', bgContainer.children.length);
+        console.log('Element classes in container:', Array.from(bgContainer.children).map(child => child.className));
+        
+        this.backgroundInterface = { container: bgContainer };
+    }
+    
+    createTechnicalBackground() {
+        console.log('CREATING TECHNICAL BACKGROUND - Minority Report Style');
+        
+        // Create the main technical background overlay
+        const techBackground = document.createElement('div');
+        techBackground.className = 'technical-background';
+        techBackground.id = 'technical-background';
+        document.body.appendChild(techBackground);
+        
+        // Add animated circuit traces
+        this.createCircuitTraces();
+    }
+    
+    createCircuitTraces() {
+        // Create flowing circuit traces across the screen
+        const tracePositions = [
+            { top: '20%', left: '10%', width: '30%' },
+            { top: '45%', left: '60%', width: '25%' },
+            { top: '70%', left: '15%', width: '40%' },
+            { top: '25%', right: '10%', width: '20%' },
+            { top: '80%', right: '30%', width: '35%' }
+        ];
+        
+        tracePositions.forEach((pos, index) => {
+            setTimeout(() => {
+                const trace = document.createElement('div');
+                trace.className = 'circuit-trace';
+                trace.style.top = pos.top;
+                if (pos.left) trace.style.left = pos.left;
+                if (pos.right) trace.style.right = pos.right;
+                trace.style.maxWidth = pos.width;
+                trace.style.animationDelay = (index * 1.5) + 's';
+                trace.style.zIndex = '2';
+                
+                document.body.appendChild(trace);
+            }, index * 400);
+        });
+    }
+    
+    createAdvancedVisualEffects() {
+        console.log('CREATING ADVANCED VISUAL EFFECTS - Phase 4 Active');
+        
+        // Create floating particle system background
+        this.createParticleSystem();
+        
+        // Add electromagnetic field visualizations
+        this.createElectromagneticFields();
+        
+        // Apply edge glow to active elements
+        this.applyEdgeGlow();
+    }
+    
+    createParticleSystem() {
+        // Create floating particles in background
+        for (let i = 0; i < 15; i++) {
+            setTimeout(() => {
+                this.createFloatingParticle();
+            }, i * 200);
+        }
+        
+        // Continuously spawn new particles
+        setInterval(() => {
+            this.createFloatingParticle();
+        }, 3000);
+    }
+    
+    createFloatingParticle() {
+        const particle = document.createElement('div');
+        particle.className = 'particle-field';
+        
+        // Random horizontal position
+        const startX = Math.random() * window.innerWidth;
+        
+        particle.style.left = startX + 'px';
+        particle.style.top = window.innerHeight + 'px';
+        particle.style.animation = `floatParticle ${8 + Math.random() * 4}s linear forwards`;
+        particle.style.zIndex = '10';
+        
+        document.body.appendChild(particle);
+        console.log('Created floating particle at', startX);
+        
+        // Remove after animation
+        setTimeout(() => {
+            if (particle.parentNode) {
+                particle.remove();
+            }
+        }, 12000);
+    }
+    
+    createElectromagneticFields() {
+        // Add electromagnetic fields around system status panels
+        setTimeout(() => {
+            const panels = document.querySelectorAll('.system-status-panel');
+            panels.forEach((panel, index) => {
+                const field = document.createElement('div');
+                field.className = 'electromagnetic-field';
+                field.style.width = '120%';
+                field.style.height = '120%';
+                field.style.top = '-10%';
+                field.style.left = '-10%';
+                field.style.animation = `electromagnet ${4 + index}s linear infinite`;
+                field.style.zIndex = '-1';
+                
+                panel.style.position = 'relative';
+                panel.appendChild(field);
+            });
+        }, 300);
+    }
+    
+    applyEdgeGlow() {
+        // Apply edge glow to critical elements
+        setTimeout(() => {
+            const criticalElements = [
+                document.getElementById('active-fault-card'),
+                document.getElementById('weapon-systems-panel')
+            ];
+            
+            criticalElements.forEach(element => {
+                if (element) {
+                    element.classList.add('edge-glow');
+                }
+            });
+        }, 500);
     }
     
     
@@ -528,7 +1772,7 @@ class CSS2DDashboard {
         positionDisplay.style.top = '10px';
         positionDisplay.style.left = '10px';
         positionDisplay.style.background = 'rgba(0,0,0,0.8)';
-        positionDisplay.style.color = '#00ffff';
+        positionDisplay.style.color = '#00d4ff';
         positionDisplay.style.padding = '10px';
         positionDisplay.style.fontFamily = 'monospace';
         positionDisplay.style.fontSize = '12px';
@@ -623,6 +1867,10 @@ class CSS2DDashboard {
         
         // Trigger periodic alert demonstrations
         this.handlePeriodicAlerts();
+        
+        // Animate system status indicators
+        this.animateSystemStatus();
+        
         
         // Render both WebGL and CSS2D
         this.renderer.render(this.scene, this.camera);
@@ -745,8 +1993,67 @@ class CSS2DDashboard {
             // Add pulsing glow effect when line is growing
             if (progressPercent < 100) {
                 const pulseIntensity = Math.sin(elapsedSeconds * 3) * 0.5 + 0.5;
-                this.faultDurationLine.style.boxShadow = `0 0 ${10 + pulseIntensity * 15}px #00ffff`;
+                this.faultDurationLine.style.boxShadow = `0 0 ${10 + pulseIntensity * 15}px #00d4ff`;
             }
+        }
+    }
+    
+    animateSystemStatus() {
+        const time = Date.now() * 0.001;
+        
+        // Animate engine parameters
+        const enginePanel = document.getElementById('engine-parameters-panel');
+        if (enginePanel) {
+            const tempBar = enginePanel.querySelector('.status-indicator:nth-child(2) .progress-fill');
+            const rpmBar = enginePanel.querySelector('.status-indicator:nth-child(3) .progress-fill');
+            const thrustBar = enginePanel.querySelector('.status-indicator:nth-child(4) .progress-fill');
+            
+            if (tempBar) {
+                const tempVariation = Math.sin(time * 0.5) * 5 + 74; // 69-79%
+                tempBar.style.width = tempVariation + '%';
+                tempBar.parentElement.previousElementSibling.innerHTML = `TEMP: ${Math.round(tempVariation * 10)}°C`;
+            }
+            
+            if (rpmBar) {
+                const rpmVariation = Math.sin(time * 0.3) * 3 + 82; // 79-85%
+                rpmBar.style.width = rpmVariation + '%';
+                const rpmValue = Math.round(rpmVariation * 100 + 400);
+                rpmBar.parentElement.previousElementSibling.innerHTML = `RPM: ${rpmValue.toLocaleString()}`;
+            }
+            
+            if (thrustBar) {
+                const thrustVariation = Math.sin(time * 0.7) * 5 + 95; // 90-100%
+                thrustBar.style.width = Math.min(100, thrustVariation) + '%';
+            }
+        }
+        
+        // Animate fuel consumption
+        const fuelPanel = document.getElementById('fuel-power-panel');
+        if (fuelPanel) {
+            const fuelBar = fuelPanel.querySelector('.status-indicator:nth-child(2) .progress-fill');
+            const consumptionBar = fuelPanel.querySelector('.status-indicator:nth-child(4) .progress-fill');
+            
+            if (fuelBar) {
+                const fuelDepletion = Math.max(50, 68 - (time * 0.1)); // Slowly decreasing
+                fuelBar.style.width = fuelDepletion + '%';
+                fuelBar.parentElement.previousElementSibling.innerHTML = `FUEL: ${Math.round(fuelDepletion)}%`;
+            }
+            
+            if (consumptionBar) {
+                const consumption = Math.sin(time * 1.2) * 15 + 45; // 30-60%
+                consumptionBar.style.width = consumption + '%';
+            }
+        }
+        
+        // Animate communication signal bars
+        const commPanel = document.getElementById('communications-panel');
+        if (commPanel) {
+            const signalBars = commPanel.querySelectorAll('.signal-bar');
+            signalBars.forEach((bar, index) => {
+                const baseHeight = [6, 10, 14, 18, 12][index];
+                const variation = Math.sin(time * (2 + index * 0.3)) * 3;
+                bar.style.height = Math.max(3, baseHeight + variation) + 'px';
+            });
         }
     }
     
@@ -804,8 +2111,8 @@ class CSS2DDashboard {
                     {
                         label: 'Planned',
                         data: [100, 110, 120, 130, 125, 115, 105],
-                        borderColor: '#00ffff',
-                        backgroundColor: 'rgba(0, 255, 255, 0.1)',
+                        borderColor: '#66ccff',
+                        backgroundColor: 'rgba(0, 102, 255, 0.1)',
                         borderWidth: 2,
                         fill: false,
                         tension: 0.1
@@ -884,7 +2191,7 @@ class CSS2DDashboard {
                     title: {
                         display: true,
                         text: 'Planned vs Actual Performance',
-                        color: 'rgba(0, 255, 255, 0.7)',
+                        color: 'rgba(255, 102, 0, 0.7)',
                         font: {
                             size: 14,
                             weight: 'bold'
@@ -907,7 +2214,7 @@ class CSS2DDashboard {
                 scales: {
                     x: {
                         grid: {
-                            color: 'rgba(0, 255, 255, 0.1)',
+                            color: 'rgba(0, 212, 255, 0.1)',
                             lineWidth: 1
                         },
                         ticks: {
@@ -919,7 +2226,7 @@ class CSS2DDashboard {
                     },
                     y: {
                         grid: {
-                            color: 'rgba(0, 255, 255, 0.1)',
+                            color: 'rgba(0, 212, 255, 0.1)',
                             lineWidth: 1
                         },
                         ticks: {
@@ -952,6 +2259,226 @@ class CSS2DDashboard {
         
         
         this.scene.add(chartGroup);
+    }
+    
+    createBottomSection() {
+        console.log('CREATING BOTTOM SECTION - Machine Status and Data Readouts');
+        
+        const bottomGroup = new THREE.Group();
+        
+        // Position bottom section at bottom of screen
+        const bottomY = -window.innerHeight * 0.35;
+        bottomGroup.position.set(0, bottomY, 0);
+        
+        // Create machine status circles (left side)
+        this.createMachineStatusCircles(bottomGroup);
+        
+        // Data readouts will appear only for faulted machines
+        
+        this.scene.add(bottomGroup);
+    }
+    
+    createMachineStatusCircles(bottomGroup) {
+        const machineStatuses = [
+            { id: 'M001', status: 'operational', name: 'CNC Lathe #1' },
+            { id: 'M002', status: 'operational', name: 'Mill #3' },
+            { id: 'M003', status: 'operational', name: 'Assembly #2' },
+            { id: 'M004', status: 'fault', name: 'Press #1' },
+            { id: 'M005', status: 'operational', name: 'Conveyor #4' },
+            { id: 'M006', status: 'operational', name: 'Robot #2' }
+        ];
+        
+        const circleRadius = 40;
+        const spacing = 120;
+        const startX = -300;
+        
+        machineStatuses.forEach((machine, index) => {
+            const circleGroup = new THREE.Group();
+            
+            // Create machine status circle
+            const geometry = new THREE.CircleGeometry(circleRadius, 32);
+            const color = machine.status === 'fault' ? 0xff4444 : 0x00ffff;
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.3
+            });
+            
+            const circle = new THREE.Mesh(geometry, material);
+            circleGroup.add(circle);
+            
+            // Add circle border
+            const borderGeometry = new THREE.RingGeometry(circleRadius - 2, circleRadius + 2, 32);
+            const borderMaterial = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.8
+            });
+            const border = new THREE.Mesh(borderGeometry, borderMaterial);
+            circleGroup.add(border);
+            
+            // Position the circle
+            circleGroup.position.set(startX + (index * spacing), 0, 0);
+            
+            // Add CSS2D label
+            const labelDiv = document.createElement('div');
+            labelDiv.style.color = machine.status === 'fault' ? '#ff4444' : '#00ffff';
+            labelDiv.style.fontSize = '10px';
+            labelDiv.style.fontFamily = 'Courier New, monospace';
+            labelDiv.style.textAlign = 'center';
+            labelDiv.style.fontWeight = 'bold';
+            labelDiv.innerHTML = `${machine.id}<br><span style="font-size: 8px;">${machine.name}</span>`;
+            
+            const label = new CSS2DObject(labelDiv);
+            label.position.set(0, -60, 0);
+            circleGroup.add(label);
+            
+            // Add status light in center
+            const statusDot = document.createElement('div');
+            statusDot.style.width = '8px';
+            statusDot.style.height = '8px';
+            statusDot.style.background = machine.status === 'fault' ? '#ff4444' : '#00ff00';
+            statusDot.style.borderRadius = '50%';
+            statusDot.style.boxShadow = `0 0 10px ${machine.status === 'fault' ? '#ff4444' : '#00ff00'}`;
+            if (machine.status === 'fault') {
+                statusDot.style.animation = 'pulseRed 1s infinite';
+            }
+            
+            const statusLight = new CSS2DObject(statusDot);
+            statusLight.position.set(0, 0, 1);
+            circleGroup.add(statusLight);
+            
+            // Add diagnostics panel for faulted machines
+            if (machine.status === 'fault') {
+                this.createMachineDiagnostics(circleGroup, machine);
+                this.createTargetingReticle(circleGroup);
+            }
+            
+            bottomGroup.add(circleGroup);
+        });
+    }
+    
+    createMachineDiagnostics(circleGroup, machine) {
+        // Create holographic diagnostics panel with targeting marker
+        const diagDiv = document.createElement('div');
+        diagDiv.style.background = 'rgba(0, 0, 0, 0.1)';
+        diagDiv.style.border = '0.5px solid #ff4444';
+        diagDiv.style.color = '#ff4444';
+        diagDiv.style.fontFamily = 'Courier New, monospace';
+        diagDiv.style.fontSize = '9px';
+        diagDiv.style.padding = '8px';
+        diagDiv.style.width = '180px';
+        diagDiv.style.backdropFilter = 'blur(1px)';
+        diagDiv.style.position = 'relative';
+        diagDiv.style.clipPath = 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))';
+        diagDiv.style.zIndex = '9999';
+        
+        // Add internal grid lines for holographic effect
+        diagDiv.style.backgroundImage = `
+            linear-gradient(90deg, rgba(255,68,68,0.1) 1px, transparent 1px),
+            linear-gradient(0deg, rgba(255,68,68,0.1) 1px, transparent 1px)
+        `;
+        diagDiv.style.backgroundSize = '20px 15px';
+        
+        // Create content lines for typewriter effect
+        const lines = [
+            { text: '⚠️ FAULT DETECTED', style: 'border-bottom: 0.5px solid #ff4444; margin-bottom: 6px; padding-bottom: 2px; font-weight: bold; font-size: 8px;' },
+            { text: `UNIT: ${machine.name}`, style: 'margin: 2px 0; opacity: 0.9;' },
+            { text: 'ERR: MOTOR OVERHEAT', style: 'margin: 2px 0; opacity: 0.9;' },
+            { text: 'TEMP: 95°C (MAX: 85°C)', style: 'margin: 2px 0; opacity: 0.9;' },
+            { text: 'T-DOWN: 00:14:32', style: 'margin: 2px 0; opacity: 0.9;' },
+            { text: 'STATUS: COOLING CYCLE', style: 'margin: 2px 0; opacity: 0.9;' }
+        ];
+        
+        lines.forEach((line, index) => {
+            const lineDiv = document.createElement('div');
+            lineDiv.style.cssText = line.style;
+            lineDiv.style.overflow = 'hidden';
+            lineDiv.style.whiteSpace = 'nowrap';
+            lineDiv.style.width = '0';
+            diagDiv.appendChild(lineDiv);
+            
+            // Animate each line with delay
+            setTimeout(() => {
+                this.typewriterEffect(lineDiv, line.text, 30);
+            }, index * 300);
+        });
+        
+        // Create connecting line with arrow
+        const connectLine = document.createElement('div');
+        connectLine.style.position = 'absolute';
+        connectLine.style.bottom = '-130px';
+        connectLine.style.left = '50%';
+        connectLine.style.width = '0.5px';
+        connectLine.style.height = '100px';
+        connectLine.style.background = 'linear-gradient(to top, #ff4444 0%, rgba(255,68,68,0.3) 100%)';
+        connectLine.style.transform = 'translateX(-50%)';
+        connectLine.style.opacity = '0.8';
+        diagDiv.appendChild(connectLine);
+        
+        // Create targeting arrow at panel
+        const targetArrow = document.createElement('div');
+        targetArrow.style.position = 'absolute';
+        targetArrow.style.bottom = '-5px';
+        targetArrow.style.left = '50%';
+        targetArrow.style.width = '8px';
+        targetArrow.style.height = '8px';
+        targetArrow.style.transform = 'translateX(-50%) rotate(45deg)';
+        targetArrow.style.border = '0.5px solid #ff4444';
+        targetArrow.style.borderTop = 'none';
+        targetArrow.style.borderLeft = 'none';
+        targetArrow.style.opacity = '0.9';
+        diagDiv.appendChild(targetArrow);
+        
+        const diagObject = new CSS2DObject(diagDiv);
+        diagObject.position.set(0, 130, 10);
+        circleGroup.add(diagObject);
+        
+    }
+    
+    typewriterEffect(element, text, speed = 50) {
+        element.innerHTML = '';
+        element.style.width = 'auto';
+        let i = 0;
+        
+        function typeChar() {
+            if (i < text.length) {
+                element.innerHTML += text.charAt(i);
+                i++;
+                setTimeout(typeChar, speed);
+            }
+        }
+        typeChar();
+    }
+    
+    createTargetingReticle(circleGroup) {
+        // Create targeting reticle overlay on the machine orb
+        const reticleDiv = document.createElement('div');
+        reticleDiv.style.width = '60px';
+        reticleDiv.style.height = '60px';
+        reticleDiv.style.pointerEvents = 'none';
+        reticleDiv.style.position = 'relative';
+        
+        reticleDiv.innerHTML = `
+            <!-- Outer targeting ring -->
+            <div style="position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; border: 0.5px solid #ff4444; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0.6; animation: pulseRed 2s infinite;"></div>
+            <!-- Corner brackets around orb -->
+            <div style="position: absolute; top: 5px; left: 5px; width: 12px; height: 12px; border-left: 0.5px solid #ff4444; border-top: 0.5px solid #ff4444; opacity: 0.8;"></div>
+            <div style="position: absolute; top: 5px; right: 5px; width: 12px; height: 12px; border-right: 0.5px solid #ff4444; border-top: 0.5px solid #ff4444; opacity: 0.8;"></div>
+            <div style="position: absolute; bottom: 5px; left: 5px; width: 12px; height: 12px; border-left: 0.5px solid #ff4444; border-bottom: 0.5px solid #ff4444; opacity: 0.8;"></div>
+            <div style="position: absolute; bottom: 5px; right: 5px; width: 12px; height: 12px; border-right: 0.5px solid #ff4444; border-bottom: 0.5px solid #ff4444; opacity: 0.8;"></div>
+            <!-- Main targeting beam extending upward -->
+            <div style="position: absolute; top: -50px; left: 50%; width: 2px; height: 50px; background: linear-gradient(to top, #ff4444 0%, rgba(255,68,68,0.9) 50%, rgba(255,68,68,0.6) 100%); transform: translateX(-50%); opacity: 1; animation: pulseRed 1s infinite; box-shadow: 0 0 4px #ff4444;"></div>
+            <!-- Targeting arrow at top of beam -->
+            <div style="position: absolute; top: -60px; left: 50%; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 12px solid #ff4444; transform: translateX(-50%); opacity: 1; animation: pulseRed 1.5s infinite; filter: drop-shadow(0 0 3px #ff4444);"></div>
+            <!-- Side targeting brackets -->
+            <div style="position: absolute; top: -30px; left: 15px; width: 8px; height: 0.5px; background: #ff4444; opacity: 0.8; animation: pulseRed 2s infinite;"></div>
+            <div style="position: absolute; top: -30px; right: 15px; width: 8px; height: 0.5px; background: #ff4444; opacity: 0.8; animation: pulseRed 2s infinite;"></div>
+        `;
+        
+        const reticleObject = new CSS2DObject(reticleDiv);
+        reticleObject.position.set(0, 0, 2);
+        circleGroup.add(reticleObject);
     }
     
     createRightSideCards(chartGroup) {
@@ -996,9 +2523,9 @@ class CSS2DDashboard {
             light.style.width = '8px';
             light.style.height = '8px';
             light.style.borderRadius = '50%';
-            light.style.border = '1px solid #00ffff';
-            light.style.backgroundColor = i === 0 ? '#ff4444' : (i === 1 ? '#ffff00' : '#00ffff');
-            light.style.boxShadow = i === 0 ? '0 0 10px #ff4444' : (i === 1 ? '0 0 10px #ffff00' : '0 0 10px #00ffff');
+            light.style.border = '1px solid #00d4ff';
+            light.style.backgroundColor = i === 0 ? '#ff4444' : (i === 1 ? '#ffff00' : '#00d4ff');
+            light.style.boxShadow = i === 0 ? '0 0 10px #ff4444' : (i === 1 ? '0 0 10px #ffff00' : '0 0 10px #00d4ff');
             if (i === 0) {
                 light.style.animation = 'pulseRed 1s infinite';
             }
@@ -1021,7 +2548,7 @@ class CSS2DDashboard {
         
         // Header
         const header = document.createElement('div');
-        header.style.color = '#00ffff';
+        header.style.color = '#00d4ff';
         header.style.fontSize = '12px';
         header.style.fontWeight = '600';
         header.style.textTransform = 'uppercase';
@@ -1035,14 +2562,14 @@ class CSS2DDashboard {
         machineName.style.fontSize = '14px';
         machineName.style.fontWeight = '700';
         machineName.style.marginBottom = '8px';
-        machineName.style.textShadow = '0 0 8px #00ffff';
+        machineName.style.textShadow = '0 0 8px #00d4ff';
         machineName.textContent = 'Machine: PRESS-001';
         
         // Growing line container representing downtime duration
         const downtimeLineContainer = document.createElement('div');
         downtimeLineContainer.style.width = '100%';
         downtimeLineContainer.style.height = '6px';
-        downtimeLineContainer.style.backgroundColor = 'rgba(0, 255, 255, 0.1)';
+        downtimeLineContainer.style.backgroundColor = 'rgba(0, 212, 255, 0.1)';
         downtimeLineContainer.style.borderRadius = '3px';
         downtimeLineContainer.style.marginBottom = '12px';
         downtimeLineContainer.style.position = 'relative';
@@ -1051,9 +2578,9 @@ class CSS2DDashboard {
         // Growing line bar
         const growingLine = document.createElement('div');
         growingLine.style.height = '100%';
-        growingLine.style.backgroundColor = '#00ffff';
+        growingLine.style.backgroundColor = '#00d4ff';
         growingLine.style.borderRadius = '3px';
-        growingLine.style.boxShadow = '0 0 10px #00ffff';
+        growingLine.style.boxShadow = '0 0 10px #00d4ff';
         growingLine.style.transition = 'width 1s ease-out';
         growingLine.style.width = '0%';
         growingLine.id = 'fault-duration-line';
@@ -1069,7 +2596,7 @@ class CSS2DDashboard {
         const mttrColumn = document.createElement('div');
         mttrColumn.style.textAlign = 'center';
         mttrColumn.innerHTML = `
-            <div style="color: #00ffff; font-size: 10px; font-weight: 600; margin-bottom: 4px;">MTTR</div>
+            <div style="color: #00d4ff; font-size: 10px; font-weight: 600; margin-bottom: 4px;">MTTR</div>
             <div style="color: #ffffff; font-size: 16px; font-weight: 700;">8.2</div>
             <div style="color: rgba(255,255,255,0.6); font-size: 9px;">minutes</div>
         `;
@@ -1078,7 +2605,7 @@ class CSS2DDashboard {
         const mtbfColumn = document.createElement('div');
         mtbfColumn.style.textAlign = 'center';
         mtbfColumn.innerHTML = `
-            <div style="color: #00ffff; font-size: 10px; font-weight: 600; margin-bottom: 4px;">MTBF</div>
+            <div style="color: #00d4ff; font-size: 10px; font-weight: 600; margin-bottom: 4px;">MTBF</div>
             <div style="color: #ffffff; font-size: 16px; font-weight: 700;">142</div>
             <div style="color: rgba(255,255,255,0.6); font-size: 9px;">hours</div>
         `;
@@ -1128,16 +2655,16 @@ class CSS2DDashboard {
             light.style.width = '8px';
             light.style.height = '8px';
             light.style.borderRadius = '50%';
-            light.style.border = '1px solid #00ffff';
-            light.style.backgroundColor = '#00ffff';
-            light.style.boxShadow = '0 0 10px #00ffff';
+            light.style.border = '1px solid #00d4ff';
+            light.style.backgroundColor = '#00d4ff';
+            light.style.boxShadow = '0 0 10px #00d4ff';
             statusLightStrip.appendChild(light);
         }
         downtimeDiv.appendChild(statusLightStrip);
         
         // Header
         const header = document.createElement('div');
-        header.style.color = '#00ffff';
+        header.style.color = '#00d4ff';
         header.style.fontSize = '12px';
         header.style.fontWeight = '600';
         header.style.textTransform = 'uppercase';
@@ -1206,7 +2733,7 @@ class CSS2DDashboard {
         
         // Frame material with cyan
         const frameMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ffff, // Cyan
+            color: 0x00d4ff, // Cyan
             transparent: true,
             opacity: 0.8,
             blending: THREE.AdditiveBlending
