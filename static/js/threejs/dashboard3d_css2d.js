@@ -2652,14 +2652,14 @@ class CSS2DDashboard {
         const cardSpacing = 140;
         const rightX = 380; // Right side of middle section
         
-        // Tactical Targeting Card (left of Active Fault)
-        this.createTacticalTargetingCard(chartGroup, 160, cardHeight, rightX - 230, 60);
+        // Tactical Targeting Card (left of Active Fault) - moved up 20px
+        this.createTacticalTargetingCard(chartGroup, 160, cardHeight, rightX - 230, 80);
         
-        // Active Fault Overlay Card (top)
-        this.createActiveFaultCard(chartGroup, cardWidth, cardHeight, rightX, 60);
+        // Active Fault Overlay Card (top) - moved up 20px
+        this.createActiveFaultCard(chartGroup, cardWidth, cardHeight, rightX, 80);
         
-        // Last Downtime Event Card (bottom)
-        this.createLastDowntimeCard(chartGroup, cardWidth, cardHeight, rightX, -110);
+        // Last Downtime Event Card (bottom) - moved up 40px
+        this.createLastDowntimeCard(chartGroup, cardWidth, cardHeight, rightX, -70);
     }
     
     createActiveFaultCard(chartGroup, width, height, x, y) {
