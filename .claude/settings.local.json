@@ -23,7 +23,9 @@
       "WebFetch(domain:tympanus.net)",
       "WebFetch(domain:blog.maximeheckel.com)",
       "WebFetch(domain:threejs.org)",
-      "WebFetch(domain:discourse.threejs.org)"
+      "WebFetch(domain:discourse.threejs.org)",
+      "Read(C:\\Users\\flore\\OneDrive\\Desktop/**)",
+      "Read(C:\\Users\\flore\\OneDrive\\Desktop/**)"
     ],
     "deny": [],
     "ask": []

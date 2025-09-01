@@ -2652,6 +2652,9 @@ class CSS2DDashboard {
         const cardSpacing = 140;
         const rightX = 380; // Right side of middle section
         
+        // Tactical Targeting Card (left of Active Fault)
+        this.createTacticalTargetingCard(chartGroup, 160, cardHeight, rightX - 230, 60);
+        
         // Active Fault Overlay Card (top)
         this.createActiveFaultCard(chartGroup, cardWidth, cardHeight, rightX, 60);
         
@@ -2663,16 +2666,38 @@ class CSS2DDashboard {
         const faultDiv = document.createElement('div');
         faultDiv.style.width = width + 'px';
         faultDiv.style.height = height + 'px';
-        faultDiv.style.backgroundColor = 'transparent';
-        faultDiv.style.border = 'none';
-        faultDiv.style.borderRadius = '0';
+        faultDiv.style.background = 'rgba(0, 8, 15, 0.9)';
+        faultDiv.style.border = '2px solid #00d4ff';
+        faultDiv.style.borderRadius = '4px';
         faultDiv.style.padding = '15px';
+        faultDiv.style.color = '#00d4ff';
+        faultDiv.style.fontFamily = '"Courier New", "Consolas", "Monaco", monospace';
         faultDiv.style.boxSizing = 'border-box';
         faultDiv.style.display = 'flex';
         faultDiv.style.flexDirection = 'column';
+        faultDiv.style.backdropFilter = 'blur(50px)';
+        faultDiv.style.boxShadow = '0 0 25px #00d4ff60, inset 0 0 10px rgba(0, 212, 255, 0.1)';
         faultDiv.style.position = 'relative';
+        faultDiv.style.zIndex = '2';
         faultDiv.id = 'active-fault-card';
         faultDiv.className = 'scan-target';
+        
+        // Add fighter jet style scan lines
+        const scanLines = document.createElement('div');
+        scanLines.style.position = 'absolute';
+        scanLines.style.top = '0';
+        scanLines.style.left = '0';
+        scanLines.style.width = '100%';
+        scanLines.style.height = '100%';
+        scanLines.style.background = `repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 212, 255, 0.03) 2px,
+            rgba(0, 212, 255, 0.03) 4px
+        )`;
+        scanLines.style.pointerEvents = 'none';
+        faultDiv.appendChild(scanLines);
         
         // Add status light strip at top
         const statusLightStrip = document.createElement('div');
@@ -2698,28 +2723,21 @@ class CSS2DDashboard {
         }
         faultDiv.appendChild(statusLightStrip);
         
-        // Add warning triangle for critical faults
-        const warningTriangle = document.createElement('div');
-        warningTriangle.innerHTML = '⚠';
-        warningTriangle.style.position = 'absolute';
-        warningTriangle.style.top = '5px';
-        warningTriangle.style.left = '15px';
-        warningTriangle.style.color = '#ff4444';
-        warningTriangle.style.fontSize = '20px';
-        warningTriangle.style.textShadow = '0 0 10px #ff4444';
-        warningTriangle.style.animation = 'warningPulse 0.5s infinite alternate';
-        warningTriangle.className = 'warning-indicator';
-        faultDiv.appendChild(warningTriangle);
-        
         // Header
         const header = document.createElement('div');
-        header.style.color = '#00d4ff';
         header.style.fontSize = '12px';
-        header.style.fontWeight = '600';
+        header.style.fontWeight = 'bold';
         header.style.textTransform = 'uppercase';
-        header.style.letterSpacing = '1px';
+        header.style.letterSpacing = '2px';
         header.style.marginBottom = '12px';
-        header.textContent = 'Active Fault Overlay';
+        header.style.marginTop = '0px'; // No longer need margin - in separate section
+        header.style.textShadow = '0 0 8px #00d4ff';
+        header.style.borderBottom = '1px solid #00d4ff40';
+        header.style.paddingBottom = '6px';
+        header.style.position = 'relative';
+        header.style.zIndex = '2';
+        header.style.color = '#00d4ff';
+        header.textContent = '◢ ACTIVE FAULT OVERLAY ◤';
         
         // Machine name that caused the fault
         const machineName = document.createElement('div');
@@ -2793,19 +2811,308 @@ class CSS2DDashboard {
         this.faultStartTime = Date.now();
     }
     
+    createTacticalTargetingRing(container) {
+        // Create SVG for precise tactical elements
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.style.position = 'absolute';
+        svg.style.top = '0';
+        svg.style.left = '0';
+        svg.style.width = '100%';
+        svg.style.height = '100%';
+        svg.style.pointerEvents = 'none';
+        
+        const centerX = 50; // Moved entire reticle 5px to the left
+        const centerY = 55;
+        const outerRadius = 45;
+        const innerRadius = 36;
+        
+        // Outer targeting ring with crosshairs
+        const outerRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        outerRing.setAttribute('cx', centerX);
+        outerRing.setAttribute('cy', centerY);
+        outerRing.setAttribute('r', outerRadius);
+        outerRing.setAttribute('fill', 'none');
+        outerRing.setAttribute('stroke', '#00d4ff');
+        outerRing.setAttribute('stroke-width', '2');
+        outerRing.setAttribute('opacity', '1');
+        svg.appendChild(outerRing);
+        
+        // Crosshairs (N, S, E, W)
+        const crosshairs = [
+            { x1: centerX, y1: centerY - outerRadius - 3, x2: centerX, y2: centerY - outerRadius + 3 }, // N
+            { x1: centerX, y1: centerY + outerRadius - 3, x2: centerX, y2: centerY + outerRadius + 3 }, // S
+            { x1: centerX + outerRadius - 3, y1: centerY, x2: centerX + outerRadius + 3, y2: centerY }, // E
+            { x1: centerX - outerRadius - 3, y1: centerY, x2: centerX - outerRadius + 3, y2: centerY }  // W
+        ];
+        
+        crosshairs.forEach(ch => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', ch.x1);
+            line.setAttribute('y1', ch.y1);
+            line.setAttribute('x2', ch.x2);
+            line.setAttribute('y2', ch.y2);
+            line.setAttribute('stroke', '#00d4ff');
+            line.setAttribute('stroke-width', '2');
+            line.setAttribute('opacity', '1');
+            svg.appendChild(line);
+        });
+        
+        // Corner acquisition brackets
+        const brackets = [
+            // Top-left
+            [[centerX - 20, centerY - 20], [centerX - 14, centerY - 20], [centerX - 20, centerY - 14]],
+            // Top-right  
+            [[centerX + 20, centerY - 20], [centerX + 14, centerY - 20], [centerX + 20, centerY - 14]],
+            // Bottom-left
+            [[centerX - 20, centerY + 20], [centerX - 14, centerY + 20], [centerX - 20, centerY + 14]],
+            // Bottom-right
+            [[centerX + 20, centerY + 20], [centerX + 14, centerY + 20], [centerX + 20, centerY + 14]]
+        ];
+        
+        brackets.forEach(bracket => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const pathData = `M${bracket[0][0]},${bracket[0][1]} L${bracket[1][0]},${bracket[1][1]} L${bracket[2][0]},${bracket[2][1]}`;
+            path.setAttribute('d', pathData);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', '#00d4ff');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('opacity', '1');
+            svg.appendChild(path);
+        });
+        
+        // Progress arc (starts empty, fills clockwise)
+        const progressArc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        progressArc.setAttribute('fill', 'none');
+        progressArc.setAttribute('stroke', '#00d4ff');
+        progressArc.setAttribute('stroke-width', '3');
+        progressArc.setAttribute('stroke-linecap', 'round');
+        progressArc.setAttribute('opacity', '1');
+        progressArc.id = 'progress-arc-' + container.id;
+        svg.appendChild(progressArc);
+        
+        // Rotating radar sweep line
+        const radarSweep = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        radarSweep.setAttribute('x1', centerX);
+        radarSweep.setAttribute('y1', centerY);
+        radarSweep.setAttribute('x2', centerX);
+        radarSweep.setAttribute('y2', centerY - innerRadius);
+        radarSweep.setAttribute('stroke', '#00d4ff');
+        radarSweep.setAttribute('stroke-width', '2');
+        radarSweep.setAttribute('opacity', '0.8');
+        radarSweep.style.transformOrigin = `${centerX}px ${centerY}px`;
+        radarSweep.style.animation = 'spin 4s linear infinite';
+        svg.appendChild(radarSweep);
+        
+        container.appendChild(svg);
+        
+        // Add tactical text elements
+        this.createTacticalTextElements(container);
+        
+        // Start progress animation
+        this.animateTargetingProgress(progressArc, centerX, centerY, innerRadius);
+    }
+    
+    createTacticalTextElements(container) {
+        // Target designation - positioned within card boundaries
+        const targetLabel = document.createElement('div');
+        targetLabel.style.position = 'absolute';
+        targetLabel.style.top = '-14px';
+        targetLabel.style.right = '-10px';
+        targetLabel.style.fontSize = '10px';
+        targetLabel.style.color = '#00d4ff';
+        targetLabel.style.fontFamily = 'monospace';
+        targetLabel.style.fontWeight = 'bold';
+        targetLabel.style.textShadow = '0 0 5px #00d4ff';
+        targetLabel.style.whiteSpace = 'nowrap';
+        targetLabel.textContent = 'TGT:F-001';
+        container.appendChild(targetLabel);
+        
+        // Status indicator - positioned within card boundaries
+        const statusLabel = document.createElement('div');
+        statusLabel.style.position = 'absolute';
+        statusLabel.style.bottom = '-14px';
+        statusLabel.style.right = '-5px';
+        statusLabel.style.fontSize = '10px';
+        statusLabel.style.color = '#ff4444';
+        statusLabel.style.fontFamily = 'monospace';
+        statusLabel.style.fontWeight = 'bold';
+        statusLabel.style.textShadow = '0 0 5px #ff4444';
+        statusLabel.style.whiteSpace = 'nowrap';
+        statusLabel.textContent = 'ACTIVE';
+        statusLabel.style.animation = 'pulse 1s infinite';
+        container.appendChild(statusLabel);
+        
+        // Range/Time display - positioned within card boundaries
+        const rangeLabel = document.createElement('div');
+        rangeLabel.style.position = 'absolute';
+        rangeLabel.style.bottom = '-14px';
+        rangeLabel.style.left = '-10px';
+        rangeLabel.style.fontSize = '10px';
+        rangeLabel.style.color = '#00d4ff';
+        rangeLabel.style.fontFamily = 'monospace';
+        rangeLabel.style.fontWeight = 'bold';
+        rangeLabel.style.textShadow = '0 0 5px #00d4ff';
+        rangeLabel.style.whiteSpace = 'nowrap';
+        rangeLabel.textContent = 'RNG:00:00';
+        rangeLabel.id = 'range-timer-' + container.id;
+        container.appendChild(rangeLabel);
+        
+        // Start timer updates
+        this.startTargetingTimer(rangeLabel);
+    }
+    
+    animateTargetingProgress(arc, centerX, centerY, radius) {
+        let progress = 0;
+        const duration = 600000; // 10 minutes in milliseconds
+        const startTime = Date.now();
+        
+        const updateProgress = () => {
+            const elapsed = Date.now() - startTime;
+            progress = Math.min(elapsed / duration, 1);
+            
+            // Calculate arc path
+            const angle = progress * 2 * Math.PI - Math.PI/2; // Start at top
+            const largeArcFlag = progress > 0.5 ? 1 : 0;
+            const endX = centerX + radius * Math.cos(angle);
+            const endY = centerY + radius * Math.sin(angle);
+            
+            if (progress > 0) {
+                const pathData = `M ${centerX} ${centerY - radius} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY}`;
+                arc.setAttribute('d', pathData);
+                
+                // Change color based on progress
+                if (progress < 0.3) {
+                    arc.setAttribute('stroke', '#00d4ff');
+                } else if (progress < 0.7) {
+                    arc.setAttribute('stroke', '#ffaa00');
+                } else {
+                    arc.setAttribute('stroke', '#ff4444');
+                    arc.style.animation = 'pulse 0.5s infinite';
+                }
+            }
+            
+            if (progress < 1) {
+                requestAnimationFrame(updateProgress);
+            } else {
+                // Full circle - start continuous rotation
+                arc.style.animation = 'spin 2s linear infinite';
+            }
+        };
+        
+        updateProgress();
+    }
+    
+    startTargetingTimer(label) {
+        const startTime = Date.now();
+        
+        const updateTimer = () => {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            label.textContent = `RNG:${minutes}:${seconds}`;
+            
+            setTimeout(updateTimer, 1000);
+        };
+        
+        updateTimer();
+    }
+    
+    createTacticalTargetingCard(chartGroup, width, height, x, y) {
+        const targetingDiv = document.createElement('div');
+        targetingDiv.style.width = width + 'px';
+        targetingDiv.style.height = height + 'px';
+        targetingDiv.style.background = 'rgba(0, 8, 15, 0.9)';
+        targetingDiv.style.border = '2px solid #00d4ff';
+        targetingDiv.style.borderRadius = '4px';
+        targetingDiv.style.padding = '15px';
+        targetingDiv.style.color = '#00d4ff';
+        targetingDiv.style.fontFamily = '"Courier New", "Consolas", "Monaco", monospace';
+        targetingDiv.style.boxSizing = 'border-box';
+        targetingDiv.style.display = 'flex';
+        targetingDiv.style.alignItems = 'center';
+        targetingDiv.style.justifyContent = 'center';
+        targetingDiv.style.backdropFilter = 'blur(50px)';
+        targetingDiv.style.boxShadow = '0 0 25px #00d4ff60, inset 0 0 10px rgba(0, 212, 255, 0.1)';
+        targetingDiv.style.position = 'relative';
+        targetingDiv.style.zIndex = '2';
+        targetingDiv.id = 'tactical-targeting-card';
+        targetingDiv.className = 'scan-target';
+        
+        // Add fighter jet style scan lines
+        const scanLines = document.createElement('div');
+        scanLines.style.position = 'absolute';
+        scanLines.style.top = '0';
+        scanLines.style.left = '0';
+        scanLines.style.width = '100%';
+        scanLines.style.height = '100%';
+        scanLines.style.background = `repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 212, 255, 0.03) 2px,
+            rgba(0, 212, 255, 0.03) 4px
+        )`;
+        scanLines.style.pointerEvents = 'none';
+        targetingDiv.appendChild(scanLines);
+        
+        // Create tactical targeting system container - moved 10px to the right
+        const targetingContainer = document.createElement('div');
+        targetingContainer.style.position = 'relative';
+        targetingContainer.style.width = '110px';
+        targetingContainer.style.height = '110px';
+        targetingContainer.style.marginLeft = '10px';
+        targetingContainer.style.pointerEvents = 'none';
+        targetingContainer.style.zIndex = '5';
+        targetingContainer.id = 'targeting-system-' + Date.now();
+        
+        
+        // Create tactical targeting ring system
+        this.createTacticalTargetingRing(targetingContainer);
+        
+        targetingDiv.appendChild(targetingContainer);
+        
+        const targetingObject = new CSS2DObject(targetingDiv);
+        targetingObject.position.set(x, y, 0);
+        targetingObject.center.set(0.5, 0.5);
+        
+        chartGroup.add(targetingObject);
+    }
+    
     createLastDowntimeCard(chartGroup, width, height, x, y) {
         const downtimeDiv = document.createElement('div');
         downtimeDiv.style.width = width + 'px';
         downtimeDiv.style.height = height + 'px';
-        downtimeDiv.style.backgroundColor = 'transparent';
-        downtimeDiv.style.border = 'none';
-        downtimeDiv.style.borderRadius = '0';
+        downtimeDiv.style.background = 'rgba(0, 8, 15, 0.9)';
+        downtimeDiv.style.border = '2px solid #00d4ff';
+        downtimeDiv.style.borderRadius = '4px';
         downtimeDiv.style.padding = '15px';
+        downtimeDiv.style.color = '#00d4ff';
+        downtimeDiv.style.fontFamily = '"Courier New", "Consolas", "Monaco", monospace';
         downtimeDiv.style.boxSizing = 'border-box';
         downtimeDiv.style.display = 'flex';
         downtimeDiv.style.flexDirection = 'column';
+        downtimeDiv.style.backdropFilter = 'blur(50px)';
+        downtimeDiv.style.boxShadow = '0 0 25px #00d4ff60, inset 0 0 10px rgba(0, 212, 255, 0.1)';
         downtimeDiv.style.position = 'relative';
+        downtimeDiv.style.zIndex = '2';
         downtimeDiv.className = 'scan-target';
+        
+        // Add fighter jet style scan lines
+        const scanLines = document.createElement('div');
+        scanLines.style.position = 'absolute';
+        scanLines.style.top = '0';
+        scanLines.style.left = '0';
+        scanLines.style.width = '100%';
+        scanLines.style.height = '100%';
+        scanLines.style.background = `repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 212, 255, 0.03) 2px,
+            rgba(0, 212, 255, 0.03) 4px
+        )`;
+        scanLines.style.pointerEvents = 'none';
+        downtimeDiv.appendChild(scanLines);
         
         // Add status light strip
         const statusLightStrip = document.createElement('div');
@@ -2829,13 +3136,18 @@ class CSS2DDashboard {
         
         // Header
         const header = document.createElement('div');
-        header.style.color = '#00d4ff';
         header.style.fontSize = '12px';
-        header.style.fontWeight = '600';
+        header.style.fontWeight = 'bold';
         header.style.textTransform = 'uppercase';
-        header.style.letterSpacing = '1px';
+        header.style.letterSpacing = '2px';
         header.style.marginBottom = '12px';
-        header.textContent = 'Last Downtime Event';
+        header.style.textShadow = '0 0 8px #00d4ff';
+        header.style.borderBottom = '1px solid #00d4ff40';
+        header.style.paddingBottom = '6px';
+        header.style.position = 'relative';
+        header.style.zIndex = '2';
+        header.style.color = '#00d4ff';
+        header.textContent = '◢ LAST DOWNTIME EVENT ◤';
         
         // Fault details
         const faultDetails = document.createElement('div');
