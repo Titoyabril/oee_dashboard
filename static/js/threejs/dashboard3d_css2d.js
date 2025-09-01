@@ -2074,11 +2074,11 @@ class CSS2DDashboard {
         // Chart section positioned in middle of screen
         const chartGroup = new THREE.Group();
         
-        // Chart container positioned on left side (69% larger total)
-        const chartWidth = 676;  // 520 * 1.3
-        const chartHeight = 338; // 260 * 1.3
+        // Chart container positioned on left side (69% larger total, then 15% larger)
+        const chartWidth = 777;  // 676 * 1.15
+        const chartHeight = 389; // 338 * 1.15
         const chartX = -150; // Optimized position
-        const chartY = -25;  // Optimized position
+        const chartY = -10;  // Moved up by 15 pixels: -25 + 15 = -10
         
         // Create chart container with military HUD styling
         const chartContainer = document.createElement('div');
@@ -2283,6 +2283,9 @@ class CSS2DDashboard {
         const bottomY = -window.innerHeight * 0.35;
         bottomGroup.position.set(0, bottomY, 0);
         
+        // Add two cards above sprockets
+        this.createSprocketOverlayCards(bottomGroup);
+        
         // Create machine status circles (left side)
         this.createMachineStatusCircles(bottomGroup);
         
@@ -2462,10 +2465,10 @@ class CSS2DDashboard {
         diagDiv.style.border = '0.5px solid #ff4444';
         diagDiv.style.color = '#ff4444';
         diagDiv.style.fontFamily = 'Courier New, monospace';
-        diagDiv.style.fontSize = '9px';
-        diagDiv.style.padding = '8px';
-        diagDiv.style.width = '180px';
-        diagDiv.style.backdropFilter = 'blur(1px)';
+        diagDiv.style.fontSize = '13px';  // 11 * 1.2 = 13.2 ≈ 13
+        diagDiv.style.padding = '12px';   // 10 * 1.2 = 12
+        diagDiv.style.width = '259px';    // 216 * 1.2 = 259.2 ≈ 259
+        diagDiv.style.backdropFilter = 'blur(5px)';
         diagDiv.style.position = 'relative';
         diagDiv.style.clipPath = 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))';
         diagDiv.style.zIndex = '9999';
@@ -2487,6 +2490,10 @@ class CSS2DDashboard {
             { text: 'STATUS: COOLING CYCLE', style: 'margin: 2px 0; opacity: 0.9;' }
         ];
         
+        // Store lines data for re-animation during cycling
+        diagDiv.linesData = lines;
+        diagDiv.lineElements = [];
+        
         lines.forEach((line, index) => {
             const lineDiv = document.createElement('div');
             lineDiv.style.cssText = line.style;
@@ -2494,6 +2501,7 @@ class CSS2DDashboard {
             lineDiv.style.whiteSpace = 'nowrap';
             lineDiv.style.width = '0';
             diagDiv.appendChild(lineDiv);
+            diagDiv.lineElements.push(lineDiv);
             
             // Animate each line with delay
             setTimeout(() => {
@@ -2531,6 +2539,9 @@ class CSS2DDashboard {
         diagObject.position.set(0, 130, 10);
         circleGroup.add(diagObject);
         
+        // Implement cycling visibility: 5 seconds on, 2 seconds off
+        this.startDiagnosticsCycling(diagDiv, machine);
+        
     }
     
     typewriterEffect(element, text, speed = 50) {
@@ -2546,6 +2557,63 @@ class CSS2DDashboard {
             }
         }
         typeChar();
+    }
+    
+    startDiagnosticsCycling(diagDiv, machine) {
+        // Only cycle if machine status is 'fault'
+        if (machine.status !== 'fault') return;
+        
+        let isVisible = true;
+        diagDiv.style.display = 'block';
+        diagDiv.style.opacity = '1';
+        
+        // Create cycling interval: 5 seconds visible, 2 seconds hidden
+        const cycleInterval = setInterval(() => {
+            if (isVisible) {
+                // Start fade out
+                diagDiv.style.transition = 'opacity 0.3s ease-out';
+                diagDiv.style.opacity = '0';
+                
+                // Hide completely after fade
+                setTimeout(() => {
+                    diagDiv.style.display = 'none';
+                }, 300);
+                
+                isVisible = false;
+                
+                // Show again after 2 seconds (total off time)
+                setTimeout(() => {
+                    diagDiv.style.display = 'block';
+                    diagDiv.style.transition = 'opacity 0.3s ease-in';
+                    diagDiv.style.opacity = '1';
+                    isVisible = true;
+                    
+                    // Trigger typewriter effect again
+                    this.retriggerTypewriterEffect(diagDiv);
+                }, 2000);
+            }
+        }, 10000); // Cycle every 10 seconds (10 seconds on, then trigger 2 seconds off)
+        
+        // Store interval reference for cleanup if needed
+        diagDiv.cycleInterval = cycleInterval;
+        
+        console.log(`Started diagnostics cycling for machine ${machine.id}: 10s on, 2s off`);
+    }
+    
+    retriggerTypewriterEffect(diagDiv) {
+        // Reset all line elements for re-animation
+        if (diagDiv.lineElements && diagDiv.linesData) {
+            diagDiv.lineElements.forEach((lineDiv, index) => {
+                // Clear current content and reset width
+                lineDiv.innerHTML = '';
+                lineDiv.style.width = '0';
+                
+                // Re-trigger typewriter effect with delay
+                setTimeout(() => {
+                    this.typewriterEffect(lineDiv, diagDiv.linesData[index].text, 30);
+                }, index * 300);
+            });
+        }
     }
     
     createTargetingReticle(circleGroup) {
@@ -2804,6 +2872,264 @@ class CSS2DDashboard {
         downtimeObject.position.set(x, y, 0);
         downtimeObject.center.set(0.5, 0.5);
         chartGroup.add(downtimeObject);
+    }
+    
+    createSprocketOverlayCards(bottomGroup) {
+        console.log('CREATING SPROCKET OVERLAY CARDS - Above Machine Status');
+        
+        const cardWidth = 250;
+        const cardHeight = 140;
+        const cardSpacing = 280;
+        // Align with left margin of chart: chartX (-150) - chartWidth/2 (338) = -488
+        // Move 100 pixels to the right: -488 + 100 = -388
+        const chartLeftMargin = -488;
+        const startX = chartLeftMargin + 100;
+        const cardY = 120; // Position above sprockets
+        
+        const cardData = [
+            {
+                title: 'PRODUCTION RATE',
+                status: 'TRACKING',
+                plannedRate: '950',
+                currentRate: '847',
+                color: '#00d4ff',
+                statusColor: '#00d4ff'
+            },
+            {
+                title: 'SHIFT TOTALS',
+                status: 'ACTIVE',
+                plannedShiftTotal: '7600',
+                currentShiftTotal: '5890',
+                color: '#00d4ff',
+                statusColor: '#00d4ff'
+            }
+        ];
+        
+        cardData.forEach((card, index) => {
+            const cardGroup = new THREE.Group();
+            
+            // Create futuristic border frame
+            this.createSprocketCardFrame(cardGroup, cardWidth, cardHeight, card.color);
+            
+            // Create HTML content
+            const cardDiv = document.createElement('div');
+            cardDiv.style.width = cardWidth + 'px';
+            cardDiv.style.height = cardHeight + 'px';
+            cardDiv.style.background = 'rgba(0, 8, 15, 0.9)';
+            cardDiv.style.border = `2px solid ${card.color}`;
+            cardDiv.style.borderRadius = '4px';
+            cardDiv.style.padding = '15px';
+            cardDiv.style.color = card.color;
+            cardDiv.style.fontFamily = '"Courier New", "Consolas", "Monaco", monospace';
+            cardDiv.style.display = 'flex';
+            cardDiv.style.flexDirection = 'column';
+            cardDiv.style.backdropFilter = 'blur(50px)';
+            cardDiv.style.boxShadow = `0 0 25px ${card.color}60, inset 0 0 10px rgba(0, 212, 255, 0.1)`;
+            cardDiv.style.position = 'relative';
+            cardDiv.style.zIndex = '1'; // Lower z-index for background cards
+            
+            // Add fighter jet style scan lines
+            const scanLines = document.createElement('div');
+            scanLines.style.position = 'absolute';
+            scanLines.style.top = '0';
+            scanLines.style.left = '0';
+            scanLines.style.width = '100%';
+            scanLines.style.height = '100%';
+            scanLines.style.background = `repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 212, 255, 0.03) 2px,
+                rgba(0, 212, 255, 0.03) 4px
+            )`;
+            scanLines.style.pointerEvents = 'none';
+            cardDiv.appendChild(scanLines);
+            
+            // Header
+            const header = document.createElement('div');
+            header.style.fontSize = '12px';
+            header.style.fontWeight = 'bold';
+            header.style.textTransform = 'uppercase';
+            header.style.letterSpacing = '2px';
+            header.style.marginBottom = '12px';
+            header.style.textShadow = `0 0 8px ${card.color}`;
+            header.style.borderBottom = `1px solid ${card.color}40`;
+            header.style.paddingBottom = '6px';
+            header.style.position = 'relative';
+            header.style.zIndex = '2';
+            header.textContent = `◢ ${card.title} ◤`;
+            
+            // Status indicator
+            const statusDiv = document.createElement('div');
+            statusDiv.style.display = 'flex';
+            statusDiv.style.alignItems = 'center';
+            statusDiv.style.marginBottom = '12px';
+            statusDiv.style.position = 'relative';
+            statusDiv.style.zIndex = '2';
+            
+            // Military style status indicator
+            const statusIndicator = document.createElement('div');
+            statusIndicator.style.display = 'flex';
+            statusIndicator.style.alignItems = 'center';
+            statusIndicator.style.padding = '4px 8px';
+            statusIndicator.style.background = `linear-gradient(45deg, rgba(0, 212, 255, 0.1), rgba(0, 212, 255, 0.05))`;
+            statusIndicator.style.border = `1px solid ${card.statusColor}`;
+            statusIndicator.style.borderRadius = '2px';
+            
+            const statusLight = document.createElement('div');
+            statusLight.style.width = '6px';
+            statusLight.style.height = '6px';
+            statusLight.style.background = card.statusColor;
+            statusLight.style.marginRight = '6px';
+            statusLight.style.boxShadow = `0 0 8px ${card.statusColor}`;
+            statusLight.style.animation = 'pulse 1.5s infinite';
+            
+            const statusText = document.createElement('span');
+            statusText.style.fontSize = '10px';
+            statusText.style.fontWeight = 'bold';
+            statusText.style.color = card.statusColor;
+            statusText.style.letterSpacing = '1px';
+            statusText.textContent = `● ${card.status}`;
+            
+            statusIndicator.appendChild(statusLight);
+            statusIndicator.appendChild(statusText);
+            statusDiv.appendChild(statusIndicator);
+            
+            // Metrics
+            const metricsDiv = document.createElement('div');
+            metricsDiv.style.display = 'flex';
+            metricsDiv.style.justifyContent = 'space-between';
+            metricsDiv.style.flexGrow = '1';
+            metricsDiv.style.alignItems = 'center';
+            metricsDiv.style.position = 'relative';
+            metricsDiv.style.zIndex = '2';
+            
+            if (index === 0) {
+                // Left card: Production Rate
+                const plannedRateDiv = document.createElement('div');
+                plannedRateDiv.style.textAlign = 'center';
+                plannedRateDiv.style.padding = '8px';
+                plannedRateDiv.style.border = `1px solid ${card.color}30`;
+                plannedRateDiv.style.borderRadius = '2px';
+                plannedRateDiv.style.background = `rgba(0, 212, 255, 0.05)`;
+                plannedRateDiv.innerHTML = `
+                    <div style="font-size: 9px; opacity: 0.8; margin-bottom: 4px; letter-spacing: 1px; color: ${card.color};">▸ PLANNED RATE</div>
+                    <div style="font-size: 14px; font-weight: bold; text-shadow: 0 0 6px ${card.color}; color: ${card.color};">${card.plannedRate}</div>
+                `;
+                
+                const currentRateDiv = document.createElement('div');
+                currentRateDiv.style.textAlign = 'center';
+                currentRateDiv.style.padding = '8px';
+                currentRateDiv.style.border = `1px solid ${card.color}30`;
+                currentRateDiv.style.borderRadius = '2px';
+                currentRateDiv.style.background = `rgba(0, 212, 255, 0.05)`;
+                currentRateDiv.innerHTML = `
+                    <div style="font-size: 9px; opacity: 0.8; margin-bottom: 4px; letter-spacing: 1px; color: ${card.color};">▸ CURRENT RATE</div>
+                    <div style="font-size: 14px; font-weight: bold; text-shadow: 0 0 6px ${card.color}; color: ${card.color};">${card.currentRate}</div>
+                `;
+                
+                metricsDiv.appendChild(plannedRateDiv);
+                metricsDiv.appendChild(currentRateDiv);
+            } else {
+                // Right card: Shift Totals
+                const plannedShiftDiv = document.createElement('div');
+                plannedShiftDiv.style.textAlign = 'center';
+                plannedShiftDiv.style.padding = '8px';
+                plannedShiftDiv.style.border = `1px solid ${card.color}30`;
+                plannedShiftDiv.style.borderRadius = '2px';
+                plannedShiftDiv.style.background = `rgba(0, 212, 255, 0.05)`;
+                plannedShiftDiv.innerHTML = `
+                    <div style="font-size: 9px; opacity: 0.8; margin-bottom: 4px; letter-spacing: 1px; color: ${card.color};">▸ PLANNED SHIFT TOTAL</div>
+                    <div style="font-size: 14px; font-weight: bold; text-shadow: 0 0 6px ${card.color}; color: ${card.color};">${card.plannedShiftTotal}</div>
+                `;
+                
+                const currentShiftDiv = document.createElement('div');
+                currentShiftDiv.style.textAlign = 'center';
+                currentShiftDiv.style.padding = '8px';
+                currentShiftDiv.style.border = `1px solid ${card.color}30`;
+                currentShiftDiv.style.borderRadius = '2px';
+                currentShiftDiv.style.background = `rgba(0, 212, 255, 0.05)`;
+                currentShiftDiv.innerHTML = `
+                    <div style="font-size: 9px; opacity: 0.8; margin-bottom: 4px; letter-spacing: 1px; color: ${card.color};">▸ CURRENT SHIFT TOTAL</div>
+                    <div style="font-size: 14px; font-weight: bold; text-shadow: 0 0 6px ${card.color}; color: ${card.color};">${card.currentShiftTotal}</div>
+                `;
+                
+                metricsDiv.appendChild(plannedShiftDiv);
+                metricsDiv.appendChild(currentShiftDiv);
+            }
+            
+            cardDiv.appendChild(header);
+            cardDiv.appendChild(statusDiv);
+            cardDiv.appendChild(metricsDiv);
+            
+            const cardObject = new CSS2DObject(cardDiv);
+            cardObject.position.set(0, 0, 0);
+            cardObject.center.set(0.5, 0.5);
+            cardGroup.add(cardObject);
+            
+            // Position the card (send to back with negative z)
+            cardGroup.position.set(startX + (index * cardSpacing), cardY, -50);
+            bottomGroup.add(cardGroup);
+        });
+    }
+    
+    createSprocketCardFrame(cardGroup, width, height, color) {
+        // Create fighter jet style angled brackets
+        const bracketLength = 20;
+        const bracketWidth = 1.5;
+        const cornerOffset = 8;
+        
+        const frameMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00d4ff,
+            transparent: true,
+            opacity: 0.9
+        });
+        
+        // Create angled corner brackets like fighter jet HUD
+        const corners = [
+            { pos: [-width/2 + cornerOffset, height/2 - cornerOffset], angles: [0.3, -0.3] },     // TL
+            { pos: [width/2 - cornerOffset, height/2 - cornerOffset], angles: [-0.3, 0.3] },     // TR
+            { pos: [-width/2 + cornerOffset, -height/2 + cornerOffset], angles: [-0.3, 0.3] },   // BL
+            { pos: [width/2 - cornerOffset, -height/2 + cornerOffset], angles: [0.3, -0.3] }     // BR
+        ];
+        
+        corners.forEach((corner, index) => {
+            // Angled horizontal bracket
+            const hBracket = new THREE.PlaneGeometry(bracketLength, bracketWidth);
+            const hMesh = new THREE.Mesh(hBracket, frameMaterial.clone());
+            hMesh.position.set(corner.pos[0], corner.pos[1], -2);
+            hMesh.rotation.z = corner.angles[0];
+            
+            // Angled vertical bracket
+            const vBracket = new THREE.PlaneGeometry(bracketWidth, bracketLength);
+            const vMesh = new THREE.Mesh(vBracket, frameMaterial.clone());
+            vMesh.position.set(corner.pos[0], corner.pos[1], -2);
+            vMesh.rotation.z = corner.angles[1];
+            
+            // Add targeting markers
+            const marker = new THREE.PlaneGeometry(3, 0.5);
+            const markerMesh = new THREE.Mesh(marker, frameMaterial.clone());
+            markerMesh.position.set(corner.pos[0], corner.pos[1], -1.5);
+            markerMesh.rotation.z = Math.PI/4 * index;
+            
+            cardGroup.add(hMesh);
+            cardGroup.add(vMesh);
+            cardGroup.add(markerMesh);
+        });
+        
+        // Add central targeting crosshairs
+        const crosshairH = new THREE.PlaneGeometry(width * 0.15, 0.5);
+        const crosshairV = new THREE.PlaneGeometry(0.5, height * 0.15);
+        const crosshairMaterial = frameMaterial.clone();
+        crosshairMaterial.opacity = 0.3;
+        
+        const crossH = new THREE.Mesh(crosshairH, crosshairMaterial);
+        const crossV = new THREE.Mesh(crosshairV, crosshairMaterial);
+        crossH.position.set(0, 0, -3);
+        crossV.position.set(0, 0, -3);
+        
+        cardGroup.add(crossH);
+        cardGroup.add(crossV);
     }
     
     createGeometricFrames(chartGroup, chartX, chartY, chartWidth, chartHeight) {
