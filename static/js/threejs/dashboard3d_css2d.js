@@ -500,6 +500,16 @@ class CSS2DDashboard {
                 100% { background-position: 100% 0; }
             }
             
+            @keyframes holographicFlicker {
+                0% { opacity: 1; filter: brightness(1); }
+                2% { opacity: 0.8; filter: brightness(1.2); }
+                4% { opacity: 1; filter: brightness(1); }
+                94% { opacity: 1; filter: brightness(1); }
+                96% { opacity: 0.7; filter: brightness(1.3); }
+                98% { opacity: 0.9; filter: brightness(1.1); }
+                100% { opacity: 1; filter: brightness(1); }
+            }
+            
             @keyframes chromaticShift {
                 0% { filter: hue-rotate(0deg); }
                 25% { filter: hue-rotate(2deg); }
@@ -1872,6 +1882,7 @@ class CSS2DDashboard {
         // Animate dynamic light brackets
         this.animateDynamicLightFrames();
         
+        
         // Animate growing fault duration line
         this.animateFaultDurationLine();
         
@@ -2653,13 +2664,18 @@ class CSS2DDashboard {
         const rightX = 380; // Right side of middle section
         
         // Tactical Targeting Card (left of Active Fault) - moved up 20px
-        this.createTacticalTargetingCard(chartGroup, 160, cardHeight, rightX - 230, 80);
+        this.createTacticalTargetingCard(chartGroup, 160, cardHeight, rightX - 223, 80);
         
         // Active Fault Overlay Card (top) - moved up 20px
         this.createActiveFaultCard(chartGroup, cardWidth, cardHeight, rightX, 80);
         
         // Last Downtime Event Card (bottom) - moved up 40px
         this.createLastDowntimeCard(chartGroup, cardWidth, cardHeight, rightX, -70);
+        
+        // Human Intervention Video Card - positioned below tactical targeting
+        this.createHumanInterventionVideoCard(chartGroup, 180, 240, rightX - 220, -110);
+        
+        
     }
     
     createActiveFaultCard(chartGroup, width, height, x, y) {
@@ -3185,6 +3201,501 @@ class CSS2DDashboard {
         downtimeObject.center.set(0.5, 0.5);
         chartGroup.add(downtimeObject);
     }
+    
+    createHumanInterventionVideoCard(chartGroup, width, height, x, y) {
+        const videoCardDiv = document.createElement('div');
+        videoCardDiv.style.width = width + 'px';
+        videoCardDiv.style.height = height + 'px';
+        videoCardDiv.style.background = 'rgba(0, 8, 15, 0.9)';
+        videoCardDiv.style.border = '2px solid #00d4ff';
+        videoCardDiv.style.borderRadius = '4px';
+        videoCardDiv.style.padding = '10px';
+        videoCardDiv.style.color = '#00d4ff';
+        videoCardDiv.style.fontFamily = '"Courier New", "Consolas", "Monaco", monospace';
+        videoCardDiv.style.boxSizing = 'border-box';
+        videoCardDiv.style.backdropFilter = 'blur(50px)';
+        videoCardDiv.style.overflow = 'hidden';
+        
+        // Header
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.marginBottom = '8px';
+        header.style.borderBottom = '1px solid rgba(0, 212, 255, 0.3)';
+        header.style.paddingBottom = '5px';
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = 'HUMAN INTERVENTION';
+        titleSpan.style.fontWeight = 'bold';
+        titleSpan.style.fontSize = '11px';
+        titleSpan.style.textShadow = '0 0 8px #00d4ff';
+        
+        const statusSpan = document.createElement('span');
+        statusSpan.textContent = 'ACTIVE';
+        statusSpan.style.color = '#ff4444';
+        statusSpan.style.fontSize = '10px';
+        statusSpan.style.fontWeight = 'bold';
+        statusSpan.style.textShadow = '0 0 6px #ff4444';
+        statusSpan.style.animation = 'pulseRed 1s infinite';
+        
+        header.appendChild(titleSpan);
+        header.appendChild(statusSpan);
+        
+        // Video container
+        const videoContainer = document.createElement('div');
+        videoContainer.style.width = '100%';
+        videoContainer.style.height = '190px';
+        videoContainer.style.position = 'relative';
+        videoContainer.style.border = '1px solid rgba(0, 212, 255, 0.5)';
+        videoContainer.style.borderRadius = '2px';
+        videoContainer.style.overflow = 'hidden';
+        videoContainer.style.background = 'rgba(0, 0, 0, 0.8)';
+        
+        // Use the actual reference image instead of recreating it
+        const humanImage = document.createElement('img');
+        humanImage.src = '/static/img/holographic-man-lines-only.png';
+        humanImage.style.width = '100%';
+        humanImage.style.height = '100%';
+        humanImage.style.objectFit = 'contain';
+        humanImage.style.filter = 'brightness(1.1) contrast(1.2)'; // Enhance visibility
+        humanImage.alt = 'Human Intervention Indicator';
+        
+        // Fallback if image doesn't load
+        humanImage.onerror = function() {
+            this.style.display = 'none';
+            const fallback = document.createElement('div');
+            fallback.style.width = '100%';
+            fallback.style.height = '100%';
+            fallback.style.display = 'flex';
+            fallback.style.alignItems = 'center';
+            fallback.style.justifyContent = 'center';
+            fallback.style.color = '#00d4ff';
+            fallback.style.fontSize = '12px';
+            fallback.textContent = 'HUMAN ACTIVE';
+            videoContainer.appendChild(fallback);
+        };
+        
+        videoContainer.appendChild(humanImage);
+        
+        videoCardDiv.appendChild(header);
+        videoCardDiv.appendChild(videoContainer);
+        
+        const videoCardObject = new CSS2DObject(videoCardDiv);
+        videoCardObject.position.set(x, y, 0);
+        videoCardObject.center.set(0.5, 0.5);
+        chartGroup.add(videoCardObject);
+    }
+    
+    
+    
+    // REMOVED: create3DHumanFigure method - not working properly
+    /* create3DHumanFigure(container) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', point.x);
+            circle.setAttribute('cy', point.y);
+            circle.setAttribute('r', size);
+            circle.setAttribute('style', bright ? brightDotStyle : dotStyle);
+            svg.appendChild(circle);
+        };
+        
+        // Function to connect two points with a razor-thin line
+        const connectPoints = (p1, p2, bright = false) => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', p1.x);
+            line.setAttribute('y1', p1.y);
+            line.setAttribute('x2', p2.x);
+            line.setAttribute('y2', p2.y);
+            line.setAttribute('style', bright ? brightLineStyle : lineStyle);
+            svg.appendChild(line);
+        };
+        
+        // Draw detailed constellation connections matching reference image
+        // Head structure with internal details
+        connectPoints(points.headTop, points.headFrontLeft);
+        connectPoints(points.headTop, points.headFrontRight);
+        connectPoints(points.headFrontLeft, points.headLeft);
+        connectPoints(points.headFrontRight, points.headRight);
+        connectPoints(points.headLeft, points.headBackLeft);
+        connectPoints(points.headRight, points.headBackRight);
+        connectPoints(points.headBackLeft, points.headBottom);
+        connectPoints(points.headBackRight, points.headBottom);
+        
+        // Face features
+        connectPoints(points.leftEye, points.nose);
+        connectPoints(points.rightEye, points.nose);
+        connectPoints(points.nose, points.mouth);
+        connectPoints(points.headFrontLeft, points.leftEye);
+        connectPoints(points.headFrontRight, points.rightEye);
+        
+        // Neck vertebrae
+        connectPoints(points.headBottom, points.neckTop);
+        connectPoints(points.neckTop, points.neckMid);
+        connectPoints(points.neckMid, points.neckBottom);
+        
+        // Shoulders and clavicles
+        connectPoints(points.neckBottom, points.leftClavicle);
+        connectPoints(points.neckBottom, points.rightClavicle);
+        connectPoints(points.leftClavicle, points.leftShoulder);
+        connectPoints(points.rightClavicle, points.rightShoulder);
+        connectPoints(points.leftClavicle, points.sternum);
+        connectPoints(points.rightClavicle, points.sternum);
+        
+        // Ribcage structure
+        connectPoints(points.sternum, points.leftRib1);
+        connectPoints(points.sternum, points.rightRib1);
+        connectPoints(points.leftRib1, points.leftRib2);
+        connectPoints(points.rightRib1, points.rightRib2);
+        connectPoints(points.leftRib2, points.leftRib3);
+        connectPoints(points.rightRib2, points.rightRib3);
+        connectPoints(points.leftRib3, points.leftRib4);
+        connectPoints(points.rightRib3, points.rightRib4);
+        
+        // Spine
+        connectPoints(points.sternum, points.spine1);
+        connectPoints(points.spine1, points.spine2);
+        connectPoints(points.spine2, points.spine3);
+        connectPoints(points.spine3, points.spine4);
+        connectPoints(points.spine4, points.sacrum);
+        
+        // Abdomen
+        connectPoints(points.leftRib4, points.leftAbdomen);
+        connectPoints(points.rightRib4, points.rightAbdomen);
+        connectPoints(points.leftAbdomen, points.navel);
+        connectPoints(points.rightAbdomen, points.navel);
+        connectPoints(points.leftAbdomen, points.leftPelvis);
+        connectPoints(points.rightAbdomen, points.rightPelvis);
+        
+        // Arms - detailed with musculature
+        connectPoints(points.leftShoulder, points.leftShoulderJoint);
+        connectPoints(points.leftShoulderJoint, points.leftUpperArm);
+        connectPoints(points.leftUpperArm, points.leftElbow);
+        connectPoints(points.leftElbow, points.leftForearm);
+        connectPoints(points.leftForearm, points.leftWrist);
+        connectPoints(points.leftWrist, points.leftPalm);
+        
+        // Left hand details
+        connectPoints(points.leftWrist, points.leftThumb);
+        connectPoints(points.leftPalm, points.leftFingers1);
+        connectPoints(points.leftPalm, points.leftFingers2);
+        connectPoints(points.leftPalm, points.leftFingers3);
+        
+        connectPoints(points.rightShoulder, points.rightShoulderJoint);
+        connectPoints(points.rightShoulderJoint, points.rightUpperArm);
+        connectPoints(points.rightUpperArm, points.rightElbow);
+        connectPoints(points.rightElbow, points.rightForearm);
+        connectPoints(points.rightForearm, points.rightWrist);
+        connectPoints(points.rightWrist, points.rightPalm);
+        
+        // Right hand details
+        connectPoints(points.rightWrist, points.rightThumb);
+        connectPoints(points.rightPalm, points.rightFingers1);
+        connectPoints(points.rightPalm, points.rightFingers2);
+        connectPoints(points.rightPalm, points.rightFingers3);
+        
+        // Pelvis structure
+        connectPoints(points.leftPelvis, points.sacrum);
+        connectPoints(points.rightPelvis, points.sacrum);
+        connectPoints(points.leftPelvis, points.leftHip);
+        connectPoints(points.rightPelvis, points.rightHip);
+        connectPoints(points.leftHip, points.pubis);
+        connectPoints(points.rightHip, points.pubis);
+        connectPoints(points.pubis, points.sacrum);
+        
+        // Legs - detailed musculature
+        connectPoints(points.leftHip, points.leftThighTop);
+        connectPoints(points.leftThighTop, points.leftThighMid);
+        connectPoints(points.leftThighMid, points.leftKneecap);
+        connectPoints(points.leftKneecap, points.leftKnee);
+        connectPoints(points.leftKnee, points.leftShinTop);
+        connectPoints(points.leftShinTop, points.leftShinMid);
+        connectPoints(points.leftShinMid, points.leftAnkle);
+        
+        // Left foot structure
+        connectPoints(points.leftAnkle, points.leftHeel);
+        connectPoints(points.leftHeel, points.leftArch);
+        connectPoints(points.leftArch, points.leftBall);
+        connectPoints(points.leftBall, points.leftToes);
+        connectPoints(points.leftAnkle, points.leftBall);
+        
+        connectPoints(points.rightHip, points.rightThighTop);
+        connectPoints(points.rightThighTop, points.rightThighMid);
+        connectPoints(points.rightThighMid, points.rightKneecap);
+        connectPoints(points.rightKneecap, points.rightKnee);
+        connectPoints(points.rightKnee, points.rightShinTop);
+        connectPoints(points.rightShinTop, points.rightShinMid);
+        connectPoints(points.rightShinMid, points.rightAnkle);
+        
+        // Right foot structure
+        connectPoints(points.rightAnkle, points.rightHeel);
+        connectPoints(points.rightHeel, points.rightArch);
+        connectPoints(points.rightArch, points.rightBall);
+        connectPoints(points.rightBall, points.rightToes);
+        connectPoints(points.rightAnkle, points.rightBall);
+        
+        // Draw all constellation points with varying sizes
+        // Smaller dots for detail points
+        Object.values(points).forEach(point => {
+            createStar(point, 0.5);
+        });
+        
+        // Brighter/larger stars at major joints and anatomical landmarks
+        createStar(points.headTop, 0.8, true);
+        createStar(points.sternum, 0.8, true);
+        createStar(points.leftShoulder, 0.7, true);
+        createStar(points.rightShoulder, 0.7, true);
+        createStar(points.leftElbow, 0.7, true);
+        createStar(points.rightElbow, 0.7, true);
+        createStar(points.leftWrist, 0.6, true);
+        createStar(points.rightWrist, 0.6, true);
+        createStar(points.leftHip, 0.7, true);
+        createStar(points.rightHip, 0.7, true);
+        createStar(points.leftKnee, 0.7, true);
+        createStar(points.rightKnee, 0.7, true);
+        createStar(points.leftAnkle, 0.6, true);
+        createStar(points.rightAnkle, 0.6, true);
+        createStar(points.sacrum, 0.7, true);
+        createStar(points.navel, 0.6, true);
+        
+        // Add some scattered background stars for cosmic effect
+        for (let i = 0; i < 20; i++) {
+            const star = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            star.setAttribute('cx', Math.random() * 100);
+            star.setAttribute('cy', Math.random() * 100);
+            star.setAttribute('r', Math.random() * 0.3 + 0.1);
+            star.setAttribute('style', 'fill:#ffffff; opacity:' + (Math.random() * 0.3 + 0.1));
+            svg.appendChild(star);
+        }
+        
+        // Holographic flicker animation
+        svg.style.animation = 'holographicFlicker 3s infinite';
+        
+        videoContainer.appendChild(svg);
+        
+        videoCardDiv.appendChild(header);
+        videoCardDiv.appendChild(videoContainer);
+        
+        const videoCardObject = new CSS2DObject(videoCardDiv);
+        videoCardObject.position.set(x, y, 0);
+        videoCardObject.center.set(0.5, 0.5);
+        chartGroup.add(videoCardObject);
+    }
+    
+    
+    
+    // REMOVED: create3DHumanFigure method - not working properly
+    /* create3DHumanFigure(container) {
+        console.log('Starting 3D figure creation in container:', container);
+        
+        // Create Three.js scene for the 3D human
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+        const renderer = new THREE.WebGLRenderer({ 
+            alpha: true, 
+            antialias: true,
+            powerPreference: "high-performance" 
+        });
+        
+        renderer.setSize(120, 120);
+        renderer.setClearColor(0x000000, 0);
+        renderer.shadowMap.enabled = false;
+        
+        // Style the canvas for visibility
+        renderer.domElement.style.border = '1px solid #00d4ff';
+        renderer.domElement.style.display = 'block';
+        
+        container.appendChild(renderer.domElement);
+        console.log('Renderer canvas added to container');
+        
+        // Create human figure from basic geometries - scaled up for visibility
+        const humanGroup = new THREE.Group();
+        
+        // Enhanced materials with wireframe option for debugging
+        const bodyMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x00d4ff, 
+            transparent: true, 
+            opacity: 1.0,
+            side: THREE.DoubleSide
+        });
+        const toolMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xffaa00,
+            transparent: true,
+            opacity: 1.0
+        });
+        
+        // Head (sphere) - much smaller scale
+        const headGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+        const head = new THREE.Mesh(headGeometry, bodyMaterial);
+        head.position.y = 0.25;
+        humanGroup.add(head);
+        
+        // Body (box) - much smaller
+        const bodyGeometry = new THREE.BoxGeometry(0.12, 0.2, 0.08);
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.y = 0.1;
+        humanGroup.add(body);
+        
+        // Arms (cylinders) - much smaller
+        const armGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.15);
+        
+        const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
+        leftArm.position.set(-0.1, 0.12, 0);
+        leftArm.rotation.z = Math.PI / 6;
+        humanGroup.add(leftArm);
+        
+        const rightArm = new THREE.Mesh(armGeometry, bodyMaterial);
+        rightArm.position.set(0.1, 0.12, 0);
+        rightArm.rotation.z = -Math.PI / 4;
+        humanGroup.add(rightArm);
+        
+        // Tool (wrench) in right hand - much smaller
+        const toolGeometry = new THREE.BoxGeometry(0.01, 0.06, 0.01);
+        const tool = new THREE.Mesh(toolGeometry, toolMaterial);
+        tool.position.set(0.13, 0.06, 0);
+        tool.rotation.z = -Math.PI / 4;
+        humanGroup.add(tool);
+        
+        // Legs (cylinders) - much smaller
+        const legGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.15);
+        
+        const leftLeg = new THREE.Mesh(legGeometry, bodyMaterial);
+        leftLeg.position.set(-0.04, -0.08, 0);
+        humanGroup.add(leftLeg);
+        
+        const rightLeg = new THREE.Mesh(legGeometry, bodyMaterial);
+        rightLeg.position.set(0.04, -0.08, 0);
+        humanGroup.add(rightLeg);
+        
+        // Add brighter lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0x00d4ff, 0.6);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+        
+        // Scale down the entire group to fit in viewport
+        humanGroup.scale.set(0.8, 0.8, 0.8);
+        scene.add(humanGroup);
+        
+        // Position camera closer and at better angle
+        camera.position.set(1, 0.5, 3);
+        camera.lookAt(0, 0, 0);
+        
+        // Store references for animation
+        let animationId;
+        
+        // Animation loop with error handling
+        const animate = () => {
+            try {
+                // Slow rotation to show 3D depth
+                humanGroup.rotation.y += 0.008;
+                
+                // Slight arm movement animation
+                const time = Date.now() * 0.001;
+                rightArm.rotation.z = -Math.PI / 4 + Math.sin(time * 2) * 0.15;
+                tool.rotation.z = -Math.PI / 4 + Math.sin(time * 2) * 0.15;
+                
+                renderer.render(scene, camera);
+                animationId = requestAnimationFrame(animate);
+            } catch (error) {
+                console.error('3D Human animation error:', error);
+            }
+        };
+        
+        // Start animation
+        animate();
+        console.log('3D Human animation started');
+        
+        // Store cleanup function
+        container.cleanup = () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            renderer.dispose();
+        };
+        
+        console.log('3D Human figure creation completed successfully');
+    } */
+    
+    /* addHumanoidToSprocketArea() {
+        // Add the humanoid directly to the main scene
+        if (this.scene) {
+            console.log('Adding humanoid to main scene');
+            
+            // Create a simple humanoid figure using basic geometries
+            const humanoidGroup = new THREE.Group();
+            
+            // Materials - use basic material for guaranteed visibility
+            const bodyMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x00d4ff,
+                side: THREE.DoubleSide
+            });
+            const toolMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffaa00,
+                side: THREE.DoubleSide
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+            const head = new THREE.Mesh(headGeometry, bodyMaterial);
+            head.position.y = 1.8;
+            humanoidGroup.add(head);
+            
+            // Body
+            const bodyGeometry = new THREE.BoxGeometry(0.5, 1.0, 0.3);
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.0;
+            humanoidGroup.add(body);
+            
+            // Arms
+            const armGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.6);
+            
+            const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
+            leftArm.position.set(-0.4, 1.2, 0);
+            leftArm.rotation.z = Math.PI / 6;
+            humanoidGroup.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(armGeometry, bodyMaterial);
+            rightArm.position.set(0.4, 1.2, 0);
+            rightArm.rotation.z = -Math.PI / 6;
+            humanoidGroup.add(rightArm);
+            
+            // Tool in hand
+            const toolGeometry = new THREE.BoxGeometry(0.05, 0.4, 0.05);
+            const tool = new THREE.Mesh(toolGeometry, toolMaterial);
+            tool.position.set(0.5, 0.9, 0);
+            humanoidGroup.add(tool);
+            
+            // Legs
+            const legGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.8);
+            
+            const leftLeg = new THREE.Mesh(legGeometry, bodyMaterial);
+            leftLeg.position.set(-0.15, 0.1, 0);
+            humanoidGroup.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(legGeometry, bodyMaterial);
+            rightLeg.position.set(0.15, 0.1, 0);
+            humanoidGroup.add(rightLeg);
+            
+            // Position the humanoid more centrally and visibly
+            humanoidGroup.position.set(5, 0, 2); // More centered position
+            humanoidGroup.scale.set(1.5, 1.5, 1.5); // Scale up for visibility
+            
+            // Add to the main scene
+            this.scene.add(humanoidGroup);
+            
+            // Store reference for animation
+            this.humanoidGroup = humanoidGroup;
+            
+            console.log('Humanoid successfully added to scene at position:', humanoidGroup.position);
+            console.log('Humanoid scale:', humanoidGroup.scale);
+            console.log('Scene children count:', this.scene.children.length);
+        } else {
+            console.error('ERROR: Scene not available for humanoid placement! Scene:', this.scene);
+        }
+    } */
+    
     
     createSprocketOverlayCards(bottomGroup) {
         console.log('CREATING SPROCKET OVERLAY CARDS - Above Machine Status');
