@@ -6,6 +6,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('new-dashboard/', views.new_dashboard, name='new_dashboard'),
     path('threejs-dashboard/', views.threejs_dashboard, name='threejs_dashboard'),  # Three.js version
+    path('threejs-dashboard-clone/', views.threejs_dashboard_clone, name='threejs_dashboard_clone'),  # Clone for development
     path('shifts/', views.dashboard, name='shifts'),  # Placeholder
     path('challenges/', views.dashboard, name='challenges'),  # Placeholder
     path('achievements/', views.dashboard, name='achievements'),  # Placeholder
