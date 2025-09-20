@@ -1,0 +1,103 @@
+# Dockerfile for Sparkplug B Agent
+# Production-ready container for OEE Dashboard Sparkplug B integration
+
+FROM python:3.11-slim AS base
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    libffi-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r sparkplug && useradd -r -g sparkplug sparkplug
+
+# Set work directory
+WORKDIR /app
+
+# Copy requirements first (for better caching)
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create directories and set permissions
+RUN mkdir -p /app/logs /app/config /app/data && \
+    chown -R sparkplug:sparkplug /app
+
+# Switch to non-root user
+USER sparkplug
+
+# Expose ports
+EXPOSE 8001 8002
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8002/health || exit 1
+
+# Default command
+CMD ["python", "manage.py", "sparkplug_agent", "--log-level", "INFO"]
+
+
+# Multi-stage build for production
+FROM base AS production
+
+# Install production dependencies only
+RUN pip install --no-cache-dir gunicorn[gevent]
+
+# Copy production configuration
+COPY docker/production/sparkplug_config.yaml /app/config/sparkplug_config.yaml
+COPY docker/production/entrypoint.sh /app/entrypoint.sh
+
+# Make entrypoint executable
+USER root
+RUN chmod +x /app/entrypoint.sh
+USER sparkplug
+
+# Production entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["python", "manage.py", "sparkplug_agent", "--config-file", "/app/config/sparkplug_config.yaml"]
+
+
+# Development stage
+FROM base AS development
+
+# Install development dependencies
+RUN pip install --no-cache-dir \
+    pytest \
+    pytest-asyncio \
+    pytest-cov \
+    black \
+    flake8 \
+    mypy
+
+# Copy development configuration
+COPY docker/development/sparkplug_config.yaml /app/config/sparkplug_config.yaml
+
+# Development command
+CMD ["python", "manage.py", "sparkplug_agent", "--config-file", "/app/config/sparkplug_config.yaml", "--log-level", "DEBUG"]
+
+
+# Testing stage
+FROM development AS testing
+
+# Copy test files
+COPY tests/ /app/tests/
+
+# Run tests
+RUN python -m pytest tests/ --cov=oee_analytics.sparkplug --cov-report=term-missing
+
+# Test command
+CMD ["python", "-m", "pytest", "tests/", "-v"]

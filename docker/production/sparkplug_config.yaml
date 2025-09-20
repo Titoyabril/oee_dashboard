@@ -1,0 +1,273 @@
+# Production Sparkplug B Agent Configuration
+version: "1.0"
+environment: "production"
+debug: false
+
+# MQTT Broker Configuration
+mqtt:
+  broker_host: "${MQTT_BROKER_HOST:-mqtt-broker}"
+  broker_port: ${MQTT_BROKER_PORT:-1883}
+  username: "${MQTT_USERNAME}"
+  password: "${MQTT_PASSWORD}"
+  client_id: "sparkplug_oee_prod"
+  
+  # TLS Configuration
+  use_tls: ${MQTT_USE_TLS:-true}
+  ca_cert_path: "/app/certs/ca.crt"
+  cert_path: "/app/certs/client.crt"
+  key_path: "/app/certs/client.key"
+  
+  # Connection Settings
+  keep_alive: 60
+  qos: 1
+  clean_session: true
+  reconnect_delay_min: 5.0
+  reconnect_delay_max: 300.0
+  connection_timeout: 30
+
+# Sparkplug Protocol Configuration
+sparkplug:
+  group_id: "${SPARKPLUG_GROUP_ID:-OEE_Production}"
+  node_id: "${SPARKPLUG_NODE_ID:-OEE_Node_01}"
+  subscribe_group_ids: 
+    - "${SPARKPLUG_GROUP_ID:-OEE_Production}"
+    - "Manufacturing"
+    - "Quality"
+  
+  # Message handling
+  max_queue_size: 50000
+  batch_size: 500
+  batch_timeout: 2.0
+  
+  # Birth/Death settings
+  birth_timeout: 600
+  death_timeout: 120
+  
+  # Command settings (disabled in production by default)
+  enable_commands: false
+  command_timeout: 60
+  command_rate_limit: 5
+
+# Data Processing Configuration
+processing:
+  enabled: true
+  batch_size: 1000
+  processing_interval: 0.5
+  
+  # Store and forward
+  store_raw_messages: true
+  enable_store_forward: true
+  max_stored_messages: 1000000
+  
+  # Data retention
+  data_retention_days: 365
+  cleanup_interval_hours: 6
+  
+  # Quality settings
+  quality_score_threshold: 75
+  duplicate_detection: true
+
+# Monitoring and Observability
+monitoring:
+  enabled: true
+  metrics_port: 8001
+  health_check_port: 8002
+  
+  # Logging
+  log_level: "INFO"
+  log_format: "structured"
+  log_file: "/app/logs/sparkplug_agent.log"
+  
+  # Alerting thresholds
+  connection_timeout_threshold: 600
+  message_lag_threshold: 120
+  error_rate_threshold: 2.0
+  
+  # Performance monitoring
+  enable_profiling: false
+  slow_query_threshold: 2.0
+
+# PLC Connections
+plc_connections:
+  - id: "production_line_1_plc"
+    type: "SIEMENS_S7"
+    host: "${PLC1_HOST:-192.168.1.100}"
+    port: 102
+    rack: 0
+    slot: 1
+    timeout: 10.0
+    enabled: true
+    plc_type: "S7_1500"
+    
+    tags:
+      - name: "cycle_start"
+        address: "DB1,0.0"
+        data_type: "BOOL"
+        description: "Production cycle start signal"
+        oee_metric_type: "CYCLE_START"
+        sparkplug_alias: 1001
+      
+      - name: "cycle_end"
+        address: "DB1,0.1"
+        data_type: "BOOL"
+        description: "Production cycle end signal"
+        oee_metric_type: "CYCLE_END"
+        sparkplug_alias: 1002
+      
+      - name: "good_parts_count"
+        address: "DB1,2"
+        data_type: "DINT"
+        description: "Good parts counter"
+        oee_metric_type: "PART_COUNT_GOOD"
+        sparkplug_alias: 1003
+      
+      - name: "scrap_parts_count"
+        address: "DB1,6"
+        data_type: "DINT"
+        description: "Scrap parts counter"
+        oee_metric_type: "PART_COUNT_SCRAP"
+        sparkplug_alias: 1004
+      
+      - name: "machine_temperature"
+        address: "DB1,10"
+        data_type: "REAL"
+        description: "Machine temperature"
+        units: "°C"
+        min_value: 0.0
+        max_value: 150.0
+        sparkplug_alias: 1005
+      
+      - name: "machine_pressure"
+        address: "DB1,14"
+        data_type: "REAL"
+        description: "Machine pressure"
+        units: "bar"
+        min_value: 0.0
+        max_value: 10.0
+        sparkplug_alias: 1006
+      
+      - name: "machine_speed"
+        address: "DB1,18"
+        data_type: "REAL"
+        description: "Machine speed"
+        units: "rpm"
+        min_value: 0.0
+        max_value: 3000.0
+        sparkplug_alias: 1007
+      
+      - name: "alarm_active"
+        address: "DB1,0.2"
+        data_type: "BOOL"
+        description: "Active alarm flag"
+        oee_metric_type: "ALARM_ACTIVE"
+        sparkplug_alias: 1008
+      
+      - name: "operator_id"
+        address: "DB1,22"
+        data_type: "STRING"
+        description: "Current operator ID"
+        oee_metric_type: "OPERATOR_ID"
+        sparkplug_alias: 1009
+
+  - id: "production_line_2_plc"
+    type: "ALLEN_BRADLEY"
+    host: "${PLC2_HOST:-192.168.1.101}"
+    port: 44818
+    timeout: 10.0
+    enabled: true
+    plc_family: "ControlLogix"
+    
+    tags:
+      - name: "ProductionLine.CycleStart"
+        address: "ProductionLine.CycleStart"
+        data_type: "BOOL"
+        description: "Production cycle start"
+        oee_metric_type: "CYCLE_START"
+        sparkplug_alias: 2001
+      
+      - name: "ProductionLine.CycleComplete"
+        address: "ProductionLine.CycleComplete"
+        data_type: "BOOL"
+        description: "Production cycle complete"
+        oee_metric_type: "CYCLE_END"
+        sparkplug_alias: 2002
+      
+      - name: "Counters.GoodParts"
+        address: "Counters.GoodParts"
+        data_type: "DINT"
+        description: "Good parts counter"
+        oee_metric_type: "PART_COUNT_GOOD"
+        sparkplug_alias: 2003
+      
+      - name: "Counters.ScrapParts"
+        address: "Counters.ScrapParts"
+        data_type: "DINT"
+        description: "Scrap parts counter"
+        oee_metric_type: "PART_COUNT_SCRAP"
+        sparkplug_alias: 2004
+      
+      - name: "Process.Temperature"
+        address: "Process.Temperature"
+        data_type: "REAL"
+        description: "Process temperature"
+        units: "°C"
+        sparkplug_alias: 2005
+      
+      - name: "Process.Pressure"
+        address: "Process.Pressure"
+        data_type: "REAL"
+        description: "Process pressure"
+        units: "bar"
+        sparkplug_alias: 2006
+
+# Metric Mappings for OEE Processing
+metric_mappings:
+  - machine_id: "MACHINE_001"
+    sparkplug_metric_name: "cycle_start"
+    oee_metric_type: "CYCLE_START"
+    quality_threshold: 192
+  
+  - machine_id: "MACHINE_001"
+    sparkplug_metric_name: "cycle_end"
+    oee_metric_type: "CYCLE_END"
+    quality_threshold: 192
+  
+  - machine_id: "MACHINE_001"
+    sparkplug_metric_name: "good_parts_count"
+    oee_metric_type: "PART_COUNT_GOOD"
+    quality_threshold: 192
+  
+  - machine_id: "MACHINE_001"
+    sparkplug_metric_name: "scrap_parts_count"
+    oee_metric_type: "PART_COUNT_SCRAP"
+    quality_threshold: 192
+  
+  - machine_id: "MACHINE_001"
+    sparkplug_metric_name: "machine_temperature"
+    oee_metric_type: "TEMPERATURE"
+    quality_threshold: 128
+  
+  - machine_id: "MACHINE_001"
+    sparkplug_metric_name: "alarm_active"
+    oee_metric_type: "ALARM_ACTIVE"
+    quality_threshold: 192
+  
+  - machine_id: "MACHINE_002"
+    sparkplug_metric_name: "ProductionLine.CycleStart"
+    oee_metric_type: "CYCLE_START"
+    quality_threshold: 192
+  
+  - machine_id: "MACHINE_002"
+    sparkplug_metric_name: "ProductionLine.CycleComplete"
+    oee_metric_type: "CYCLE_END"
+    quality_threshold: 192
+  
+  - machine_id: "MACHINE_002"
+    sparkplug_metric_name: "Counters.GoodParts"
+    oee_metric_type: "PART_COUNT_GOOD"
+    quality_threshold: 192
+  
+  - machine_id: "MACHINE_002"
+    sparkplug_metric_name: "Counters.ScrapParts"
+    oee_metric_type: "PART_COUNT_SCRAP"
+    quality_threshold: 192
