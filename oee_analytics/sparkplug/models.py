@@ -512,3 +512,218 @@ class SparkplugCommandAudit(models.Model):
     def __str__(self):
         target = self.device or self.node
         return f"CMD {self.command_id}: {target}/{self.metric_name}"
+
+
+class OPCUAServerConnection(models.Model):
+    """OPC-UA Server connection configuration"""
+
+    SECURITY_MODE_CHOICES = [
+        ('None', 'No Security'),
+        ('Sign', 'Sign Only'),
+        ('SignAndEncrypt', 'Sign and Encrypt'),
+    ]
+
+    AUTH_MODE_CHOICES = [
+        ('Anonymous', 'Anonymous'),
+        ('UsernamePassword', 'Username/Password'),
+        ('Certificate', 'Certificate'),
+    ]
+
+    STATUS_CHOICES = [
+        ('DISCONNECTED', 'Disconnected'),
+        ('CONNECTING', 'Connecting'),
+        ('CONNECTED', 'Connected'),
+        ('ERROR', 'Error'),
+        ('DISABLED', 'Disabled'),
+    ]
+
+    # Identification
+    server_id = models.CharField(max_length=100, unique=True, help_text="Unique server identifier")
+    name = models.CharField(max_length=200, help_text="Display name")
+    endpoint_url = models.URLField(max_length=500, help_text="OPC-UA endpoint URL")
+
+    # Status tracking
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DISCONNECTED')
+    enabled = models.BooleanField(default=True)
+    last_connection = models.DateTimeField(blank=True, null=True)
+    last_disconnection = models.DateTimeField(blank=True, null=True)
+    last_error = models.TextField(blank=True, null=True)
+
+    # Security settings
+    security_mode = models.CharField(max_length=20, choices=SECURITY_MODE_CHOICES, default='SignAndEncrypt')
+    security_policy = models.CharField(max_length=50, default='Basic256Sha256')
+    auth_mode = models.CharField(max_length=20, choices=AUTH_MODE_CHOICES, default='Certificate')
+
+    # Credentials
+    username = models.CharField(max_length=100, blank=True, null=True)
+    password = models.CharField(max_length=255, blank=True, null=True)  # Should be encrypted
+
+    # Certificates
+    client_cert_path = models.CharField(max_length=500, blank=True, null=True)
+    client_key_path = models.CharField(max_length=500, blank=True, null=True)
+    server_cert_path = models.CharField(max_length=500, blank=True, null=True)
+
+    # Connection settings
+    session_timeout_ms = models.IntegerField(default=30000)
+    keep_alive_interval_ms = models.IntegerField(default=10000)
+    reconnect_interval_s = models.IntegerField(default=5)
+    max_reconnect_attempts = models.IntegerField(default=-1, help_text="-1 for infinite")
+
+    # Subscription settings
+    publishing_interval_ms = models.IntegerField(default=250)
+    max_notifications_per_publish = models.IntegerField(default=1000)
+
+    # Performance
+    max_concurrent_reads = models.IntegerField(default=100)
+    batch_read_size = models.IntegerField(default=50)
+
+    # Metrics
+    total_subscriptions = models.IntegerField(default=0)
+    total_monitored_items = models.IntegerField(default=0)
+    total_data_changes = models.BigIntegerField(default=0)
+    total_errors = models.BigIntegerField(default=0)
+
+    # Metadata
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'opcua_server_connection'
+        indexes = [
+            models.Index(fields=['server_id']),
+            models.Index(fields=['status', 'enabled']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.endpoint_url})"
+
+
+class OPCUANodeMapping(models.Model):
+    """Mapping between OPC-UA nodes and Sparkplug metrics"""
+
+    DATA_TYPE_CHOICES = [
+        ('BOOL', 'Boolean'),
+        ('INT', 'Integer'),
+        ('DINT', 'Double Integer'),
+        ('REAL', 'Real/Float'),
+        ('LREAL', 'Long Real/Double'),
+        ('STRING', 'String'),
+        ('DATETIME', 'DateTime'),
+    ]
+
+    OEE_METRIC_CHOICES = [
+        ('CYCLE_START', 'Cycle Start'),
+        ('CYCLE_END', 'Cycle End'),
+        ('CYCLE_TIME', 'Cycle Time'),
+        ('PART_COUNT_GOOD', 'Good Parts'),
+        ('PART_COUNT_SCRAP', 'Scrap Parts'),
+        ('PART_COUNT_REWORK', 'Rework Parts'),
+        ('QUALITY_FLAG', 'Quality Flag'),
+        ('DOWNTIME_START', 'Downtime Start'),
+        ('DOWNTIME_END', 'Downtime End'),
+        ('DOWNTIME_REASON', 'Downtime Reason'),
+        ('MACHINE_STATUS', 'Machine Status'),
+        ('PRODUCTION_RATE', 'Production Rate'),
+        ('TEMPERATURE', 'Temperature'),
+        ('PRESSURE', 'Pressure'),
+        ('VIBRATION', 'Vibration'),
+        ('SPEED', 'Speed'),
+        ('ALARM_ACTIVE', 'Alarm Active'),
+    ]
+
+    # Association
+    server = models.ForeignKey(OPCUAServerConnection, on_delete=models.CASCADE)
+
+    # OPC-UA node
+    opcua_node_id = models.CharField(max_length=500, help_text="OPC-UA Node ID (e.g., ns=2;i=1001)")
+    display_name = models.CharField(max_length=200)
+    browse_path = models.CharField(max_length=1000, blank=True, null=True)
+
+    # Sparkplug mapping
+    sparkplug_metric_name = models.CharField(max_length=200)
+    sparkplug_node = models.ForeignKey(SparkplugNode, on_delete=models.SET_NULL, blank=True, null=True)
+    sparkplug_device = models.ForeignKey(SparkplugDevice, on_delete=models.SET_NULL, blank=True, null=True)
+
+    # Data processing
+    data_type = models.CharField(max_length=20, choices=DATA_TYPE_CHOICES, default='REAL')
+    scale_factor = models.FloatField(default=1.0)
+    offset = models.FloatField(default=0.0)
+    unit = models.CharField(max_length=50, blank=True, null=True)
+
+    # Subscription settings
+    sampling_interval_ms = models.IntegerField(default=250)
+    deadband_type = models.IntegerField(default=1, help_text="0=None, 1=Absolute, 2=Percent")
+    deadband_value = models.FloatField(default=0.0)
+    queue_size = models.IntegerField(default=10)
+    discard_oldest = models.BooleanField(default=True)
+
+    # OEE mapping
+    oee_metric_type = models.CharField(max_length=30, choices=OEE_METRIC_CHOICES, blank=True, null=True)
+    machine_id = models.CharField(max_length=100, blank=True, null=True)
+    line_id = models.CharField(max_length=100, blank=True, null=True)
+
+    # Status
+    enabled = models.BooleanField(default=True)
+    last_value = models.TextField(blank=True, null=True)
+    last_timestamp = models.DateTimeField(blank=True, null=True)
+    last_quality = models.IntegerField(default=100, help_text="0-100 quality score")
+
+    # Metadata
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'opcua_node_mapping'
+        unique_together = ('server', 'opcua_node_id')
+        indexes = [
+            models.Index(fields=['server', 'enabled']),
+            models.Index(fields=['sparkplug_metric_name']),
+            models.Index(fields=['oee_metric_type', 'machine_id']),
+        ]
+
+    def __str__(self):
+        return f"{self.display_name} ({self.opcua_node_id})"
+
+    def apply_scaling(self, value):
+        """Apply scale factor and offset to value"""
+        if value is None:
+            return None
+        try:
+            return (float(value) * self.scale_factor) + self.offset
+        except (ValueError, TypeError):
+            return value
+
+
+class OPCUASubscription(models.Model):
+    """OPC-UA subscription tracking"""
+
+    server = models.ForeignKey(OPCUAServerConnection, on_delete=models.CASCADE)
+    subscription_id = models.IntegerField()
+
+    # Settings
+    publishing_interval_ms = models.IntegerField(default=250)
+    keep_alive_count = models.IntegerField(default=10)
+    lifetime_count = models.IntegerField(default=3000)
+    max_notifications_per_publish = models.IntegerField(default=1000)
+    publishing_enabled = models.BooleanField(default=True)
+    priority = models.IntegerField(default=0)
+
+    # Status
+    active = models.BooleanField(default=False)
+    monitored_items_count = models.IntegerField(default=0)
+    last_sequence_number = models.BigIntegerField(default=0)
+
+    # Metrics
+    total_data_changes = models.BigIntegerField(default=0)
+    total_events = models.BigIntegerField(default=0)
+    total_errors = models.BigIntegerField(default=0)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'opcua_subscription'
+        unique_together = ('server', 'subscription_id')
+
+    def __str__(self):
+        return f"Subscription {self.subscription_id} on {self.server.name}"

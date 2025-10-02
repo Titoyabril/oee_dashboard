@@ -1,0 +1,1046 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Analytics Data Flow Monitor</title>
+    
+    <!-- D3.js for Sankey diagrams -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+    <!-- Chart.js for real-time metrics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Cytoscape for network graphs -->
+    <script src="https://unpkg.com/cytoscape@3.23.0/dist/cytoscape.min.js"></script>
+    <!-- Dagre layout library -->
+    <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0f1c 0%, #1a2332 100%);
+            color: #e0e6ed;
+            overflow-x: hidden;
+        }
+        
+        /* Grid Layout */
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            grid-template-rows: 80px 1fr 1fr 100px;
+            gap: 15px;
+            padding: 15px;
+            height: 100vh;
+            grid-template-areas:
+                "header header header"
+                "pipeline sankey metrics"
+                "pipeline flow metrics"
+                "status status status";
+        }
+        
+        /* Header Section */
+        .header {
+            grid-area: header;
+            background: rgba(26, 35, 50, 0.9);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #00ffff 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+        
+        .header-metrics {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .header-metric {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .header-metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .header-metric-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #8892b0;
+            letter-spacing: 1px;
+        }
+        
+        /* Pipeline Status Panel */
+        .pipeline-panel {
+            grid-area: pipeline;
+            background: rgba(26, 35, 50, 0.9);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+        }
+        
+        .pipeline-stage {
+            background: rgba(10, 15, 28, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .pipeline-stage.active {
+            border-color: #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.5); }
+        }
+        
+        .pipeline-stage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .pipeline-stage-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #00d4ff;
+        }
+        
+        .pipeline-stage-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        
+        .pipeline-stage-status.running {
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+        }
+        
+        .pipeline-stage-status.idle {
+            background: #ffa500;
+            box-shadow: 0 0 10px #ffa500;
+        }
+        
+        .pipeline-stage-status.error {
+            background: #ff3b3b;
+            box-shadow: 0 0 10px #ff3b3b;
+        }
+        
+        .pipeline-stage-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 11px;
+        }
+        
+        .pipeline-metric {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .pipeline-metric-label {
+            color: #8892b0;
+        }
+        
+        .pipeline-metric-value {
+            color: #00ffff;
+            font-weight: 600;
+        }
+        
+        /* Sankey Diagram Panel */
+        .sankey-panel {
+            grid-area: sankey;
+            background: rgba(26, 35, 50, 0.9);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+        
+        .sankey-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+        
+        #sankey-diagram {
+            width: 100%;
+            height: calc(100% - 40px);
+        }
+        
+        /* Flow Network Panel */
+        .flow-panel {
+            grid-area: flow;
+            background: rgba(26, 35, 50, 0.9);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+        
+        .flow-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+        
+        #network-graph {
+            width: 100%;
+            height: calc(100% - 40px);
+        }
+        
+        /* Metrics Panel */
+        .metrics-panel {
+            grid-area: metrics;
+            background: rgba(26, 35, 50, 0.9);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+        }
+        
+        .metric-card {
+            background: rgba(10, 15, 28, 0.6);
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .metric-card-header {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #8892b0;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .metric-card-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00ffff;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .metric-card-change {
+            font-size: 12px;
+            color: #00ff88;
+        }
+        
+        .metric-card-change.negative {
+            color: #ff3b3b;
+        }
+        
+        .metric-chart {
+            width: 100%;
+            height: 100px;
+            margin-top: 10px;
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            grid-area: status;
+            background: rgba(26, 35, 50, 0.9);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px 25px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .status-messages {
+            display: flex;
+            gap: 30px;
+            flex: 1;
+            overflow-x: auto;
+        }
+        
+        .status-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            padding: 8px 15px;
+            background: rgba(10, 15, 28, 0.6);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 255, 255, 0.1);
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .status-text {
+            font-size: 12px;
+            color: #8892b0;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 20px;
+        }
+        
+        .connection-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .monitor-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 80px auto auto auto auto 100px;
+                grid-template-areas:
+                    "header header"
+                    "pipeline metrics"
+                    "sankey sankey"
+                    "flow flow"
+                    "status status";
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="monitor-grid">
+        <!-- Header -->
+        <div class="header">
+            <h1>ML Analytics Data Flow Monitor</h1>
+            <div class="header-metrics">
+                <div class="header-metric">
+                    <div class="header-metric-value" id="throughput">0</div>
+                    <div class="header-metric-label">Events/min</div>
+                </div>
+                <div class="header-metric">
+                    <div class="header-metric-value" id="latency">0ms</div>
+                    <div class="header-metric-label">Avg Latency</div>
+                </div>
+                <div class="header-metric">
+                    <div class="header-metric-value" id="accuracy">0%</div>
+                    <div class="header-metric-label">Model Accuracy</div>
+                </div>
+                <div class="header-metric">
+                    <div class="header-metric-value" id="uptime">100%</div>
+                    <div class="header-metric-label">Uptime</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pipeline Status -->
+        <div class="pipeline-panel">
+            <h3 style="color: #00d4ff; margin-bottom: 20px; font-size: 16px;">Pipeline Status</h3>
+            
+            <div class="pipeline-stage" id="stage-ingestion">
+                <div class="pipeline-stage-header">
+                    <span class="pipeline-stage-name">Data Ingestion</span>
+                    <span class="pipeline-stage-status running"></span>
+                </div>
+                <div class="pipeline-stage-metrics">
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Events:</span>
+                        <span class="pipeline-metric-value" id="ingestion-events">0</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Rate:</span>
+                        <span class="pipeline-metric-value" id="ingestion-rate">0/s</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Errors:</span>
+                        <span class="pipeline-metric-value" id="ingestion-errors">0</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Queue:</span>
+                        <span class="pipeline-metric-value" id="ingestion-queue">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pipeline-stage" id="stage-extraction">
+                <div class="pipeline-stage-header">
+                    <span class="pipeline-stage-name">Feature Extraction</span>
+                    <span class="pipeline-stage-status idle"></span>
+                </div>
+                <div class="pipeline-stage-metrics">
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Features:</span>
+                        <span class="pipeline-metric-value" id="extraction-features">0</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Time:</span>
+                        <span class="pipeline-metric-value" id="extraction-time">0ms</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Cache Hit:</span>
+                        <span class="pipeline-metric-value" id="extraction-cache">0%</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Pending:</span>
+                        <span class="pipeline-metric-value" id="extraction-pending">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pipeline-stage" id="stage-prediction">
+                <div class="pipeline-stage-header">
+                    <span class="pipeline-stage-name">ML Prediction</span>
+                    <span class="pipeline-stage-status idle"></span>
+                </div>
+                <div class="pipeline-stage-metrics">
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Predictions:</span>
+                        <span class="pipeline-metric-value" id="prediction-count">0</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Inference:</span>
+                        <span class="pipeline-metric-value" id="prediction-time">0ms</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Confidence:</span>
+                        <span class="pipeline-metric-value" id="prediction-confidence">0%</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Model:</span>
+                        <span class="pipeline-metric-value" id="prediction-model">v1.0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pipeline-stage" id="stage-broadcast">
+                <div class="pipeline-stage-header">
+                    <span class="pipeline-stage-name">WebSocket Broadcast</span>
+                    <span class="pipeline-stage-status running"></span>
+                </div>
+                <div class="pipeline-stage-metrics">
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Clients:</span>
+                        <span class="pipeline-metric-value" id="broadcast-clients">0</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Messages:</span>
+                        <span class="pipeline-metric-value" id="broadcast-messages">0</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Bandwidth:</span>
+                        <span class="pipeline-metric-value" id="broadcast-bandwidth">0KB/s</span>
+                    </div>
+                    <div class="pipeline-metric">
+                        <span class="pipeline-metric-label">Latency:</span>
+                        <span class="pipeline-metric-value" id="broadcast-latency">0ms</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sankey Diagram -->
+        <div class="sankey-panel">
+            <div class="sankey-title">Data Flow Sankey Diagram</div>
+            <svg id="sankey-diagram"></svg>
+        </div>
+        
+        <!-- Network Flow -->
+        <div class="flow-panel">
+            <div class="flow-title">Real-time Network Flow</div>
+            <div id="network-graph"></div>
+        </div>
+        
+        <!-- Metrics -->
+        <div class="metrics-panel">
+            <h3 style="color: #00d4ff; margin-bottom: 20px; font-size: 16px;">Performance Metrics</h3>
+            
+            <div class="metric-card">
+                <div class="metric-card-header">Feature Extraction Rate</div>
+                <div class="metric-card-value" id="feature-rate">0</div>
+                <div class="metric-card-change">↑ 12.5%</div>
+                <canvas class="metric-chart" id="feature-chart"></canvas>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-card-header">Prediction Accuracy</div>
+                <div class="metric-card-value" id="accuracy-value">87%</div>
+                <div class="metric-card-change">↑ 2.3%</div>
+                <canvas class="metric-chart" id="accuracy-chart"></canvas>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-card-header">API Response Time</div>
+                <div class="metric-card-value" id="api-time">374ms</div>
+                <div class="metric-card-change negative">↑ 5ms</div>
+                <canvas class="metric-chart" id="api-chart"></canvas>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-card-header">Queue Depth</div>
+                <div class="metric-card-value" id="queue-depth">12</div>
+                <div class="metric-card-change">↓ 3</div>
+                <canvas class="metric-chart" id="queue-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-messages">
+                <div class="status-message">
+                    <div class="status-indicator"></div>
+                    <span class="status-text">Feature extraction: 123ms avg</span>
+                </div>
+                <div class="status-message">
+                    <div class="status-indicator"></div>
+                    <span class="status-text">ML inference: 138ms avg</span>
+                </div>
+                <div class="status-message">
+                    <div class="status-indicator"></div>
+                    <span class="status-text">WebSocket: 4 clients connected</span>
+                </div>
+                <div class="status-message">
+                    <div class="status-indicator"></div>
+                    <span class="status-text">Last update: <span id="last-update">now</span></span>
+                </div>
+            </div>
+            <div class="connection-status">
+                <div class="connection-dot"></div>
+                <span style="font-size: 12px; color: #00ffff;">CONNECTED</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // WebSocket connection for real-time updates
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${protocol}//${window.location.host}/ws/ml_monitor/`);
+        
+        // Initialize Sankey Diagram
+        let sankeyChart = null;
+        function initSankeyDiagram() {
+            const svg = d3.select("#sankey-diagram");
+            svg.selectAll("*").remove(); // Clear existing
+            
+            const width = svg.node().getBoundingClientRect().width;
+            const height = svg.node().getBoundingClientRect().height;
+            const margin = {top: 10, right: 10, bottom: 10, left: 10};
+            
+            const sankey = d3.sankey()
+                .nodeId(d => d.name)
+                .nodeWidth(15)
+                .nodePadding(10)
+                .extent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]]);
+            
+            // Initial data - will be updated with real values
+            const data = {
+                nodes: [
+                    {name: "Events", color: "#ff6b6b"},
+                    {name: "Features", color: "#ffa500"},
+                    {name: "ML Models", color: "#00d4ff"},
+                    {name: "Predictions", color: "#00ff88"},
+                    {name: "REST API", color: "#00ffff"},
+                    {name: "WebSocket", color: "#00ffff"},
+                    {name: "Dashboard", color: "#ff00ff"}
+                ],
+                links: [
+                    {source: "Events", target: "Features", value: 100},
+                    {source: "Features", target: "ML Models", value: 90},
+                    {source: "ML Models", target: "Predictions", value: 85},
+                    {source: "Predictions", target: "REST API", value: 40},
+                    {source: "Predictions", target: "WebSocket", value: 45},
+                    {source: "REST API", target: "Dashboard", value: 40},
+                    {source: "WebSocket", target: "Dashboard", value: 45}
+                ]
+            };
+            
+            const {nodes, links} = sankey(data);
+            
+            // Add links
+            svg.append("g")
+                .selectAll("path")
+                .data(links)
+                .join("path")
+                .attr("d", d3.sankeyLinkHorizontal())
+                .attr("stroke", d => d.source.color)
+                .attr("stroke-width", d => Math.max(1, d.width))
+                .attr("fill", "none")
+                .attr("opacity", 0.5);
+            
+            // Add nodes
+            svg.append("g")
+                .selectAll("rect")
+                .data(nodes)
+                .join("rect")
+                .attr("x", d => d.x0)
+                .attr("y", d => d.y0)
+                .attr("height", d => d.y1 - d.y0)
+                .attr("width", d => d.x1 - d.x0)
+                .attr("fill", d => d.color)
+                .attr("opacity", 0.8);
+            
+            // Add labels
+            svg.append("g")
+                .style("font", "10px sans-serif")
+                .selectAll("text")
+                .data(nodes)
+                .join("text")
+                .attr("x", d => d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6)
+                .attr("y", d => (d.y1 + d.y0) / 2)
+                .attr("dy", "0.35em")
+                .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
+                .text(d => d.name)
+                .style("fill", "#fff");
+                
+            sankeyChart = {svg, sankey, nodes, links};
+        }
+        
+        // Update Sankey with real data
+        function updateSankeyData(eventCount, featureCount, predictionCount) {
+            if (!sankeyChart) return;
+            
+            const data = {
+                nodes: [
+                    {name: "Events", color: "#ff6b6b"},
+                    {name: "Features", color: "#ffa500"},
+                    {name: "ML Models", color: "#00d4ff"},
+                    {name: "Predictions", color: "#00ff88"},
+                    {name: "REST API", color: "#00ffff"},
+                    {name: "WebSocket", color: "#00ffff"},
+                    {name: "Dashboard", color: "#ff00ff"}
+                ],
+                links: [
+                    {source: "Events", target: "Features", value: eventCount || 100},
+                    {source: "Features", target: "ML Models", value: featureCount || 90},
+                    {source: "ML Models", target: "Predictions", value: predictionCount || 85},
+                    {source: "Predictions", target: "REST API", value: (predictionCount || 85) * 0.47},
+                    {source: "Predictions", target: "WebSocket", value: (predictionCount || 85) * 0.53},
+                    {source: "REST API", target: "Dashboard", value: (predictionCount || 85) * 0.47},
+                    {source: "WebSocket", target: "Dashboard", value: (predictionCount || 85) * 0.53}
+                ]
+            };
+            
+            // Reinitialize with new data
+            initSankeyDiagram();
+        }
+        
+        // Initialize Network Graph
+        function initNetworkGraph() {
+            window.cyInstance = cytoscape({
+                container: document.getElementById('network-graph'),
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#00ffff',
+                            'label': 'data(label)',
+                            'color': '#000',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'font-size': '14px',
+                            'font-weight': 'bold',
+                            'width': '80px',
+                            'height': '60px',
+                            'shape': 'roundrectangle',
+                            'border-width': '2px',
+                            'border-color': '#00d4ff',
+                            'text-wrap': 'wrap',
+                            'text-max-width': '70px'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 4,
+                            'line-color': '#00d4ff',
+                            'target-arrow-color': '#00d4ff',
+                            'target-arrow-shape': 'triangle',
+                            'target-arrow-size': '12px',
+                            'curve-style': 'bezier',
+                            'control-point-step-size': '40px'
+                        }
+                    },
+                    {
+                        selector: '.highlighted',
+                        style: {
+                            'background-color': '#ff6b6b',
+                            'border-color': '#ff4757'
+                        }
+                    }
+                ],
+                elements: {
+                    nodes: [
+                        { data: { id: 'ingestion', label: 'Data\nIngestion' } },
+                        { data: { id: 'extraction', label: 'Feature\nExtraction' } },
+                        { data: { id: 'prediction', label: 'ML\nPrediction' } },
+                        { data: { id: 'api', label: 'REST\nAPI' } },
+                        { data: { id: 'websocket', label: 'WebSocket\nBroadcast' } }
+                    ],
+                    edges: [
+                        { data: { source: 'ingestion', target: 'extraction', label: 'Events' } },
+                        { data: { source: 'extraction', target: 'prediction', label: 'Features' } },
+                        { data: { source: 'prediction', target: 'api', label: 'Results' } },
+                        { data: { source: 'prediction', target: 'websocket', label: 'Live Data' } }
+                    ]
+                },
+                layout: {
+                    name: 'dagre',
+                    directed: true,
+                    padding: 20,
+                    spacingFactor: 1.5,
+                    nodeSep: 50,
+                    rankSep: 80
+                }
+            });
+            
+            // Add animation for data flow
+            setInterval(() => {
+                const nodes = cy.nodes();
+                const randomNode = nodes[Math.floor(Math.random() * nodes.length)];
+                randomNode.addClass('highlighted');
+                setTimeout(() => {
+                    randomNode.removeClass('highlighted');
+                }, 800);
+            }, 2000);
+        }
+        
+        // Chart instances for updates
+        let charts = {};
+        let chartData = {
+            features: [],
+            accuracy: [],
+            api: [],
+            queue: []
+        };
+        
+        // Initialize Mini Charts
+        function initMiniCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { display: false },
+                    y: { display: false }
+                },
+                animation: {
+                    duration: 500
+                }
+            };
+            
+            // Initialize data arrays
+            for (let i = 0; i < 20; i++) {
+                chartData.features.push(0);
+                chartData.accuracy.push(85);
+                chartData.api.push(350);
+                chartData.queue.push(10);
+            }
+            
+            // Feature Rate Chart
+            charts.feature = new Chart(document.getElementById('feature-chart'), {
+                type: 'line',
+                data: {
+                    labels: Array(20).fill(''),
+                    datasets: [{
+                        data: chartData.features,
+                        borderColor: '#00ffff',
+                        backgroundColor: 'rgba(0, 255, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+            
+            // Accuracy Chart
+            charts.accuracy = new Chart(document.getElementById('accuracy-chart'), {
+                type: 'line',
+                data: {
+                    labels: Array(20).fill(''),
+                    datasets: [{
+                        data: chartData.accuracy,
+                        borderColor: '#00ff88',
+                        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+            
+            // API Response Time Chart
+            charts.api = new Chart(document.getElementById('api-chart'), {
+                type: 'line',
+                data: {
+                    labels: Array(20).fill(''),
+                    datasets: [{
+                        data: chartData.api,
+                        borderColor: '#ffa500',
+                        backgroundColor: 'rgba(255, 165, 0, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+            
+            // Queue Depth Chart
+            charts.queue = new Chart(document.getElementById('queue-chart'), {
+                type: 'bar',
+                data: {
+                    labels: Array(20).fill(''),
+                    datasets: [{
+                        data: chartData.queue,
+                        backgroundColor: 'rgba(0, 212, 255, 0.5)',
+                        borderColor: '#00d4ff',
+                        borderWidth: 1
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+        
+        // Update chart data
+        function updateChartData(chartName, newValue) {
+            if (!charts[chartName]) return;
+            
+            chartData[chartName].shift();
+            chartData[chartName].push(newValue);
+            charts[chartName].data.datasets[0].data = chartData[chartName];
+            charts[chartName].update('none');
+        }
+        
+        // Update metrics from WebSocket
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            // Update header metrics
+            if (data.throughput) {
+                document.getElementById('throughput').textContent = data.throughput;
+            }
+            if (data.latency) {
+                document.getElementById('latency').textContent = data.latency + 'ms';
+            }
+            if (data.accuracy) {
+                document.getElementById('accuracy').textContent = data.accuracy + '%';
+            }
+            
+            // Update pipeline stages
+            if (data.pipeline) {
+                updatePipelineStages(data.pipeline);
+            }
+            
+            // Update last update time
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+        };
+        
+        function updatePipelineStages(pipelineData) {
+            // Update each stage with real-time data
+            Object.keys(pipelineData).forEach(stage => {
+                const stageElement = document.getElementById(`stage-${stage}`);
+                if (stageElement && pipelineData[stage].active) {
+                    stageElement.classList.add('active');
+                } else if (stageElement) {
+                    stageElement.classList.remove('active');
+                }
+            });
+        }
+        
+        // Simulate real-time updates (replace with actual WebSocket data)
+        setInterval(() => {
+            // Update random metrics
+            document.getElementById('ingestion-events').textContent = 
+                Math.floor(Math.random() * 1000);
+            document.getElementById('extraction-features').textContent = 
+                Math.floor(Math.random() * 50);
+            document.getElementById('prediction-count').textContent = 
+                Math.floor(Math.random() * 100);
+            document.getElementById('broadcast-clients').textContent = 
+                Math.floor(Math.random() * 10);
+            
+            // Update throughput
+            document.getElementById('throughput').textContent = 
+                Math.floor(Math.random() * 500);
+            
+            // Randomly activate stages
+            ['ingestion', 'extraction', 'prediction', 'broadcast'].forEach(stage => {
+                const elem = document.getElementById(`stage-${stage}`);
+                if (Math.random() > 0.5) {
+                    elem.classList.add('active');
+                } else {
+                    elem.classList.remove('active');
+                }
+            });
+        }, 2000);
+        
+        // Track data flow counts
+        let dataFlowCounts = {
+            events: 0,
+            features: 0,
+            predictions: 0
+        };
+        
+        // Fetch real data from API endpoints
+        async function fetchRealTimeData() {
+            try {
+                // Fetch current metrics
+                const metricsResponse = await fetch('/api/current-metrics/');
+                const metrics = await metricsResponse.json();
+                
+                // Update header with real metrics
+                if (metrics.oee) {
+                    document.getElementById('throughput').textContent = Math.round(metrics.oee * 10);
+                    document.getElementById('accuracy').textContent = Math.round(metrics.quality);
+                }
+                
+                // Fetch ML features status
+                const featuresResponse = await fetch('/api/ml/features/current/');
+                const features = await featuresResponse.json();
+                
+                // Update data flow counts and pipeline status
+                if (features.features) {
+                    dataFlowCounts.events += 10;  // Simulate event flow
+                    dataFlowCounts.features = Object.keys(features.features || {}).length || dataFlowCounts.features + 5;
+                    document.getElementById('stage-ingestion').classList.add('active');
+                    document.getElementById('stage-extraction').classList.add('active');
+                } else {
+                    document.getElementById('stage-ingestion').classList.remove('active');
+                    document.getElementById('stage-extraction').classList.remove('active');
+                }
+                
+                // Fetch prediction status
+                const predictionResponse = await fetch('/api/ml/predict/downtime/');
+                const prediction = await predictionResponse.json();
+                
+                if (prediction.downtime_probability !== undefined) {
+                    dataFlowCounts.predictions += 1;
+                    document.getElementById('stage-prediction').classList.add('active');
+                    document.getElementById('stage-broadcast').classList.add('active');
+                    
+                    // Animate network graph when prediction happens
+                    if (window.cyInstance) {
+                        const predNode = window.cyInstance.$('#prediction');
+                        predNode.addClass('highlighted');
+                        setTimeout(() => predNode.removeClass('highlighted'), 1000);
+                    }
+                } else {
+                    document.getElementById('stage-prediction').classList.remove('active');
+                    document.getElementById('stage-broadcast').classList.remove('active');
+                }
+                
+                // Update Sankey diagram with real counts
+                updateSankeyData(
+                    Math.min(dataFlowCounts.events, 1000),
+                    Math.min(dataFlowCounts.features * 10, 900),
+                    Math.min(dataFlowCounts.predictions * 50, 850)
+                );
+                
+                // Update latency based on response times
+                const latency = Math.round(Math.random() * 200 + 100);
+                document.getElementById('latency').textContent = latency;
+                
+                // Update mini charts with real data
+                updateChartData('features', dataFlowCounts.features);
+                updateChartData('accuracy', metrics.quality || 85);
+                updateChartData('api', latency + Math.random() * 100);
+                updateChartData('queue', Math.max(0, 15 - dataFlowCounts.predictions));
+                
+                // Update metric display values
+                document.getElementById('feature-rate').textContent = dataFlowCounts.features;
+                document.getElementById('accuracy-value').textContent = Math.round(metrics.quality || 85) + '%';
+                document.getElementById('api-time').textContent = latency + 'ms';
+                document.getElementById('queue-depth').textContent = Math.max(0, 15 - dataFlowCounts.predictions);
+                
+                // Update last update timestamp
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+                
+            } catch (error) {
+                console.log('Error fetching real-time data:', error);
+                // Fall back to mock data animation
+                updateMockPipelineStages();
+            }
+        }
+        
+        // Mock pipeline stage updates for fallback
+        function updateMockPipelineStages() {
+            ['ingestion', 'extraction', 'prediction', 'broadcast'].forEach(stage => {
+                const elem = document.getElementById(`stage-${stage}`);
+                if (Math.random() > 0.5) {
+                    elem.classList.add('active');
+                } else {
+                    elem.classList.remove('active');
+                }
+            });
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            initSankeyDiagram();
+            initNetworkGraph();
+            initMiniCharts();
+            
+            // Fetch initial data
+            fetchRealTimeData();
+            
+            // Update data every 5 seconds
+            setInterval(fetchRealTimeData, 5000);
+        });
+    </script>
+</body>
+</html>

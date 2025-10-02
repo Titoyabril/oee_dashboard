@@ -1,0 +1,247 @@
+# Stream Processing Service Configuration Example
+#
+# This configuration defines the complete stream processing pipeline:
+# MQTT → Sparkplug Decoder → Normalizer → OEE Calculator / Fault State Machine → Storage
+
+processor:
+  # MQTT Broker connection
+  mqtt_broker: "mqtt.production.local"
+  mqtt_port: 8883
+  mqtt_client_id: "stream_processor_001"
+  mqtt_username: "analytics_stream"
+  mqtt_password: "${MQTT_PASSWORD}"  # Use environment variable
+
+  # mTLS certificates
+  mqtt_ca_cert: "/etc/oee/certs/ca.crt"
+  mqtt_client_cert: "/etc/oee/certs/analytics_stream.crt"
+  mqtt_client_key: "/etc/oee/certs/analytics_stream.key"
+
+  # Topics to subscribe (optional - defaults to all Sparkplug)
+  sparkplug_topics:
+    - "spBv1.0/+/NBIRTH/+"
+    - "spBv1.0/+/NDEATH/+"
+    - "spBv1.0/+/DBIRTH/+/+"
+    - "spBv1.0/+/DDEATH/+/+"
+    - "spBv1.0/+/NDATA/+"
+    - "spBv1.0/+/DDATA/+/+"
+
+  # Processing configuration
+  oee_window_minutes: 60  # Rolling window for OEE calculation
+  fault_dedup_seconds: 300  # Deduplication window (5 minutes)
+
+# Processing rules and tag mappings
+processing:
+  # Tag mappings: Map Sparkplug tags to canonical signal types
+  tag_mappings:
+    # Site 01, Line A, Machine 1
+    - source_tag: "/Devices/LineA/M1/ProdCount"
+      signal_type: "counter.total"
+      machine_id: "SITE01-LINEA-M1"
+      line_id: "SITE01-LINEA"
+      site_id: "SITE01"
+      source_unit: "count"
+      target_unit: "count"
+      scale_factor: 1.0
+      offset: 0.0
+      deadband_absolute: null  # No deadband for counters
+      min_quality: 192  # GOOD quality only
+      description: "Total production count"
+
+    - source_tag: "/Devices/LineA/M1/GoodCount"
+      signal_type: "counter.good"
+      machine_id: "SITE01-LINEA-M1"
+      line_id: "SITE01-LINEA"
+      site_id: "SITE01"
+      source_unit: "count"
+      target_unit: "count"
+      scale_factor: 1.0
+      offset: 0.0
+      min_quality: 192
+      description: "Good parts count"
+
+    - source_tag: "/Devices/LineA/M1/ScrapCount"
+      signal_type: "counter.scrap"
+      machine_id: "SITE01-LINEA-M1"
+      line_id: "SITE01-LINEA"
+      site_id: "SITE01"
+      source_unit: "count"
+      target_unit: "count"
+      scale_factor: 1.0
+      offset: 0.0
+      min_quality: 192
+      description: "Scrap parts count"
+
+    - source_tag: "/Devices/LineA/M1/CycleTime"
+      signal_type: "cycle.time_actual"
+      machine_id: "SITE01-LINEA-M1"
+      line_id: "SITE01-LINEA"
+      site_id: "SITE01"
+      source_unit: "ms"
+      target_unit: "seconds"
+      scale_factor: 0.001  # Convert ms to seconds
+      offset: 0.0
+      deadband_percent: 5.0  # Filter noise <5% change
+      min_quality: 192
+      description: "Actual cycle time"
+
+    - source_tag: "/Devices/LineA/M1/RunState"
+      signal_type: "state.run"
+      machine_id: "SITE01-LINEA-M1"
+      line_id: "SITE01-LINEA"
+      site_id: "SITE01"
+      source_unit: "boolean"
+      target_unit: "boolean"
+      min_quality: 192
+      description: "Machine running state"
+
+    - source_tag: "/Devices/LineA/M1/FaultCode"
+      signal_type: "fault.code"
+      machine_id: "SITE01-LINEA-M1"
+      line_id: "SITE01-LINEA"
+      site_id: "SITE01"
+      source_unit: "code"
+      target_unit: "code"
+      min_quality: 192
+      description: "Active fault code"
+
+    - source_tag: "/Devices/LineA/M1/FaultActive"
+      signal_type: "fault.active"
+      machine_id: "SITE01-LINEA-M1"
+      line_id: "SITE01-LINEA"
+      site_id: "SITE01"
+      source_unit: "boolean"
+      target_unit: "boolean"
+      min_quality: 192
+      description: "Fault active flag"
+
+    # Site 01, Line A, Machine 2
+    - source_tag: "/Devices/LineA/M2/ProdCount"
+      signal_type: "counter.total"
+      machine_id: "SITE01-LINEA-M2"
+      line_id: "SITE01-LINEA"
+      site_id: "SITE01"
+      source_unit: "count"
+      target_unit: "count"
+      min_quality: 192
+      description: "Total production count"
+
+    - source_tag: "/Devices/LineA/M2/Temperature"
+      signal_type: "temperature"
+      machine_id: "SITE01-LINEA-M2"
+      line_id: "SITE01-LINEA"
+      site_id: "SITE01"
+      source_unit: "fahrenheit"
+      target_unit: "celsius"
+      scale_factor: 0.5556  # F to C conversion
+      offset: -17.78
+      deadband_absolute: 2.0  # Filter changes <2°C
+      min_quality: 192
+      description: "Machine temperature"
+
+    - source_tag: "/Devices/LineA/M2/Pressure"
+      signal_type: "pressure"
+      machine_id: "SITE01-LINEA-M2"
+      line_id: "SITE01-LINEA"
+      site_id: "SITE01"
+      source_unit: "psi"
+      target_unit: "bar"
+      scale_factor: 0.0689476  # PSI to bar
+      offset: 0.0
+      deadband_absolute: 0.5  # Filter changes <0.5 bar
+      min_quality: 192
+      description: "Hydraulic pressure"
+
+  # Ideal cycle times (seconds) for performance calculation
+  ideal_cycle_times:
+    "SITE01-LINEA-M1": 12.5  # 12.5 seconds per part
+    "SITE01-LINEA-M2": 8.0   # 8 seconds per part
+    "SITE01-LINEA-M3": 15.0  # 15 seconds per part
+    "SITE01-LINEB-M1": 10.0
+    "SITE01-LINEB-M2": 10.0
+
+# Output configuration
+output:
+  # TimescaleDB for telemetry
+  timescaledb:
+    enabled: true
+    host: "timescaledb.local"
+    port: 5432
+    database: "oee_analytics"
+    user: "oeeuser"
+    password: "${TIMESCALE_PASSWORD}"
+    connection_pool_size: 10
+    batch_size: 100  # Batch inserts for performance
+    flush_interval_seconds: 5
+
+  # Postgres for events
+  postgres:
+    enabled: true
+    host: "postgres.local"
+    port: 5432
+    database: "oee_events"
+    user: "oeeuser"
+    password: "${POSTGRES_PASSWORD}"
+    connection_pool_size: 5
+
+  # Kafka (optional - for downstream consumers)
+  kafka:
+    enabled: false
+    bootstrap_servers:
+      - "kafka1.local:9092"
+      - "kafka2.local:9092"
+      - "kafka3.local:9092"
+    topics:
+      telemetry: "oee.telemetry"
+      oee_results: "oee.calculations"
+      faults: "oee.faults"
+    compression: "gzip"
+
+  # MQTT republish (optional - for dashboards)
+  mqtt_republish:
+    enabled: true
+    broker: "mqtt.production.local"
+    port: 8883
+    topics:
+      oee_results: "oee/results/{machine_id}"
+      faults: "oee/faults/{machine_id}"
+    qos: 1
+    retain: false
+
+# Monitoring and health
+monitoring:
+  # Prometheus metrics endpoint
+  prometheus:
+    enabled: true
+    port: 9100
+    path: "/metrics"
+
+  # Health check endpoint
+  health_check:
+    enabled: true
+    port: 9100
+    path: "/health"
+
+  # Logging
+  logging:
+    level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+    format: "json"  # json or text
+    output: "stdout"  # stdout, file, syslog
+
+    # Optional: structured logging to Loki
+    loki:
+      enabled: false
+      url: "http://loki.local:3100/loki/api/v1/push"
+      labels:
+        app: "stream_processor"
+        environment: "production"
+
+# Cleanup and maintenance
+maintenance:
+  # Clean up stale alias cache entries
+  alias_cache_cleanup_interval_seconds: 3600  # 1 hour
+
+  # Clean up resolved faults from memory
+  resolved_fault_retention_hours: 24
+
+  # Recent signature cache cleanup
+  signature_cache_cleanup_interval_seconds: 600  # 10 minutes

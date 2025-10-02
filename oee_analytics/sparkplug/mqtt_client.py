@@ -22,10 +22,11 @@ from eclipse_tahu.core.sparkplug_b import SparkplugMessageBuilder, SparkplugMess
 from prometheus_client import Counter, Histogram, Gauge
 
 from .models import (
-    SparkplugNode, SparkplugDevice, SparkplugMetric, 
+    SparkplugNode, SparkplugDevice, SparkplugMetric,
     SparkplugEventRaw, SparkplugMetricHistory, SparkplugNodeState,
     SparkplugCommandAudit
 )
+from ..edge.cache import EdgeCache, CacheConfig
 
 
 # Prometheus metrics
@@ -73,7 +74,16 @@ class SparkplugConfig:
     batch_size: int = 100
     batch_timeout: float = 1.0
     enable_compression: bool = False
-    
+
+    # Store-and-forward settings
+    enable_store_forward: bool = True
+    store_forward_max_size_mb: int = 500
+
+    # Backpressure settings
+    enable_backpressure: bool = True
+    backpressure_threshold: int = 1000  # Queue size to trigger backpressure
+    backpressure_resume_threshold: int = 500  # Queue size to resume normal operation
+
     # Birth/Death settings
     birth_timeout: int = 300  # Seconds before considering node dead
     death_timeout: int = 60   # Seconds to wait for death message
@@ -97,39 +107,57 @@ class SparkplugMQTTClient:
     def __init__(self, config: SparkplugConfig, logger: Optional[logging.Logger] = None):
         self.config = config
         self.logger = logger or logging.getLogger(__name__)
-        
+
         # MQTT client
         self.mqtt_client: Optional[mqtt.Client] = None
         self.connected = False
         self.connection_event = threading.Event()
-        
+
         # Message handling
         self.message_queue = Queue(maxsize=config.max_queue_size)
         self.processing_thread: Optional[threading.Thread] = None
         self.shutdown_event = threading.Event()
-        
+
+        # Store-and-forward cache
+        self.edge_cache: Optional[EdgeCache] = None
+        if config.enable_store_forward:
+            cache_config = CacheConfig(
+                redis_enabled=True,
+                rocksdb_enabled=True,
+                max_queue_size=config.max_queue_size,
+                max_memory_usage=config.store_forward_max_size_mb * 1024 * 1024
+            )
+            self.edge_cache = EdgeCache(cache_config)
+
+        # Backpressure state
+        self.backpressure_active = False
+        self.backpressure_callbacks: List[Callable] = []
+
         # Sequence tracking per node
         self.node_sequences: Dict[str, int] = {}
         self.device_sequences: Dict[str, int] = {}
-        
+
         # Birth/Death tracking
         self.node_states: Dict[str, Dict[str, Any]] = {}
         self.device_states: Dict[str, Dict[str, Any]] = {}
-        
+
         # Command handling
         self.command_callbacks: Dict[str, Callable] = {}
         self.pending_commands: Dict[str, Dict[str, Any]] = {}
-        
+
         # Statistics
         self.stats = {
             'messages_received': 0,
             'messages_processed': 0,
             'messages_failed': 0,
+            'messages_queued': 0,
+            'messages_replayed': 0,
             'sequence_errors': 0,
             'connection_attempts': 0,
             'last_message_time': None,
+            'backpressure_events': 0,
         }
-        
+
         # Reconnection
         self.reconnect_delay = config.reconnect_delay_min
         self.max_reconnect_delay = config.reconnect_delay_max
@@ -137,24 +165,33 @@ class SparkplugMQTTClient:
     async def start(self) -> bool:
         """Start the Sparkplug MQTT client"""
         try:
+            # Initialize edge cache if enabled
+            if self.edge_cache:
+                await self.edge_cache.connect()
+                self.logger.info("Edge cache connected for store-and-forward")
+
             # Initialize MQTT client
             self._init_mqtt_client()
-            
+
             # Start message processing thread
             self.processing_thread = threading.Thread(
                 target=self._message_processing_loop,
                 daemon=True
             )
             self.processing_thread.start()
-            
+
             # Connect to broker
             success = await self._connect_with_retry()
             if success:
                 self.logger.info("Sparkplug MQTT client started successfully")
                 CONNECTION_STATUS.set(1)
-            
+
+                # Replay any queued messages from store-and-forward
+                if self.edge_cache:
+                    await self._replay_stored_messages()
+
             return success
-            
+
         except Exception as e:
             self.logger.error(f"Failed to start Sparkplug client: {e}")
             CONNECTION_STATUS.set(0)
@@ -164,26 +201,31 @@ class SparkplugMQTTClient:
         """Stop the Sparkplug MQTT client"""
         try:
             self.logger.info("Stopping Sparkplug MQTT client")
-            
+
             # Signal shutdown
             self.shutdown_event.set()
-            
+
             # Send death message if connected
             if self.connected:
                 await self._send_death_message()
-            
+
             # Disconnect MQTT
             if self.mqtt_client:
                 self.mqtt_client.disconnect()
                 self.mqtt_client.loop_stop()
-            
+
             # Wait for processing thread
             if self.processing_thread and self.processing_thread.is_alive():
                 self.processing_thread.join(timeout=5.0)
-            
+
+            # Disconnect edge cache
+            if self.edge_cache:
+                await self.edge_cache.disconnect()
+                self.logger.info("Edge cache disconnected")
+
             CONNECTION_STATUS.set(0)
             self.logger.info("Sparkplug MQTT client stopped")
-            
+
         except Exception as e:
             self.logger.error(f"Error stopping Sparkplug client: {e}")
     
@@ -288,12 +330,41 @@ class SparkplugMQTTClient:
         """MQTT disconnect callback"""
         self.connected = False
         self.connection_event.clear()
-        
+
         if rc == 0:
             self.logger.info("Disconnected from MQTT broker")
         else:
             self.logger.warning(f"Unexpected disconnect from MQTT broker: {rc}")
-            
+
+            # When disconnected, queue remaining messages to edge cache
+            if self.edge_cache and not self.shutdown_event.is_set():
+                self.logger.info("Broker unavailable - queuing messages to edge cache")
+                try:
+                    # Drain current message queue to edge cache
+                    import asyncio
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
+                    queued_count = 0
+                    while not self.message_queue.empty():
+                        try:
+                            msg = self.message_queue.get_nowait()
+                            # Queue this message for later
+                            loop.run_until_complete(self._queue_message_for_later(
+                                msg['topic'],
+                                msg['payload'],
+                                msg.get('qos', 1)
+                            ))
+                            queued_count += 1
+                        except Empty:
+                            break
+
+                    loop.close()
+                    self.logger.info(f"Queued {queued_count} messages to edge cache")
+
+                except Exception as e:
+                    self.logger.error(f"Error queuing messages to cache: {e}")
+
             # Attempt reconnection if not shutting down
             if not self.shutdown_event.is_set():
                 asyncio.create_task(self._connect_with_retry())
@@ -353,28 +424,41 @@ class SparkplugMQTTClient:
         """Main message processing loop (runs in thread)"""
         batch = []
         last_batch_time = time.time()
-        
+        last_backpressure_check = time.time()
+
         while not self.shutdown_event.is_set():
             try:
+                # Check backpressure every 5 seconds
+                current_time = time.time()
+                if current_time - last_backpressure_check >= 5.0:
+                    import asyncio
+                    try:
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(self._check_backpressure())
+                        loop.close()
+                    except Exception as e:
+                        self.logger.error(f"Backpressure check error: {e}")
+                    last_backpressure_check = current_time
+
                 # Get message with timeout
                 try:
                     message = self.message_queue.get(timeout=0.1)
                     batch.append(message)
                 except Empty:
                     message = None
-                
+
                 # Process batch if conditions are met
-                current_time = time.time()
                 should_process = (
                     len(batch) >= self.config.batch_size or
                     (batch and current_time - last_batch_time >= self.config.batch_timeout)
                 )
-                
+
                 if should_process and batch:
                     self._process_message_batch(batch)
                     batch.clear()
                     last_batch_time = current_time
-                
+
             except Exception as e:
                 self.logger.error(f"Error in message processing loop: {e}")
                 batch.clear()
@@ -846,10 +930,135 @@ class SparkplugMQTTClient:
     
     def get_statistics(self) -> Dict[str, Any]:
         """Get client statistics"""
-        return {
+        stats = {
             **self.stats,
             'connected': self.connected,
             'active_nodes': len(self.node_states),
             'active_devices': len(self.device_states),
             'queue_size': self.message_queue.qsize(),
+            'backpressure_active': self.backpressure_active,
         }
+
+        # Add edge cache stats if available
+        if self.edge_cache:
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                cache_stats = loop.run_until_complete(self.edge_cache.get_stats())
+                stats['edge_cache'] = cache_stats
+            except:
+                pass
+
+        return stats
+
+    def register_backpressure_callback(self, callback: Callable[[bool], None]):
+        """Register a callback to be notified of backpressure events"""
+        self.backpressure_callbacks.append(callback)
+
+    async def _check_backpressure(self):
+        """Check queue size and trigger backpressure if needed"""
+        if not self.config.enable_backpressure:
+            return
+
+        queue_size = self.message_queue.qsize()
+
+        # Activate backpressure if threshold exceeded
+        if not self.backpressure_active and queue_size >= self.config.backpressure_threshold:
+            self.backpressure_active = True
+            self.stats['backpressure_events'] += 1
+            self.logger.warning(f"Backpressure activated: queue size {queue_size}")
+
+            # Notify all callbacks
+            for callback in self.backpressure_callbacks:
+                try:
+                    if asyncio.iscoroutinefunction(callback):
+                        await callback(True)
+                    else:
+                        callback(True)
+                except Exception as e:
+                    self.logger.error(f"Backpressure callback error: {e}")
+
+        # Deactivate backpressure if below resume threshold
+        elif self.backpressure_active and queue_size <= self.config.backpressure_resume_threshold:
+            self.backpressure_active = False
+            self.logger.info(f"Backpressure deactivated: queue size {queue_size}")
+
+            # Notify all callbacks
+            for callback in self.backpressure_callbacks:
+                try:
+                    if asyncio.iscoroutinefunction(callback):
+                        await callback(False)
+                    else:
+                        callback(False)
+                except Exception as e:
+                    self.logger.error(f"Backpressure callback error: {e}")
+
+    async def _queue_message_for_later(self, topic: str, payload: bytes, qos: int = 1):
+        """Queue message to edge cache for later delivery"""
+        if not self.edge_cache:
+            self.logger.warning("Edge cache not available, message will be lost")
+            return
+
+        try:
+            message_data = {
+                'topic': topic,
+                'payload': payload.hex(),  # Convert bytes to hex string for storage
+                'qos': qos,
+                'timestamp': time.time(),
+            }
+
+            await self.edge_cache.queue_for_forward(message_data)
+            self.stats['messages_queued'] += 1
+            self.logger.debug(f"Message queued for later delivery: {topic}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to queue message: {e}")
+
+    async def _replay_stored_messages(self):
+        """Replay messages from store-and-forward cache after reconnection"""
+        if not self.edge_cache:
+            return
+
+        try:
+            self.logger.info("Replaying stored messages from cache")
+
+            # Get all pending messages
+            pending = await self.edge_cache.get_pending_data()
+
+            if not pending:
+                self.logger.info("No messages to replay")
+                return
+
+            self.logger.info(f"Replaying {len(pending)} stored messages")
+
+            for message_data in pending:
+                try:
+                    # Restore bytes from hex string
+                    payload = bytes.fromhex(message_data['payload'])
+
+                    # Publish the message
+                    result = self.mqtt_client.publish(
+                        message_data['topic'],
+                        payload,
+                        qos=message_data.get('qos', 1),
+                        retain=False
+                    )
+
+                    if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                        self.stats['messages_replayed'] += 1
+                    else:
+                        self.logger.error(f"Failed to replay message: {result.rc}")
+                        # Re-queue the message
+                        await self._queue_message_for_later(
+                            message_data['topic'],
+                            payload,
+                            message_data.get('qos', 1)
+                        )
+
+                except Exception as e:
+                    self.logger.error(f"Error replaying message: {e}")
+
+            self.logger.info(f"Replay complete: {self.stats['messages_replayed']} messages sent")
+
+        except Exception as e:
+            self.logger.error(f"Failed to replay stored messages: {e}")

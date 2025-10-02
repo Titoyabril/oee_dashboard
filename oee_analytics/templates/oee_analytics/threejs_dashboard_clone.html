@@ -54,11 +54,412 @@
         font-family: system-ui, -apple-system, sans-serif;
         transition: transform 0.2s ease;
     }
+
+    /* Holographic Toolbar Styles */
+    .holographic-toolbar {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, 
+            rgba(0, 255, 255, 0.1), 
+            rgba(0, 212, 255, 0.05), 
+            rgba(0, 255, 255, 0.1)
+        );
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 25px;
+        backdrop-filter: blur(10px);
+        box-shadow: 
+            0 0 20px rgba(0, 255, 255, 0.2),
+            inset 0 1px 0 rgba(0, 255, 255, 0.2),
+            0 4px 15px rgba(0, 0, 0, 0.3);
+        font-family: 'Orbitron', monospace;
+        z-index: 1000;
+        pointer-events: all;
+        animation: holographicPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes holographicPulse {
+        0%, 100% { 
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.2),
+                inset 0 1px 0 rgba(0, 255, 255, 0.2),
+                0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        50% { 
+            box-shadow: 
+                0 0 30px rgba(0, 255, 255, 0.4),
+                inset 0 1px 0 rgba(0, 255, 255, 0.4),
+                0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+    }
+
+    .holo-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        background: linear-gradient(135deg, 
+            rgba(0, 255, 255, 0.15), 
+            rgba(0, 255, 255, 0.05)
+        );
+        border: 1px solid rgba(0, 255, 255, 0.4);
+        border-radius: 15px;
+        color: #00ffff;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 400;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+    }
+
+    .holo-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+            transparent, 
+            rgba(0, 255, 255, 0.2), 
+            transparent
+        );
+        transition: left 0.5s ease;
+    }
+
+    .holo-btn:hover::before {
+        left: 100%;
+    }
+
+    .holo-btn:hover {
+        background: linear-gradient(135deg, 
+            rgba(0, 255, 255, 0.25), 
+            rgba(0, 255, 255, 0.15)
+        );
+        box-shadow: 
+            0 0 15px rgba(0, 255, 255, 0.4),
+            inset 0 0 10px rgba(0, 255, 255, 0.1);
+        border-color: rgba(0, 255, 255, 0.6);
+        text-shadow: 0 0 12px rgba(0, 255, 255, 0.8);
+        transform: translateY(-1px);
+    }
+
+    .holo-btn:active {
+        transform: translateY(0);
+        box-shadow: 
+            0 0 10px rgba(0, 255, 255, 0.3),
+            inset 0 0 5px rgba(0, 255, 255, 0.2);
+    }
+
+    .holo-icon {
+        width: 16px;
+        height: 16px;
+        filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.8));
+    }
+
+    /* Dropdown Styles */
+    .holo-dropdown {
+        position: relative;
+    }
+
+    .holo-dropdown-content {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 8px;
+        min-width: 150px;
+        background: linear-gradient(135deg, 
+            rgba(0, 255, 255, 0.1), 
+            rgba(0, 212, 255, 0.05)
+        );
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 12px;
+        backdrop-filter: blur(15px);
+        box-shadow: 
+            0 0 25px rgba(0, 255, 255, 0.2),
+            0 8px 20px rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+        z-index: 1001;
+    }
+
+    .holo-dropdown:hover .holo-dropdown-content {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .holo-dropdown-item {
+        display: block;
+        padding: 10px 15px;
+        color: #00ffff;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 400;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+        margin: 4px;
+        text-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
+    }
+
+    .holo-dropdown-item:hover {
+        background: rgba(0, 255, 255, 0.15);
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+        transform: translateX(3px);
+    }
+
+    /* Time Toggle Styles */
+    .holo-time-toggle {
+        display: flex;
+        background: rgba(0, 255, 255, 0.1);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 20px;
+        padding: 2px;
+        position: relative;
+    }
+
+    .holo-time-option {
+        padding: 6px 12px;
+        font-size: 10px;
+        font-weight: 400;
+        letter-spacing: 0.5px;
+        color: rgba(0, 255, 255, 0.7);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 18px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .holo-time-option.active {
+        color: #00ffff;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
+    }
+
+    .holo-time-slider {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        height: calc(100% - 4px);
+        background: linear-gradient(135deg, 
+            rgba(0, 255, 255, 0.3), 
+            rgba(0, 255, 255, 0.15)
+        );
+        border-radius: 18px;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        z-index: 1;
+    }
+
+    /* Profile Menu Styles */
+    .holo-profile {
+        margin-left: auto;
+    }
+
+    .holo-profile-content {
+        right: 0;
+        left: auto;
+        min-width: 120px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .holographic-toolbar {
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            transform: none;
+            padding: 6px 12px;
+            gap: 10px;
+        }
+        
+        .holo-btn {
+            padding: 6px 8px;
+            font-size: 10px;
+        }
+        
+        .holo-icon {
+            width: 14px;
+            height: 14px;
+        }
+    }
+
+    /* Holographic text effects */
+    .holo-text {
+        color: #00ffff;
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+        font-family: 'Orbitron', monospace;
+    }
     </style>
 </head>
 <body>
     <!-- Three.js Container - Full viewport -->
     <div id="threejs-container"></div>
+
+    <!-- Holographic Toolbar -->
+    <div class="holographic-toolbar">
+        <!-- Home Button -->
+        <button class="holo-btn" id="holo-home" title="Home">
+            <svg class="holo-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            <span>HOME</span>
+        </button>
+
+        <!-- View Dropdown -->
+        <div class="holo-dropdown">
+            <button class="holo-btn" title="View Options">
+                <svg class="holo-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                </svg>
+                <span>VIEW</span>
+                <svg class="holo-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 12px; height: 12px;">
+                    <path d="M7 10l5 5 5-5z"/>
+                </svg>
+            </button>
+            <div class="holo-dropdown-content">
+                <a href="#" class="holo-dropdown-item" data-view="oee">OEE</a>
+                <a href="#" class="holo-dropdown-item" data-view="availability">AVAILABILITY</a>
+                <a href="#" class="holo-dropdown-item" data-view="performance">PERFORMANCE</a>
+                <a href="#" class="holo-dropdown-item" data-view="quality">QUALITY</a>
+                <a href="#" class="holo-dropdown-item" data-view="downtime">DOWNTIME</a>
+            </div>
+        </div>
+
+        <!-- Time Toggle -->
+        <div class="holo-time-toggle">
+            <div class="holo-time-slider" id="timeSlider"></div>
+            <div class="holo-time-option active" data-time="shift">SHIFT</div>
+            <div class="holo-time-option" data-time="day">DAY</div>
+            <div class="holo-time-option" data-time="week">WEEK</div>
+            <div class="holo-time-option" data-time="custom">CUSTOM</div>
+        </div>
+
+        <!-- Profile Menu -->
+        <div class="holo-dropdown holo-profile">
+            <button class="holo-btn" title="Profile Menu">
+                <svg class="holo-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <span>PROFILE</span>
+            </button>
+            <div class="holo-dropdown-content holo-profile-content">
+                <a href="#" class="holo-dropdown-item" id="alerts-link">ALERTS</a>
+                <a href="#" class="holo-dropdown-item" id="export-link">EXPORT</a>
+                <a href="#" class="holo-dropdown-item" id="settings-link">SETTINGS</a>
+                <a href="#" class="holo-dropdown-item" id="logout-link">LOGOUT</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Holographic Toolbar JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Time toggle functionality
+            const timeOptions = document.querySelectorAll('.holo-time-option');
+            const timeSlider = document.getElementById('timeSlider');
+            
+            function updateTimeSlider(activeOption) {
+                const optionWidth = activeOption.offsetWidth;
+                const optionLeft = activeOption.offsetLeft;
+                timeSlider.style.width = optionWidth + 'px';
+                timeSlider.style.left = optionLeft + 'px';
+            }
+
+            // Initialize slider position
+            const activeOption = document.querySelector('.holo-time-option.active');
+            updateTimeSlider(activeOption);
+
+            // Add click handlers for time options
+            timeOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove active class from all options
+                    timeOptions.forEach(opt => opt.classList.remove('active'));
+                    
+                    // Add active class to clicked option
+                    this.classList.add('active');
+                    
+                    // Update slider position
+                    updateTimeSlider(this);
+                    
+                    // Emit custom event for time change
+                    const timeChangeEvent = new CustomEvent('holoTimeChange', {
+                        detail: { timeframe: this.dataset.time }
+                    });
+                    document.dispatchEvent(timeChangeEvent);
+                });
+            });
+
+            // View dropdown handlers
+            const viewItems = document.querySelectorAll('[data-view]');
+            viewItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const view = this.dataset.view;
+                    
+                    // Emit custom event for view change
+                    const viewChangeEvent = new CustomEvent('holoViewChange', {
+                        detail: { view: view }
+                    });
+                    document.dispatchEvent(viewChangeEvent);
+                    
+                    console.log('View changed to:', view);
+                });
+            });
+
+            // Home button handler
+            document.getElementById('holo-home').addEventListener('click', function() {
+                const homeEvent = new CustomEvent('holoHome');
+                document.dispatchEvent(homeEvent);
+                console.log('Home button clicked');
+            });
+
+            // Profile menu handlers
+            document.getElementById('alerts-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Alerts clicked');
+                // Add alerts functionality
+            });
+
+            document.getElementById('export-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Export clicked');
+                // Add export functionality
+            });
+
+            document.getElementById('settings-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Settings clicked');
+                // Add settings functionality
+            });
+
+            document.getElementById('logout-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Logout clicked');
+                // Add logout functionality
+            });
+
+            // Window resize handler for responsive slider
+            window.addEventListener('resize', function() {
+                const activeOption = document.querySelector('.holo-time-option.active');
+                if (activeOption) {
+                    updateTimeSlider(activeOption);
+                }
+            });
+        });
+    </script>
 
     <!-- CSS2DRenderer Dashboard Clone -->
     <script type="module" src="{% static 'js/threejs/dashboard3d_clone.js' %}"></script>

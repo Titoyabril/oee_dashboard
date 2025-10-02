@@ -47,24 +47,24 @@ class SiemensS7Connector(BasePLCConnector):
     
     # S7 data type mappings
     S7_DATA_TYPES = {
-        'BOOL': snap7.snap7types.S7WLBit,
-        'BYTE': snap7.snap7types.S7WLByte,
-        'WORD': snap7.snap7types.S7WLWord,
-        'DWORD': snap7.snap7types.S7WLDWord,
-        'INT': snap7.snap7types.S7WLWord,
-        'DINT': snap7.snap7types.S7WLDWord,
-        'REAL': snap7.snap7types.S7WLReal,
-        'STRING': snap7.snap7types.S7WLByte,
+        'BOOL': snap7.types.S7WLBit,
+        'BYTE': snap7.types.S7WLByte,
+        'WORD': snap7.types.S7WLWord,
+        'DWORD': snap7.types.S7WLDWord,
+        'INT': snap7.types.S7WLWord,
+        'DINT': snap7.types.S7WLDWord,
+        'REAL': snap7.types.S7WLReal,
+        'STRING': snap7.types.S7WLByte,
     }
     
     # Memory area codes
     MEMORY_AREAS = {
-        'DB': snap7.snap7types.S7AreaDB,    # Data blocks
-        'I': snap7.snap7types.S7AreaPE,     # Process inputs
-        'Q': snap7.snap7types.S7AreaPA,     # Process outputs  
-        'M': snap7.snap7types.S7AreaMK,     # Memory (Merker)
-        'T': snap7.snap7types.S7AreaTM,     # Timers
-        'C': snap7.snap7types.S7AreaCT,     # Counters
+        'DB': snap7.types.S7AreaDB,    # Data blocks
+        'I': snap7.types.S7AreaPE,     # Process inputs
+        'Q': snap7.types.S7AreaPA,     # Process outputs
+        'M': snap7.types.S7AreaMK,     # Memory (Merker)
+        'T': snap7.types.S7AreaTM,     # Timers
+        'C': snap7.types.S7AreaCT,     # Counters
     }
     
     def __init__(self, config: Union[PLCConnectionConfig, SiemensS7Config], 
@@ -117,9 +117,9 @@ class SiemensS7Connector(BasePLCConnector):
             
             # Configure connection parameters
             if hasattr(self.config, 'local_tsap'):
-                self.s7_client.set_param(snap7.snap7types.LocalTSAP, self.config.local_tsap)
+                self.s7_client.set_param(snap7.types.LocalTSAP, self.config.local_tsap)
             if hasattr(self.config, 'remote_tsap'):
-                self.s7_client.set_param(snap7.snap7types.RemoteTSAP, self.config.remote_tsap)
+                self.s7_client.set_param(snap7.types.RemoteTSAP, self.config.remote_tsap)
             
             # Connect to PLC
             await asyncio.get_event_loop().run_in_executor(

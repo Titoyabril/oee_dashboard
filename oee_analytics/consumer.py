@@ -7,6 +7,7 @@ class EventsConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_add("metrics", self.channel_name)
         await self.channel_layer.group_add("alerts", self.channel_name)
         await self.channel_layer.group_add("downtime", self.channel_name)  # Legacy compatibility
+        await self.channel_layer.group_add("dataflow", self.channel_name)  # Data flow monitoring
         await self.accept()
 
     async def disconnect(self, code):
@@ -15,6 +16,7 @@ class EventsConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_discard("metrics", self.channel_name)
         await self.channel_layer.group_discard("alerts", self.channel_name)
         await self.channel_layer.group_discard("downtime", self.channel_name)
+        await self.channel_layer.group_discard("dataflow", self.channel_name)
 
     # Handle different message types from Celery tasks
     async def event_message(self, event):
@@ -36,6 +38,13 @@ class EventsConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({
             'type': 'alert',
             'data': event['alert']
+        })
+
+    async def dataflow_update(self, event):
+        """Handle data flow monitoring updates from Celery"""
+        await self.send_json({
+            'type': 'dataflow',
+            'data': event['dataflow']
         })
         
     # Legacy handler for backwards compatibility

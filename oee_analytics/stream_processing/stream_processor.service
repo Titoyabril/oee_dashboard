@@ -1,0 +1,48 @@
+[Unit]
+Description=OEE Analytics Stream Processing Service
+Documentation=https://docs.company.com/oee/stream-processor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=oeeservice
+Group=oeeservice
+WorkingDirectory=/opt/oee/stream_processor
+
+# Environment
+Environment="PYTHONUNBUFFERED=1"
+EnvironmentFile=/etc/oee/stream_processor.env
+
+# Execution
+ExecStart=/opt/oee/stream_processor/venv/bin/python \
+  -m oee_analytics.stream_processing.stream_processor \
+  /etc/oee/stream_processor_config.yml
+
+# Restart policy
+Restart=always
+RestartSec=10s
+StartLimitInterval=200s
+StartLimitBurst=5
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/oee/stream_processor/logs
+
+# Health check (optional - requires systemd 236+)
+# ExecStartPost=/bin/sh -c 'sleep 10 && curl -f http://localhost:9100/health || exit 1'
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=stream-processor
+
+[Install]
+WantedBy=multi-user.target

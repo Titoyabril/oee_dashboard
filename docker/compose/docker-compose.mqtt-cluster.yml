@@ -1,0 +1,226 @@
+version: '3.8'
+
+services:
+  # EMQX Node 1
+  emqx1:
+    image: emqx/emqx:5.4.0
+    container_name: emqx1
+    environment:
+      - EMQX_NAME=emqx1
+      - EMQX_HOST=emqx1.local
+      - EMQX_NODE__NAME=emqx@emqx1.local
+      - EMQX_CLUSTER__DISCOVERY_STRATEGY=static
+      - EMQX_CLUSTER__STATIC__SEEDS=emqx@emqx1.local,emqx@emqx2.local,emqx@emqx3.local
+      # Enable mutual TLS
+      - EMQX_LISTENERS__SSL__DEFAULT__ENABLE=true
+      - EMQX_LISTENERS__SSL__DEFAULT__BIND=8883
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__CACERTFILE=/etc/emqx/certs/ca.crt
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__CERTFILE=/etc/emqx/certs/server.crt
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__KEYFILE=/etc/emqx/certs/server.key
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__VERIFY=verify_peer
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__FAIL_IF_NO_PEER_CERT=true
+      # Authentication
+      - EMQX_AUTHENTICATION__1__MECHANISM=password_based
+      - EMQX_AUTHENTICATION__1__BACKEND=built_in_database
+      - EMQX_AUTHENTICATION__1__PASSWORD_HASH_ALGORITHM__NAME=sha256
+      - EMQX_AUTHENTICATION__1__PASSWORD_HASH_ALGORITHM__SALT_POSITION=prefix
+      # Authorization (RBAC)
+      - EMQX_AUTHORIZATION__NO_MATCH=deny
+      - EMQX_AUTHORIZATION__SOURCES__1__TYPE=built_in_database
+      - EMQX_AUTHORIZATION__SOURCES__1__ENABLE=true
+      # Performance tuning
+      - EMQX_LISTENERS__SSL__DEFAULT__MAX_CONNECTIONS=10000
+      - EMQX_LISTENERS__SSL__DEFAULT__MAX_CONN_RATE=1000
+      - EMQX_MQTT__MAX_INFLIGHT=1000
+      - EMQX_MQTT__MAX_AWAITING_REL=10000
+      - EMQX_MQTT__MAX_QOS_ALLOWED=2
+      - EMQX_MQTT__RETAIN_AVAILABLE=true
+      - EMQX_MQTT__SESSION_EXPIRY_INTERVAL=2h
+      - EMQX_MQTT__MAX_TOPIC_LEVELS=128
+      # Persistence
+      - EMQX_RETAINER__ENABLE=true
+      - EMQX_RETAINER__MAX_PAYLOAD_SIZE=1MB
+      - EMQX_RETAINER__MSG_EXPIRY_INTERVAL=never
+      # Shared subscriptions
+      - EMQX_MQTT__SHARED_SUBSCRIPTION=true
+      - EMQX_MQTT__SHARED_SUBSCRIPTION_STRATEGY=round_robin
+      # Metrics
+      - EMQX_PROMETHEUS__ENABLE=true
+      - EMQX_PROMETHEUS__PUSH_GATEWAY_SERVER=http://prometheus-pushgateway:9091
+      - EMQX_PROMETHEUS__INTERVAL=15s
+    volumes:
+      - emqx1_data:/opt/emqx/data
+      - emqx1_log:/opt/emqx/log
+      - ./certs:/etc/emqx/certs:ro
+      - ./emqx_config:/opt/emqx/etc:ro
+    ports:
+      - "18083:18083"  # Dashboard
+      - "8883:8883"    # MQTT SSL
+      - "8083:8083"    # MQTT WebSocket
+    networks:
+      mqtt_cluster:
+        aliases:
+          - emqx1.local
+    healthcheck:
+      test: ["CMD", "emqx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # EMQX Node 2
+  emqx2:
+    image: emqx/emqx:5.4.0
+    container_name: emqx2
+    environment:
+      - EMQX_NAME=emqx2
+      - EMQX_HOST=emqx2.local
+      - EMQX_NODE__NAME=emqx@emqx2.local
+      - EMQX_CLUSTER__DISCOVERY_STRATEGY=static
+      - EMQX_CLUSTER__STATIC__SEEDS=emqx@emqx1.local,emqx@emqx2.local,emqx@emqx3.local
+      # TLS settings (same as node 1)
+      - EMQX_LISTENERS__SSL__DEFAULT__ENABLE=true
+      - EMQX_LISTENERS__SSL__DEFAULT__BIND=8883
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__CACERTFILE=/etc/emqx/certs/ca.crt
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__CERTFILE=/etc/emqx/certs/server.crt
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__KEYFILE=/etc/emqx/certs/server.key
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__VERIFY=verify_peer
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__FAIL_IF_NO_PEER_CERT=true
+      # Auth & Authz (same as node 1)
+      - EMQX_AUTHENTICATION__1__MECHANISM=password_based
+      - EMQX_AUTHENTICATION__1__BACKEND=built_in_database
+      - EMQX_AUTHORIZATION__NO_MATCH=deny
+      # Performance (same as node 1)
+      - EMQX_LISTENERS__SSL__DEFAULT__MAX_CONNECTIONS=10000
+      - EMQX_MQTT__SHARED_SUBSCRIPTION=true
+      - EMQX_PROMETHEUS__ENABLE=true
+    volumes:
+      - emqx2_data:/opt/emqx/data
+      - emqx2_log:/opt/emqx/log
+      - ./certs:/etc/emqx/certs:ro
+      - ./emqx_config:/opt/emqx/etc:ro
+    ports:
+      - "28083:18083"  # Dashboard
+      - "8884:8883"    # MQTT SSL
+    networks:
+      mqtt_cluster:
+        aliases:
+          - emqx2.local
+    healthcheck:
+      test: ["CMD", "emqx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # EMQX Node 3
+  emqx3:
+    image: emqx/emqx:5.4.0
+    container_name: emqx3
+    environment:
+      - EMQX_NAME=emqx3
+      - EMQX_HOST=emqx3.local
+      - EMQX_NODE__NAME=emqx@emqx3.local
+      - EMQX_CLUSTER__DISCOVERY_STRATEGY=static
+      - EMQX_CLUSTER__STATIC__SEEDS=emqx@emqx1.local,emqx@emqx2.local,emqx@emqx3.local
+      # TLS settings (same as node 1)
+      - EMQX_LISTENERS__SSL__DEFAULT__ENABLE=true
+      - EMQX_LISTENERS__SSL__DEFAULT__BIND=8883
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__CACERTFILE=/etc/emqx/certs/ca.crt
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__CERTFILE=/etc/emqx/certs/server.crt
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__KEYFILE=/etc/emqx/certs/server.key
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__VERIFY=verify_peer
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__FAIL_IF_NO_PEER_CERT=true
+      # Auth & Authz (same as node 1)
+      - EMQX_AUTHENTICATION__1__MECHANISM=password_based
+      - EMQX_AUTHENTICATION__1__BACKEND=built_in_database
+      - EMQX_AUTHORIZATION__NO_MATCH=deny
+      # Performance (same as node 1)
+      - EMQX_LISTENERS__SSL__DEFAULT__MAX_CONNECTIONS=10000
+      - EMQX_MQTT__SHARED_SUBSCRIPTION=true
+      - EMQX_PROMETHEUS__ENABLE=true
+    volumes:
+      - emqx3_data:/opt/emqx/data
+      - emqx3_log:/opt/emqx/log
+      - ./certs:/etc/emqx/certs:ro
+      - ./emqx_config:/opt/emqx/etc:ro
+    ports:
+      - "38083:18083"  # Dashboard
+      - "8885:8883"    # MQTT SSL
+    networks:
+      mqtt_cluster:
+        aliases:
+          - emqx3.local
+    healthcheck:
+      test: ["CMD", "emqx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # HAProxy Load Balancer
+  haproxy:
+    image: haproxy:2.8-alpine
+    container_name: mqtt_loadbalancer
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "1883:1883"    # MQTT TCP (load balanced)
+      - "8883:8883"    # MQTT SSL (load balanced)
+      - "8404:8404"    # HAProxy stats
+    networks:
+      - mqtt_cluster
+    depends_on:
+      - emqx1
+      - emqx2
+      - emqx3
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: mqtt_prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    networks:
+      - mqtt_cluster
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: mqtt_grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - mqtt_cluster
+    depends_on:
+      - prometheus
+
+networks:
+  mqtt_cluster:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  emqx1_data:
+  emqx1_log:
+  emqx2_data:
+  emqx2_log:
+  emqx3_data:
+  emqx3_log:
+  prometheus_data:
+  grafana_data:

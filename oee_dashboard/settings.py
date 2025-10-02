@@ -20,6 +20,10 @@ INSTALLED_APPS = [
     #"dpd_static_support",
     "channels",
     "rest_framework",
+    "rest_framework.authtoken",
+    "graphene_django",
+    "django_filters",
+    "corsheaders",
 
     "oee_analytics",
 ]
@@ -28,6 +32,7 @@ MIDDLEWARE = [
     "django_plotly_dash.middleware.BaseMiddleware",
     "django_plotly_dash.middleware.ExternalRedirectionMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -55,12 +60,55 @@ TEMPLATES = [{
 WSGI_APPLICATION = "oee_dashboard.wsgi.application"
 ASGI_APPLICATION = "oee_dashboard.asgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# Database configuration
+# Use TimescaleDB for time-series data, SQLite/SQL Server for config data
+USE_SQL_SERVER = os.getenv("USE_SQL_SERVER", "False").lower() in {"1","true","yes"}
+USE_TIMESCALEDB = os.getenv("USE_TIMESCALEDB", "True").lower() in {"1","true","yes"}
+
+if USE_SQL_SERVER:
+    DATABASES = {
+        "default": {
+            "ENGINE": "mssql",
+            "NAME": os.getenv("SQL_SERVER_DB", "oee_analytics"),
+            "USER": os.getenv("SQL_SERVER_USER", "sa"),
+            "PASSWORD": os.getenv("SQL_SERVER_PASSWORD", "OEE_Analytics2024!"),
+            "HOST": os.getenv("SQL_SERVER_HOST", "localhost"),
+            "PORT": os.getenv("SQL_SERVER_PORT", "1433"),
+            "OPTIONS": {
+                "driver": "ODBC Driver 17 for SQL Server",
+                "extra_params": "TrustServerCertificate=yes"
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+
+# Add TimescaleDB for time-series data
+if USE_TIMESCALEDB:
+    DATABASES["timescaledb"] = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("TIMESCALE_DB", "oee_analytics"),
+        "USER": os.getenv("TIMESCALE_USER", "oeeuser"),
+        "PASSWORD": os.getenv("TIMESCALE_PASSWORD", "OEE_Analytics2024!"),
+        "HOST": os.getenv("TIMESCALE_HOST", "localhost"),
+        "PORT": os.getenv("TIMESCALE_PORT", "5432"),
+        "OPTIONS": {
+            "options": "-c search_path=public",
+            "connect_timeout": 10,
+        },
+        "CONN_MAX_AGE": 600,  # Persistent connections for 10 minutes
+        "ATOMIC_REQUESTS": False,  # Better performance for bulk inserts
+    }
+
+# Database router for time-series data
+DATABASE_ROUTERS = [
+    'oee_analytics.db.router.TimeSeriesRouter',
+]
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
@@ -100,6 +148,73 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Allow Dash iframes
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
+# ---- REST Framework Configuration ----
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter',
+        'rest_framework.filters.SearchFilter',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+    },
+}
+
+# ---- GraphQL Configuration ----
+GRAPHENE = {
+    'SCHEMA': 'oee_analytics.api.schema.schema',
+    'MIDDLEWARE': [
+        'graphene_django.debug.DjangoDebugMiddleware',
+    ],
+}
+
+# ---- CORS Configuration ----
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8080",
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
 # ---- Celery Configuration ----
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
@@ -119,5 +234,22 @@ CELERY_BEAT_SCHEDULE = {
     'cleanup-old-events': {
         'task': 'oee_analytics.tasks.cleanup_old_events',
         'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
+    },
+    # ML Pipeline Tasks (Phase 2)
+    'extract-ml-features': {
+        'task': 'oee_analytics.tasks.extract_ml_features',
+        'schedule': 60.0,  # Every 60 seconds
+    },
+    'run-downtime-prediction': {
+        'task': 'oee_analytics.tasks.run_downtime_prediction',
+        'schedule': 120.0,  # Every 2 minutes
+    },
+    'calculate-oee-forecast': {
+        'task': 'oee_analytics.tasks.calculate_oee_forecast',
+        'schedule': 300.0,  # Every 5 minutes
+    },
+    'quality-risk-scoring': {
+        'task': 'oee_analytics.tasks.quality_risk_scoring',
+        'schedule': 90.0,  # Every 90 seconds
     },
 }

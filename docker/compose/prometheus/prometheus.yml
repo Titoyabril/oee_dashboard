@@ -1,0 +1,91 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'mqtt-oee'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "alerts/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # EMQX Cluster Nodes
+  - job_name: 'emqx'
+    static_configs:
+      - targets:
+          - 'emqx1:18083'
+          - 'emqx2:18083'
+          - 'emqx3:18083'
+        labels:
+          service: 'emqx'
+    metrics_path: '/api/v5/prometheus/stats'
+    scheme: http
+
+  # HAProxy Load Balancer
+  - job_name: 'haproxy'
+    static_configs:
+      - targets:
+          - 'haproxy:8404'
+        labels:
+          service: 'haproxy'
+    metrics_path: '/stats;csv'
+    scheme: http
+
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets:
+          - 'localhost:9090'
+        labels:
+          service: 'prometheus'
+
+  # Django OEE Application
+  - job_name: 'django_oee'
+    static_configs:
+      - targets:
+          - 'web:8000'
+        labels:
+          service: 'django'
+    metrics_path: '/metrics'
+    scheme: http
+
+  # Sparkplug Edge Gateways (add as they come online)
+  - job_name: 'sparkplug_edge'
+    static_configs:
+      - targets:
+          # Add edge gateway metrics endpoints here
+          # - 'edge-gateway-01:9100'
+          # - 'edge-gateway-02:9100'
+        labels:
+          service: 'edge_gateway'
+    metrics_path: '/metrics'
+    scheme: http
+
+  # Node Exporter for system metrics
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets:
+          # Add node exporters for each host
+          # - 'host1:9100'
+          # - 'host2:9100'
+        labels:
+          service: 'node_exporter'
+
+  # TimescaleDB metrics (when implemented)
+  - job_name: 'timescaledb'
+    static_configs:
+      - targets:
+          # - 'timescaledb:9187'
+        labels:
+          service: 'timescaledb'
+    metrics_path: '/metrics'
+    scheme: http

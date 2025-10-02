@@ -4,11 +4,16 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('api/events/', include('oee_analytics.events.urls')),
+    # API endpoints
+    path('api/', include('oee_analytics.api.urls')),  # Main API (REST + GraphQL)
+    path('api/events/', include('oee_analytics.events.urls')),  # Legacy events API
 
+    # Admin
     path('admin/', admin.site.urls),
-    path('', include('oee_analytics.urls')),  # Connects to your dashboard view
-    path('django_plotly_dash/', include('django_plotly_dash.urls')),  # Required for Dash components
+
+    # Dashboard views
+    path('', include('oee_analytics.urls')),  # Dashboard view
+    path('django_plotly_dash/', include('django_plotly_dash.urls')),  # Dash components
 ]
 
 # Serve static files during development

@@ -1,0 +1,1 @@
+# Edge computing components for OEE system

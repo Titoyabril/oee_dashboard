@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # TimescaleDB for time-series data
+  timescaledb:
+    image: timescale/timescaledb-ha:pg16-latest
+    container_name: oee_timescaledb
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-oee_analytics}
+      POSTGRES_USER: ${POSTGRES_USER:-oeeuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-OEE_Analytics2024!}
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      # TimescaleDB specific settings
+      TIMESCALEDB_TELEMETRY: 'off'
+      # Performance tuning
+      TS_TUNE_MEMORY: ${TS_TUNE_MEMORY:-16GB}
+      TS_TUNE_NUM_CPUS: ${TS_TUNE_NUM_CPUS:-4}
+      TS_TUNE_MAX_CONNS: ${TS_TUNE_MAX_CONNS:-200}
+      TS_TUNE_MAX_BG_WORKERS: ${TS_TUNE_MAX_BG_WORKERS:-16}
+      TS_TUNE_SCHEDULING: ${TS_TUNE_SCHEDULING:-true}
+    volumes:
+      - timescaledb_data:/home/postgres/pgdata/data
+      - ./timescaledb/init:/docker-entrypoint-initdb.d:ro
+      - ./timescaledb/config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - oee_backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-oeeuser} -d ${POSTGRES_DB:-oee_analytics}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    shm_size: 1g
+    restart: unless-stopped
+
+  # PgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: oee_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@oee.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./timescaledb/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - oee_backend
+    depends_on:
+      - timescaledb
+    restart: unless-stopped
+
+  # Postgres Exporter for Prometheus
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: oee_postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-oeeuser}:${POSTGRES_PASSWORD:-OEE_Analytics2024!}@timescaledb:5432/${POSTGRES_DB:-oee_analytics}?sslmode=disable"
+      PG_EXPORTER_EXTEND_QUERY_PATH: /etc/postgres_exporter/queries.yaml
+    volumes:
+      - ./timescaledb/exporter/queries.yaml:/etc/postgres_exporter/queries.yaml:ro
+    ports:
+      - "9187:9187"
+    networks:
+      - oee_backend
+    depends_on:
+      - timescaledb
+    restart: unless-stopped
+
+networks:
+  oee_backend:
+    driver: bridge
+
+volumes:
+  timescaledb_data:
+  pgadmin_data:
