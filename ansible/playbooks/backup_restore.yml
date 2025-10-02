@@ -1,0 +1,301 @@
+---
+# Backup and Restore Playbook for OEE Edge Gateways
+
+- name: Backup/Restore OEE Edge Gateway Configuration
+  hosts: edge_gateways
+  become: yes
+  gather_facts: yes
+
+  vars:
+    backup_dir: /var/backups/oee
+    local_backup_dir: "{{ playbook_dir }}/../backups"
+    timestamp: "{{ ansible_date_time.iso8601_basic_short }}"
+
+  vars_prompt:
+    - name: operation
+      prompt: "Operation (backup/restore)"
+      private: no
+      default: "backup"
+
+    - name: backup_file
+      prompt: "Backup file to restore (only for restore operation)"
+      private: no
+      when: operation == "restore"
+
+  pre_tasks:
+    - name: Create backup directory on edge gateway
+      file:
+        path: "{{ backup_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+      when: operation == "backup"
+
+    - name: Create local backup directory
+      local_action:
+        module: file
+        path: "{{ local_backup_dir }}"
+        state: directory
+      become: no
+      run_once: true
+      when: operation == "backup"
+
+  # ========================================
+  # BACKUP TASKS
+  # ========================================
+
+  tasks:
+    - name: Backup configuration files
+      block:
+        - name: Create backup archive
+          archive:
+            path:
+              - /etc/oee
+              - /opt/oee/edge
+              - /var/lib/oee
+            dest: "{{ backup_dir }}/oee-backup-{{ edge_node_id }}-{{ timestamp }}.tar.gz"
+            format: gz
+            owner: root
+            group: root
+            mode: '0600'
+
+        - name: Get backup file info
+          stat:
+            path: "{{ backup_dir }}/oee-backup-{{ edge_node_id }}-{{ timestamp }}.tar.gz"
+          register: backup_file_info
+
+        - name: Fetch backup to Ansible controller
+          fetch:
+            src: "{{ backup_dir }}/oee-backup-{{ edge_node_id }}-{{ timestamp }}.tar.gz"
+            dest: "{{ local_backup_dir }}/{{ edge_node_id }}-{{ timestamp }}.tar.gz"
+            flat: yes
+
+        - name: Export edge gateway database (if exists)
+          shell: |
+            if [ -f /var/lib/oee/edge_gateway.db ]; then
+              sqlite3 /var/lib/oee/edge_gateway.db .dump > {{ backup_dir }}/edge_gateway_{{ timestamp }}.sql
+            fi
+          args:
+            executable: /bin/bash
+
+        - name: Fetch database backup
+          fetch:
+            src: "{{ backup_dir }}/edge_gateway_{{ timestamp }}.sql"
+            dest: "{{ local_backup_dir }}/{{ edge_node_id }}-db-{{ timestamp }}.sql"
+            flat: yes
+          ignore_errors: yes
+
+        - name: Create backup manifest
+          copy:
+            content: |
+              Edge Gateway Backup Manifest
+              ========================================
+              Node ID: {{ edge_node_id }}
+              Hostname: {{ ansible_hostname }}
+              Backup Date: {{ ansible_date_time.iso8601 }}
+              OEE Version: {{ oee_version }}
+
+              Backup Contents:
+              - Configuration: /etc/oee
+              - Application: /opt/oee/edge
+              - Data: /var/lib/oee
+              - Database: edge_gateway.db (if exists)
+
+              Backup File: oee-backup-{{ edge_node_id }}-{{ timestamp }}.tar.gz
+              Size: {{ backup_file_info.stat.size | filesizeformat }}
+
+              MQTT Broker: {{ mqtt_broker_host }}:{{ mqtt_broker_port }}
+              OPC-UA Servers:
+              {% for server in opcua_servers %}
+              - {{ server.endpoint }}
+              {% endfor %}
+            dest: "{{ backup_dir }}/manifest_{{ timestamp }}.txt"
+
+        - name: Fetch manifest
+          fetch:
+            src: "{{ backup_dir }}/manifest_{{ timestamp }}.txt"
+            dest: "{{ local_backup_dir }}/{{ edge_node_id }}-manifest-{{ timestamp }}.txt"
+            flat: yes
+
+        - name: Display backup summary
+          debug:
+            msg: |
+              ✅ Backup Complete!
+
+              Edge Gateway: {{ edge_node_id }}
+              Backup File: {{ local_backup_dir }}/{{ edge_node_id }}-{{ timestamp }}.tar.gz
+              Size: {{ backup_file_info.stat.size | filesizeformat }}
+
+              Files backed up:
+              - Configuration: /etc/oee
+              - Application code: /opt/oee/edge
+              - Data: /var/lib/oee
+              - Database: edge_gateway.db
+
+              Remote backup: {{ backup_dir }}/oee-backup-{{ edge_node_id }}-{{ timestamp }}.tar.gz
+
+        - name: Clean old backups (keep last 7 days)
+          find:
+            paths: "{{ backup_dir }}"
+            patterns: "oee-backup-*.tar.gz"
+            age: 7d
+          register: old_backups
+
+        - name: Remove old backups
+          file:
+            path: "{{ item.path }}"
+            state: absent
+          loop: "{{ old_backups.files }}"
+          when: old_backups.matched > 0
+
+      when: operation == "backup"
+
+    # ========================================
+    # RESTORE TASKS
+    # ========================================
+
+    - name: Restore configuration from backup
+      block:
+        - name: Validate backup file exists
+          local_action:
+            module: stat
+            path: "{{ backup_file }}"
+          register: restore_file_check
+          become: no
+
+        - name: Fail if backup file not found
+          fail:
+            msg: "Backup file not found: {{ backup_file }}"
+          when: not restore_file_check.stat.exists
+
+        - name: Stop edge gateway service before restore
+          systemd:
+            name: oee-edge-gateway
+            state: stopped
+
+        - name: Backup current configuration (safety)
+          archive:
+            path:
+              - /etc/oee
+              - /opt/oee/edge
+              - /var/lib/oee
+            dest: "{{ backup_dir }}/pre-restore-backup-{{ timestamp }}.tar.gz"
+            format: gz
+          ignore_errors: yes
+
+        - name: Copy backup file to edge gateway
+          copy:
+            src: "{{ backup_file }}"
+            dest: "{{ backup_dir }}/restore.tar.gz"
+            owner: root
+            group: root
+            mode: '0600'
+
+        - name: Extract backup archive
+          unarchive:
+            src: "{{ backup_dir }}/restore.tar.gz"
+            dest: /
+            remote_src: yes
+            owner: root
+            group: root
+
+        - name: Set correct permissions on restored files
+          file:
+            path: "{{ item.path }}"
+            owner: "{{ item.owner }}"
+            group: "{{ item.group }}"
+            mode: "{{ item.mode }}"
+            state: directory
+            recurse: yes
+          loop:
+            - { path: '/etc/oee', owner: 'root', group: 'root', mode: '0755' }
+            - { path: '/opt/oee', owner: 'oee', group: 'oee', mode: '0755' }
+            - { path: '/var/lib/oee', owner: 'oee', group: 'oee', mode: '0755' }
+
+        - name: Set certificate permissions
+          file:
+            path: "/etc/oee/certs/{{ item }}"
+            owner: oee
+            group: oee
+            mode: '{{ "0600" if "key" in item else "0644" }}'
+          loop:
+            - client.crt
+            - client.key
+            - ca.crt
+          ignore_errors: yes
+
+        - name: Restore database (if backup exists)
+          shell: |
+            if [ -f {{ backup_dir }}/edge_gateway_*.sql ]; then
+              sqlite3 /var/lib/oee/edge_gateway.db < {{ backup_dir }}/edge_gateway_*.sql
+              chown oee:oee /var/lib/oee/edge_gateway.db
+            fi
+          args:
+            executable: /bin/bash
+          ignore_errors: yes
+
+        - name: Reload systemd daemon
+          systemd:
+            daemon_reload: yes
+
+        - name: Start edge gateway service
+          systemd:
+            name: oee-edge-gateway
+            state: started
+            enabled: yes
+
+        - name: Wait for service to become healthy
+          uri:
+            url: "http://localhost:9100/health"
+            status_code: 200
+          register: health_check
+          until: health_check.status == 200
+          retries: 12
+          delay: 5
+          ignore_errors: yes
+
+        - name: Display restore summary
+          debug:
+            msg: |
+              {% if health_check.status == 200 %}
+              ✅ Restore Complete and Healthy!
+              {% else %}
+              ⚠️  Restore Complete but Service Unhealthy
+              {% endif %}
+
+              Edge Gateway: {{ edge_node_id }}
+              Restored from: {{ backup_file }}
+              Service Status: {{ health_check.status | default('Unknown') }}
+
+              Configuration restored to:
+              - /etc/oee
+              - /opt/oee/edge
+              - /var/lib/oee
+
+              Pre-restore backup saved: {{ backup_dir }}/pre-restore-backup-{{ timestamp }}.tar.gz
+
+              Check logs: journalctl -u oee-edge-gateway -f
+
+      when: operation == "restore"
+
+  # ========================================
+  # POST TASKS
+  # ========================================
+
+  post_tasks:
+    - name: Verify service is running (for both operations)
+      systemd:
+        name: oee-edge-gateway
+      register: final_service_status
+
+    - name: Display final status
+      debug:
+        msg: |
+          Final Service Status: {{ final_service_status.status.ActiveState }}
+
+          {% if operation == 'backup' %}
+          Backup Location: {{ local_backup_dir }}/{{ edge_node_id }}-{{ timestamp }}.tar.gz
+          {% else %}
+          Restored from: {{ backup_file }}
+          {% endif %}

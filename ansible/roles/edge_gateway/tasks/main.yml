@@ -1,0 +1,65 @@
+---
+# Edge Gateway role - deploy OEE edge gateway application
+
+- name: Copy edge gateway Python source code
+  synchronize:
+    src: "{{ playbook_dir }}/../../oee_analytics/"
+    dest: "{{ edge_install_dir }}/oee_analytics/"
+    delete: yes
+    rsync_opts:
+      - "--exclude=__pycache__"
+      - "--exclude=*.pyc"
+      - "--exclude=.git"
+  become_user: "{{ edge_user }}"
+
+- name: Create edge gateway configuration file
+  template:
+    src: edge_gateway.yml.j2
+    dest: "{{ edge_config_dir }}/edge_gateway.yml"
+    owner: "{{ edge_user }}"
+    group: "{{ edge_group }}"
+    mode: '0640'
+
+- name: Create systemd service file
+  template:
+    src: oee-edge-gateway.service.j2
+    dest: /etc/systemd/system/oee-edge-gateway.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload systemd
+
+- name: Create edge gateway startup script
+  template:
+    src: start_edge_gateway.sh.j2
+    dest: "{{ edge_install_dir }}/start_edge_gateway.sh"
+    owner: "{{ edge_user }}"
+    group: "{{ edge_group }}"
+    mode: '0750'
+
+- name: Enable and start edge gateway service
+  systemd:
+    name: oee-edge-gateway
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: Create log rotation configuration
+  copy:
+    dest: /etc/logrotate.d/oee-edge-gateway
+    content: |
+      {{ edge_logs_dir }}/*.log {
+          daily
+          rotate {{ log_retention_days }}
+          compress
+          delaycompress
+          notifempty
+          create 0640 {{ edge_user }} {{ edge_group }}
+          sharedscripts
+          postrotate
+              systemctl reload oee-edge-gateway > /dev/null 2>&1 || true
+          endscript
+      }
+    owner: root
+    group: root
+    mode: '0644'

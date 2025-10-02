@@ -1,0 +1,106 @@
+---
+# Deploy OEE Edge Gateway to Production Site
+# This playbook installs and configures the complete edge gateway stack
+
+- name: Deploy OEE Edge Gateway
+  hosts: edge_gateways
+  become: yes
+  gather_facts: yes
+
+  vars:
+    edge_install_dir: /opt/oee/edge
+    edge_config_dir: /etc/oee
+    edge_certs_dir: /etc/oee/certs
+    edge_logs_dir: /var/log/oee
+    edge_data_dir: /var/lib/oee
+    edge_user: oee
+    edge_group: oee
+
+  pre_tasks:
+    - name: Display deployment information
+      debug:
+        msg: |
+          Deploying Edge Gateway: {{ edge_node_id }}
+          Site: {{ site_id }}
+          Line: {{ line_id }}
+          Environment: {{ oee_environment }}
+          Target Host: {{ ansible_host }}
+
+    - name: Check if running on supported OS
+      assert:
+        that:
+          - ansible_os_family == "Debian" or ansible_os_family == "RedHat"
+        fail_msg: "Unsupported OS. Only Debian/Ubuntu and RHEL/CentOS supported."
+
+  roles:
+    - role: common
+      tags: [common, base]
+
+    - role: python
+      tags: [python, dependencies]
+
+    - role: certificates
+      tags: [certificates, security]
+
+    - role: edge_gateway
+      tags: [edge_gateway, application]
+
+    - role: opcua_client
+      tags: [opcua, plc]
+
+    - role: monitoring
+      tags: [monitoring, observability]
+
+  post_tasks:
+    - name: Verify edge gateway service is running
+      systemd:
+        name: oee-edge-gateway
+        state: started
+        enabled: yes
+      register: service_status
+
+    - name: Wait for edge gateway to become healthy
+      uri:
+        url: "http://localhost:9100/health"
+        status_code: 200
+      register: health_check
+      until: health_check.status == 200
+      retries: 12
+      delay: 5
+
+    - name: Display deployment summary
+      debug:
+        msg: |
+          ✅ Edge Gateway Deployed Successfully!
+
+          Node ID: {{ edge_node_id }}
+          Service: {{ service_status.status.ActiveState }}
+          Health Check: {{ health_check.status }}
+
+          Logs: journalctl -u oee-edge-gateway -f
+          Config: {{ edge_config_dir }}/edge_gateway.yml
+
+          Next Steps:
+          1. Verify MQTT connection: systemctl status oee-edge-gateway
+          2. Check metrics: curl http://{{ ansible_host }}:9100/metrics
+          3. Monitor logs: tail -f {{ edge_logs_dir }}/edge_gateway.log
+
+- name: Configure MQTT Broker ACL for New Edge Gateway
+  hosts: mqtt_brokers[0]
+  become: yes
+  gather_facts: no
+
+  tasks:
+    - name: Add edge gateway to MQTT ACL
+      lineinfile:
+        path: /opt/emqx/etc/acl.conf
+        line: "{allow, {user, \"{{ hostvars[item].edge_node_id }}\"}, publish, [\"spBv1.0/+/NBIRTH/{{ hostvars[item].edge_node_id }}\", \"spBv1.0/+/NDATA/{{ hostvars[item].edge_node_id }}\", \"spBv1.0/+/DBIRTH/{{ hostvars[item].edge_node_id }}/+\", \"spBv1.0/+/DDATA/{{ hostvars[item].edge_node_id }}/+\"]}."
+        create: yes
+      loop: "{{ groups['edge_gateways'] }}"
+      notify: reload emqx
+
+  handlers:
+    - name: reload emqx
+      systemd:
+        name: emqx
+        state: reloaded

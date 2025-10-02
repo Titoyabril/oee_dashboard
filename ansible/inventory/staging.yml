@@ -1,0 +1,50 @@
+# Staging Inventory for OEE Analytics (Lab Testing)
+
+all:
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    ansible_user: oeeadmin
+
+    oee_environment: staging
+    oee_version: 1.0.0-rc
+
+    # Staging MQTT Broker (single instance)
+    mqtt_broker_host: mqtt.oee.staging.local
+    mqtt_broker_port: 8883
+    mqtt_use_tls: true
+
+    # Staging TimescaleDB
+    timescaledb_host: timescaledb.oee.staging.local
+    timescaledb_port: 5432
+    timescaledb_database: oee_analytics_staging
+
+    ca_cert_path: /etc/oee/certs/ca.crt
+    log_level: DEBUG
+    log_retention_days: 7
+
+  children:
+    edge_gateways:
+      hosts:
+        edge-lab-01:
+          ansible_host: 10.20.1.10
+          edge_node_id: edge_LAB-01
+          site_id: LAB
+          line_id: TEST01
+          opcua_servers:
+            - endpoint: opc.tcp://10.20.10.10:4840
+              description: OPC-UA Simulator
+              vendor: Prosys
+              sampling_interval: 500
+
+    mqtt_brokers:
+      hosts:
+        mqtt-staging:
+          ansible_host: 10.20.1.20
+          emqx_node_name: emqx@staging.local
+
+    databases:
+      hosts:
+        timescaledb-staging:
+          ansible_host: 10.20.1.30
+          postgresql_version: 16
+          timescaledb_version: 2.14

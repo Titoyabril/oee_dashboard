@@ -1,0 +1,73 @@
+---
+# Edge Gateway specific variables
+
+# Edge Gateway Configuration
+edge_gateway_version: "1.0.0"
+edge_gateway_binary: python
+edge_gateway_main_module: oee_analytics.sparkplug.edge_gateway
+
+# Resource Limits
+edge_gateway_memory_limit: "2G"
+edge_gateway_cpu_quota: "200%"  # 2 cores
+edge_gateway_max_files: 65536
+edge_gateway_max_processes: 32768
+
+# Performance Tuning
+edge_gateway_worker_threads: 4
+edge_gateway_queue_max_size: 10000
+edge_gateway_batch_size: 100
+edge_gateway_flush_interval_ms: 1000
+
+# Sparkplug B Configuration
+sparkplug_group_id: "{{ site_id }}"
+sparkplug_node_id: "{{ edge_node_id }}"
+sparkplug_rebirth_interval_seconds: 300
+sparkplug_max_sequence_number: 256
+
+# Data Quality Configuration
+data_quality_good: 192
+data_quality_uncertain: 64
+data_quality_bad: 0
+
+# Retry Configuration
+mqtt_reconnect_delay_seconds: 5
+mqtt_max_reconnect_delay_seconds: 300
+mqtt_reconnect_exponential_backoff: true
+
+opcua_retry_delay_seconds: 10
+opcua_max_retry_delay_seconds: 600
+opcua_retry_exponential_backoff: true
+
+# Cache Configuration (Redis)
+redis_host: localhost
+redis_port: 6379
+redis_db: 0
+redis_password: ""
+redis_socket_timeout_seconds: 5
+redis_connection_pool_size: 10
+
+# Alerting Thresholds
+alert_queue_size_threshold: 5000
+alert_memory_usage_threshold_percent: 85
+alert_cpu_usage_threshold_percent: 90
+alert_disk_usage_threshold_percent: 80
+alert_certificate_expiry_days: 30
+
+# Feature Flags
+enable_adaptive_sampling: true
+enable_data_compression: false  # Not implemented yet
+enable_local_cache: true
+enable_metrics_export: true
+enable_health_endpoint: true
+
+# Advanced Configuration
+message_deduplication_enabled: false
+message_timestamp_validation: true
+strict_sequence_checking: true
+drop_invalid_messages: false  # Log instead
+
+# Development/Debug Settings (override in staging)
+debug_mode: false
+verbose_logging: false
+log_mqtt_payloads: false
+log_opcua_traffic: false

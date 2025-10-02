@@ -1,0 +1,95 @@
+---
+# Certificates role - distribute CA and client certificates
+
+- name: Copy CA certificate
+  copy:
+    src: "{{ playbook_dir }}/../docker/compose/certs/ca.crt"
+    dest: "{{ edge_certs_dir }}/ca.crt"
+    owner: root
+    group: "{{ edge_group }}"
+    mode: '0644'
+
+- name: Check if client certificate exists
+  stat:
+    path: "{{ playbook_dir }}/../docker/compose/certs/client_{{ edge_node_id }}.crt"
+  delegate_to: localhost
+  become: no
+  register: client_cert_stat
+
+- name: Fail if client certificate not found
+  fail:
+    msg: |
+      Client certificate not found for {{ edge_node_id }}!
+
+      Please generate certificate first:
+      cd docker/compose/certs
+      source generate_certs.sh
+      generate_client_cert {{ edge_node_id }}
+  when: not client_cert_stat.stat.exists
+
+- name: Copy client certificate
+  copy:
+    src: "{{ playbook_dir }}/../docker/compose/certs/client_{{ edge_node_id }}.crt"
+    dest: "{{ edge_certs_dir }}/client.crt"
+    owner: root
+    group: "{{ edge_group }}"
+    mode: '0644'
+
+- name: Copy client private key
+  copy:
+    src: "{{ playbook_dir }}/../docker/compose/certs/client_{{ edge_node_id }}.key"
+    dest: "{{ edge_certs_dir }}/client.key"
+    owner: root
+    group: "{{ edge_group }}"
+    mode: '0600'
+  no_log: true  # Don't log private key transfer
+
+- name: Verify certificate
+  openssl_certificate_info:
+    path: "{{ edge_certs_dir }}/client.crt"
+  register: cert_info
+
+- name: Display certificate information
+  debug:
+    msg: |
+      Certificate deployed successfully:
+      Subject: {{ cert_info.subject.CN }}
+      Issuer: {{ cert_info.issuer.CN }}
+      Valid From: {{ cert_info.not_before }}
+      Valid Until: {{ cert_info.not_after }}
+      Days Remaining: {{ ((cert_info.not_after | to_datetime('%Y%m%d%H%M%SZ')) - (ansible_date_time.iso8601 | to_datetime('%Y-%m-%dT%H:%M:%SZ'))).days }}
+
+- name: Create certificate expiry monitoring script
+  copy:
+    dest: /usr/local/bin/check_cert_expiry.sh
+    mode: '0755'
+    content: |
+      #!/bin/bash
+      # Certificate expiry check script
+
+      CERT_FILE="{{ edge_certs_dir }}/client.crt"
+      WARN_DAYS=30
+
+      EXPIRY_DATE=$(openssl x509 -in "$CERT_FILE" -noout -enddate | cut -d= -f2)
+      EXPIRY_EPOCH=$(date -d "$EXPIRY_DATE" +%s)
+      NOW_EPOCH=$(date +%s)
+      DAYS_REMAINING=$(( ($EXPIRY_EPOCH - $NOW_EPOCH) / 86400 ))
+
+      if [ $DAYS_REMAINING -lt 0 ]; then
+          echo "CRITICAL: Certificate expired $((- $DAYS_REMAINING)) days ago!"
+          exit 2
+      elif [ $DAYS_REMAINING -lt $WARN_DAYS ]; then
+          echo "WARNING: Certificate expires in $DAYS_REMAINING days"
+          exit 1
+      else
+          echo "OK: Certificate valid for $DAYS_REMAINING days"
+          exit 0
+      fi
+
+- name: Add certificate expiry check to cron
+  cron:
+    name: "Check certificate expiry"
+    minute: "0"
+    hour: "8"
+    job: "/usr/local/bin/check_cert_expiry.sh 2>&1 | logger -t cert-expiry"
+    user: root

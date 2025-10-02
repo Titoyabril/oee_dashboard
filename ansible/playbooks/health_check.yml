@@ -1,0 +1,377 @@
+---
+# Health Check Playbook
+# Comprehensive health check for all OEE edge gateways
+
+- name: OEE Edge Gateway Health Check
+  hosts: edge_gateways
+  become: yes
+  gather_facts: yes
+
+  vars:
+    health_report_dir: "{{ playbook_dir }}/../reports"
+    timestamp: "{{ ansible_date_time.iso8601_basic_short }}"
+
+  tasks:
+    # ========================================
+    # System Health
+    # ========================================
+
+    - name: Check system resources
+      set_fact:
+        system_health:
+          hostname: "{{ ansible_hostname }}"
+          uptime_seconds: "{{ ansible_uptime_seconds }}"
+          cpu_count: "{{ ansible_processor_vcpus }}"
+          memory_total_mb: "{{ ansible_memtotal_mb }}"
+          memory_free_mb: "{{ ansible_memfree_mb }}"
+          disk_free_gb: "{{ ansible_mounts | selectattr('mount', 'equalto', '/') | map(attribute='size_available') | first | int / 1024 / 1024 / 1024 | round(2) }}"
+
+    - name: Check CPU usage
+      shell: top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}'
+      register: cpu_usage
+      changed_when: false
+
+    - name: Check memory usage
+      shell: free | grep Mem | awk '{print ($3/$2) * 100.0}'
+      register: memory_usage
+      changed_when: false
+
+    - name: Check disk usage
+      shell: df -h / | tail -1 | awk '{print $5}' | sed 's/%//'
+      register: disk_usage
+      changed_when: false
+
+    # ========================================
+    # Service Health
+    # ========================================
+
+    - name: Check edge gateway service status
+      systemd:
+        name: oee-edge-gateway
+      register: service_status
+
+    - name: Get service uptime
+      shell: systemctl show oee-edge-gateway -p ActiveEnterTimestamp | cut -d= -f2
+      register: service_uptime
+      changed_when: false
+
+    - name: Check for service restarts
+      shell: journalctl -u oee-edge-gateway --since "24 hours ago" | grep -c "Started OEE Edge Gateway" || echo "0"
+      register: restart_count
+      changed_when: false
+
+    - name: Check for service errors
+      shell: journalctl -u oee-edge-gateway --since "1 hour ago" -p err | wc -l
+      register: error_count
+      changed_when: false
+
+    # ========================================
+    # Application Health
+    # ========================================
+
+    - name: Query health endpoint
+      uri:
+        url: "http://localhost:9100/health"
+        return_content: yes
+        status_code: [200, 503]
+      register: health_endpoint
+      ignore_errors: yes
+
+    - name: Query metrics endpoint
+      uri:
+        url: "http://localhost:9100/metrics"
+        return_content: yes
+      register: metrics_endpoint
+      ignore_errors: yes
+
+    - name: Extract key metrics
+      set_fact:
+        mqtt_connected: "{{ metrics_endpoint.content | regex_search('sparkplug_mqtt_connected (\\d+)', '\\1') | first | default('0') }}"
+        messages_sent: "{{ metrics_endpoint.content | regex_search('sparkplug_messages_sent_total (\\d+)', '\\1') | first | default('0') }}"
+        queue_size: "{{ metrics_endpoint.content | regex_search('edge_cache_queue_size (\\d+)', '\\1') | first | default('0') }}"
+      when: metrics_endpoint is succeeded
+
+    # ========================================
+    # Network Connectivity
+    # ========================================
+
+    - name: Test MQTT broker connectivity
+      wait_for:
+        host: "{{ mqtt_broker_host }}"
+        port: "{{ mqtt_broker_port }}"
+        timeout: 5
+      register: mqtt_reachable
+      ignore_errors: yes
+
+    - name: Test TimescaleDB connectivity
+      wait_for:
+        host: "{{ timescaledb_host }}"
+        port: "{{ timescaledb_port }}"
+        timeout: 5
+      register: db_reachable
+      ignore_errors: yes
+
+    # ========================================
+    # Certificate Health
+    # ========================================
+
+    - name: Check certificate expiration
+      openssl_certificate_info:
+        path: /etc/oee/certs/client.crt
+      register: cert_info
+      ignore_errors: yes
+
+    - name: Calculate certificate days remaining
+      set_fact:
+        cert_days_remaining: "{{ ((cert_info.not_after | to_datetime('%Y%m%d%H%M%SZ')) - (ansible_date_time.iso8601 | to_datetime('%Y-%m-%dT%H:%M:%SZ'))).days }}"
+      when: cert_info is succeeded
+
+    # ========================================
+    # OPC-UA Connectivity
+    # ========================================
+
+    - name: Check OPC-UA server connectivity
+      wait_for:
+        host: "{{ item.endpoint | regex_replace('opc.tcp://([^:]+):.*', '\\1') }}"
+        port: "{{ item.endpoint | regex_replace('opc.tcp://[^:]+:(\\d+).*', '\\1') }}"
+        timeout: 5
+      loop: "{{ opcua_servers }}"
+      register: opcua_reachable
+      ignore_errors: yes
+
+    # ========================================
+    # Health Assessment
+    # ========================================
+
+    - name: Assess overall health
+      set_fact:
+        health_status: >-
+          {%- if service_status.status.ActiveState != 'active' -%}
+            CRITICAL
+          {%- elif mqtt_reachable is failed or db_reachable is failed -%}
+            CRITICAL
+          {%- elif (cert_days_remaining | default(999) | int) < 7 -%}
+            CRITICAL
+          {%- elif error_count.stdout | int > 10 -%}
+            WARNING
+          {%- elif (cpu_usage.stdout | float) > 90 -%}
+            WARNING
+          {%- elif (memory_usage.stdout | float) > 90 -%}
+            WARNING
+          {%- elif (disk_usage.stdout | int) > 85 -%}
+            WARNING
+          {%- elif (cert_days_remaining | default(999) | int) < 30 -%}
+            WARNING
+          {%- else -%}
+            HEALTHY
+          {%- endif -%}
+
+    - name: Collect health report
+      set_fact:
+        health_report:
+          edge_node_id: "{{ edge_node_id }}"
+          timestamp: "{{ ansible_date_time.iso8601 }}"
+          status: "{{ health_status }}"
+          system:
+            hostname: "{{ ansible_hostname }}"
+            uptime_seconds: "{{ ansible_uptime_seconds }}"
+            cpu_usage_percent: "{{ cpu_usage.stdout | float | round(2) }}"
+            memory_usage_percent: "{{ memory_usage.stdout | float | round(2) }}"
+            disk_usage_percent: "{{ disk_usage.stdout | int }}"
+            load_average: "{{ ansible_loadavg }}"
+          service:
+            active_state: "{{ service_status.status.ActiveState }}"
+            uptime: "{{ service_uptime.stdout }}"
+            restart_count_24h: "{{ restart_count.stdout | int }}"
+            error_count_1h: "{{ error_count.stdout | int }}"
+          application:
+            health_endpoint_status: "{{ health_endpoint.status | default('N/A') }}"
+            mqtt_connected: "{{ mqtt_connected | default('unknown') }}"
+            messages_sent: "{{ messages_sent | default('unknown') }}"
+            queue_size: "{{ queue_size | default('unknown') }}"
+          network:
+            mqtt_broker_reachable: "{{ mqtt_reachable is succeeded }}"
+            timescaledb_reachable: "{{ db_reachable is succeeded }}"
+            opcua_servers_reachable: "{{ opcua_reachable.results | selectattr('failed', 'equalto', false) | list | length }} / {{ opcua_servers | length }}"
+          certificates:
+            client_cert_days_remaining: "{{ cert_days_remaining | default('N/A') }}"
+            client_cert_expires: "{{ cert_info.not_after | default('N/A') }}"
+
+    - name: Display health report
+      debug:
+        msg: |
+          ============================================
+          HEALTH REPORT: {{ edge_node_id }}
+          ============================================
+          Status: {{ health_status }}
+
+          SYSTEM:
+          - CPU Usage: {{ cpu_usage.stdout | float | round(2) }}%
+          - Memory Usage: {{ memory_usage.stdout | float | round(2) }}%
+          - Disk Usage: {{ disk_usage.stdout }}%
+          - Uptime: {{ ansible_uptime_seconds | int / 3600 | round(1) }} hours
+
+          SERVICE:
+          - State: {{ service_status.status.ActiveState }}
+          - Started: {{ service_uptime.stdout }}
+          - Restarts (24h): {{ restart_count.stdout }}
+          - Errors (1h): {{ error_count.stdout }}
+
+          APPLICATION:
+          - Health Endpoint: {{ health_endpoint.status | default('N/A') }}
+          - MQTT Connected: {{ mqtt_connected | default('unknown') }}
+          - Messages Sent: {{ messages_sent | default('unknown') }}
+          - Queue Size: {{ queue_size | default('unknown') }}
+
+          NETWORK:
+          - MQTT Broker: {{ 'OK' if mqtt_reachable is succeeded else 'FAILED' }}
+          - TimescaleDB: {{ 'OK' if db_reachable is succeeded else 'FAILED' }}
+          - OPC-UA Servers: {{ opcua_reachable.results | selectattr('failed', 'equalto', false) | list | length }} / {{ opcua_servers | length }}
+
+          CERTIFICATES:
+          - Days Remaining: {{ cert_days_remaining | default('N/A') }}
+          - Expires: {{ cert_info.not_after | default('N/A') }}
+
+          ============================================
+
+    - name: Save health report to file
+      local_action:
+        module: copy
+        content: "{{ health_report | to_nice_json }}"
+        dest: "{{ health_report_dir }}/{{ edge_node_id }}_{{ timestamp }}.json"
+      become: no
+
+# ========================================
+# Summary Report
+# ========================================
+
+- name: Generate Health Summary
+  hosts: localhost
+  gather_facts: no
+  become: no
+
+  vars:
+    health_report_dir: "{{ playbook_dir }}/../reports"
+    timestamp: "{{ ansible_date_time.iso8601_basic_short }}"
+
+  tasks:
+    - name: Collect all health reports
+      set_fact:
+        all_health_reports: "{{ groups['edge_gateways'] | map('extract', hostvars, 'health_report') | list }}"
+
+    - name: Count health statuses
+      set_fact:
+        healthy_count: "{{ all_health_reports | selectattr('status', 'equalto', 'HEALTHY') | list | length }}"
+        warning_count: "{{ all_health_reports | selectattr('status', 'equalto', 'WARNING') | list | length }}"
+        critical_count: "{{ all_health_reports | selectattr('status', 'equalto', 'CRITICAL') | list | length }}"
+
+    - name: Generate summary report
+      set_fact:
+        summary_report:
+          timestamp: "{{ ansible_date_time.iso8601 }}"
+          total_gateways: "{{ groups['edge_gateways'] | length }}"
+          healthy: "{{ healthy_count }}"
+          warning: "{{ warning_count }}"
+          critical: "{{ critical_count }}"
+          details: "{{ all_health_reports }}"
+
+    - name: Display summary
+      debug:
+        msg: |
+          ============================================
+          OEE EDGE GATEWAY FLEET HEALTH SUMMARY
+          ============================================
+          Total Gateways: {{ groups['edge_gateways'] | length }}
+          Healthy: {{ healthy_count }}
+          Warning: {{ warning_count }}
+          Critical: {{ critical_count }}
+
+          {% for report in all_health_reports %}
+          {{ report.edge_node_id }}: {{ report.status }}
+          {% endfor %}
+          ============================================
+
+    - name: Save summary report
+      copy:
+        content: "{{ summary_report | to_nice_json }}"
+        dest: "{{ health_report_dir }}/fleet_summary_{{ timestamp }}.json"
+
+    - name: Create HTML report
+      copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>OEE Edge Gateway Health Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .header { background: #333; color: white; padding: 20px; }
+              .summary { display: flex; gap: 20px; margin: 20px 0; }
+              .metric { background: #f0f0f0; padding: 15px; border-radius: 5px; flex: 1; }
+              .healthy { color: green; }
+              .warning { color: orange; }
+              .critical { color: red; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background: #333; color: white; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>OEE Edge Gateway Health Report</h1>
+              <p>Generated: {{ ansible_date_time.iso8601 }}</p>
+            </div>
+
+            <div class="summary">
+              <div class="metric">
+                <h3>Total Gateways</h3>
+                <p style="font-size: 2em;">{{ groups['edge_gateways'] | length }}</p>
+              </div>
+              <div class="metric">
+                <h3 class="healthy">Healthy</h3>
+                <p style="font-size: 2em;">{{ healthy_count }}</p>
+              </div>
+              <div class="metric">
+                <h3 class="warning">Warning</h3>
+                <p style="font-size: 2em;">{{ warning_count }}</p>
+              </div>
+              <div class="metric">
+                <h3 class="critical">Critical</h3>
+                <p style="font-size: 2em;">{{ critical_count }}</p>
+              </div>
+            </div>
+
+            <table>
+              <tr>
+                <th>Edge Gateway</th>
+                <th>Status</th>
+                <th>CPU %</th>
+                <th>Memory %</th>
+                <th>MQTT</th>
+                <th>OPC-UA</th>
+                <th>Cert Days</th>
+              </tr>
+              {% for report in all_health_reports %}
+              <tr>
+                <td>{{ report.edge_node_id }}</td>
+                <td class="{{ report.status | lower }}">{{ report.status }}</td>
+                <td>{{ report.system.cpu_usage_percent }}</td>
+                <td>{{ report.system.memory_usage_percent }}</td>
+                <td>{{ 'Connected' if report.application.mqtt_connected == '1' else 'Disconnected' }}</td>
+                <td>{{ report.network.opcua_servers_reachable }}</td>
+                <td>{{ report.certificates.client_cert_days_remaining }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </body>
+          </html>
+        dest: "{{ health_report_dir }}/fleet_health_{{ timestamp }}.html"
+
+    - name: Display report location
+      debug:
+        msg: |
+          Health reports saved:
+          - JSON Summary: {{ health_report_dir }}/fleet_summary_{{ timestamp }}.json
+          - HTML Report: {{ health_report_dir }}/fleet_health_{{ timestamp }}.html
+
+          View HTML report: file://{{ health_report_dir }}/fleet_health_{{ timestamp }}.html

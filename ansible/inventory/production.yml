@@ -1,0 +1,140 @@
+# Production Inventory for OEE Analytics Edge Gateways
+
+all:
+  vars:
+    # Global variables
+    ansible_python_interpreter: /usr/bin/python3
+    ansible_user: oeeadmin
+
+    # OEE System Configuration
+    oee_environment: production
+    oee_version: 1.0.0
+
+    # MQTT Broker Configuration
+    mqtt_broker_host: mqtt.oee.prod.local
+    mqtt_broker_port: 8883
+    mqtt_use_tls: true
+
+    # TimescaleDB Configuration
+    timescaledb_host: timescaledb.oee.prod.local
+    timescaledb_port: 5432
+    timescaledb_database: oee_analytics
+
+    # Certificate Authority
+    ca_cert_path: /etc/oee/certs/ca.crt
+
+    # Logging
+    log_level: INFO
+    log_retention_days: 30
+
+  children:
+    # Edge Gateway Hosts
+    edge_gateways:
+      children:
+        site01_gateways:
+          hosts:
+            edge-site01-line01:
+              ansible_host: 10.10.1.10
+              edge_node_id: edge_SITE01-LINE01
+              site_id: SITE01
+              line_id: LINE01
+              opcua_servers:
+                - endpoint: opc.tcp://192.168.10.10:4840
+                  description: Line 1 PLC
+                  vendor: Rockwell
+                  sampling_interval: 250
+                  tags:
+                    - node_id: ns=2;s=ProductionCount
+                      name: production_count
+                      type: counter.total
+                    - node_id: ns=2;s=GoodCount
+                      name: good_count
+                      type: counter.good
+                    - node_id: ns=2;s=MachineState
+                      name: machine_state
+                      type: state.run
+
+            edge-site01-line02:
+              ansible_host: 10.10.1.11
+              edge_node_id: edge_SITE01-LINE02
+              site_id: SITE01
+              line_id: LINE02
+              opcua_servers:
+                - endpoint: opc.tcp://192.168.10.20:4840
+                  description: Line 2 PLC
+                  vendor: Siemens
+                  sampling_interval: 250
+
+        site02_gateways:
+          hosts:
+            edge-site02-line01:
+              ansible_host: 10.10.2.10
+              edge_node_id: edge_SITE02-LINE01
+              site_id: SITE02
+              line_id: LINE01
+              opcua_servers:
+                - endpoint: opc.tcp://192.168.20.10:4840
+                  description: Assembly Line
+                  vendor: Rockwell
+                  sampling_interval: 250
+
+    # Analytics/Backend Servers
+    analytics_servers:
+      hosts:
+        analytics-01:
+          ansible_host: 192.168.1.100
+          mqtt_client_id: analytics_OEE-PROCESSOR
+          role: processor
+
+    # MQTT Broker Cluster
+    mqtt_brokers:
+      hosts:
+        mqtt-broker-01:
+          ansible_host: 192.168.1.10
+          emqx_node_name: emqx@emqx1.local
+
+        mqtt-broker-02:
+          ansible_host: 192.168.1.11
+          emqx_node_name: emqx@emqx2.local
+
+        mqtt-broker-03:
+          ansible_host: 192.168.1.12
+          emqx_node_name: emqx@emqx3.local
+
+    # Database Servers
+    databases:
+      hosts:
+        timescaledb-01:
+          ansible_host: 192.168.1.20
+          postgresql_version: 16
+          timescaledb_version: 2.14
+
+# Groups by function
+edge_gateways:
+  vars:
+    # Edge-specific configuration
+    edge_gateway_version: 1.0.0
+    python_version: 3.11
+
+    # Service configuration
+    systemd_restart: on-failure
+    systemd_restart_sec: 10
+
+    # Store-and-forward
+    store_forward_enabled: true
+    store_forward_max_size_mb: 500
+
+    # Backpressure
+    backpressure_enabled: true
+    backpressure_threshold: 1000
+    backpressure_resume_threshold: 500
+
+    # Monitoring
+    prometheus_exporter_port: 9100
+    health_check_interval: 60
+
+mqtt_brokers:
+  vars:
+    emqx_version: 5.4.0
+    emqx_cluster_size: 3
+    max_connections: 10000

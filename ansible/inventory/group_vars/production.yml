@@ -1,0 +1,48 @@
+---
+# Production environment specific variables
+
+# Environment
+oee_environment: production
+
+# Logging
+log_level: INFO
+log_retention_days: 90
+verbose_logging: false
+debug_mode: false
+
+# Security
+enable_security_hardening: true
+allow_root_login: false
+
+# Performance
+edge_gateway_worker_threads: 8
+edge_gateway_queue_max_size: 20000
+
+# MQTT Broker
+mqtt_broker_host: mqtt.oee.prod.local
+mqtt_broker_port: 8883
+mqtt_use_tls: true
+
+# TimescaleDB
+timescaledb_host: timescaledb.oee.prod.local
+timescaledb_port: 5432
+timescaledb_database: oee_analytics
+
+# Backups
+backup_enabled: true
+backup_retention_days: 90
+backup_schedule: "0 2 * * *"
+
+# Monitoring
+prometheus_server: prometheus.oee.prod.local:9090
+grafana_server: grafana.oee.prod.local:3000
+alertmanager_server: alertmanager.oee.prod.local:9093
+
+# Certificate Management
+cert_renewal_threshold_days: 60  # Renew 60 days before expiry in prod
+
+# Feature Flags
+enable_adaptive_sampling: true
+enable_local_cache: true
+enable_metrics_export: true
+enable_health_endpoint: true

@@ -1,0 +1,67 @@
+---
+# Service Management Playbook
+# Start, stop, restart, status of OEE edge gateway services
+
+- name: Manage OEE Edge Gateway Services
+  hosts: edge_gateways
+  become: yes
+  gather_facts: no
+
+  vars_prompt:
+    - name: action
+      prompt: "Action (start/stop/restart/status)"
+      private: no
+      default: "status"
+
+  tasks:
+    - name: Validate action
+      assert:
+        that:
+          - action in ['start', 'stop', 'restart', 'status']
+        fail_msg: "Invalid action. Must be start, stop, restart, or status"
+
+    - name: Execute service action
+      systemd:
+        name: oee-edge-gateway
+        state: "{{ action if action != 'status' else omit }}"
+      register: service_result
+      when: action != 'status'
+
+    - name: Get service status
+      systemd:
+        name: oee-edge-gateway
+      register: service_status
+
+    - name: Display service information
+      debug:
+        msg: |
+          Edge Gateway: {{ edge_node_id }}
+          Host: {{ ansible_host }}
+          Status: {{ service_status.status.ActiveState }}
+          Uptime: {{ service_status.status.ActiveEnterTimestamp | default('N/A') }}
+          Memory: {{ service_status.status.MemoryCurrent | default('N/A') }}
+          CPU: {{ service_status.status.CPUUsageNSec | default('N/A') }}
+
+    - name: Get recent logs
+      command: journalctl -u oee-edge-gateway -n 20 --no-pager
+      register: recent_logs
+      changed_when: false
+
+    - name: Display recent logs
+      debug:
+        msg: "{{ recent_logs.stdout_lines }}"
+      when: action == 'status'
+
+    - name: Check health endpoint
+      uri:
+        url: "http://localhost:9100/health"
+        return_content: yes
+        status_code: [200, 503]
+      register: health_check
+      ignore_errors: yes
+
+    - name: Display health status
+      debug:
+        msg: |
+          Health Endpoint: {{ 'Healthy' if health_check.status == 200 else 'Unhealthy' }}
+          Response: {{ health_check.json | default('Not available') }}

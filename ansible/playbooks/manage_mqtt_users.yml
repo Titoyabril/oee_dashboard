@@ -1,0 +1,233 @@
+---
+# MQTT User Management Playbook
+# Add/remove MQTT users and configure ACL permissions
+
+- name: Manage MQTT Users and ACL
+  hosts: mqtt_brokers[0]  # Run only on first broker (cluster syncs)
+  become: yes
+  gather_facts: yes
+
+  vars:
+    emqx_cli: /opt/emqx/bin/emqx_ctl
+    emqx_acl_file: /opt/emqx/etc/acl.conf
+    emqx_users_file: /opt/emqx/data/mnesia/emqx@{{ ansible_hostname }}.local/BUILT_IN.PASSWD
+
+  vars_prompt:
+    - name: action
+      prompt: "Action (add/remove/list)"
+      private: no
+      default: "list"
+
+    - name: client_id
+      prompt: "Client ID (e.g., edge_SITE01-LINE01)"
+      private: no
+      when: action != "list"
+
+    - name: client_role
+      prompt: "Client Role (edge/analytics/scada/dashboard/admin)"
+      private: no
+      when: action == "add"
+
+    - name: client_password
+      prompt: "Client Password"
+      private: yes
+      when: action == "add"
+
+  tasks:
+    # ========================================
+    # LIST USERS
+    # ========================================
+
+    - name: List current MQTT users
+      command: "{{ emqx_cli }} users list"
+      register: users_list
+      when: action == "list"
+
+    - name: Display MQTT users
+      debug:
+        msg: "{{ users_list.stdout_lines }}"
+      when: action == "list"
+
+    # ========================================
+    # ADD USER
+    # ========================================
+
+    - name: Validate client ID format
+      assert:
+        that:
+          - client_id is match('^(edge|analytics|scada|dashboard|admin)_[A-Z0-9-]+$')
+        fail_msg: "Invalid client ID format. Must start with role_ (e.g., edge_SITE01-LINE01)"
+      when: action == "add"
+
+    - name: Check if user already exists
+      command: "{{ emqx_cli }} users list"
+      register: existing_users
+      changed_when: false
+      when: action == "add"
+
+    - name: Fail if user already exists
+      fail:
+        msg: "User {{ client_id }} already exists!"
+      when: action == "add" and client_id in existing_users.stdout
+      ignore_errors: no
+
+    - name: Add MQTT user
+      command: >
+        {{ emqx_cli }} users add
+        {{ client_id }}
+        {{ client_password }}
+      when: action == "add"
+      register: add_user_result
+      no_log: true  # Don't log password
+
+    - name: Generate client certificate for new edge gateway
+      block:
+        - name: Create CSR directory on controller
+          local_action:
+            module: file
+            path: /tmp/mqtt_certs
+            state: directory
+          become: no
+
+        - name: Generate private key
+          local_action:
+            module: openssl_privatekey
+            path: "/tmp/mqtt_certs/{{ client_id }}.key"
+            size: 2048
+          become: no
+
+        - name: Generate CSR
+          local_action:
+            module: openssl_csr
+            path: "/tmp/mqtt_certs/{{ client_id }}.csr"
+            privatekey_path: "/tmp/mqtt_certs/{{ client_id }}.key"
+            common_name: "{{ client_id }}"
+            organization_name: "OEE-Manufacturing"
+            organizational_unit_name: "{{ client_role | capitalize }}"
+          become: no
+
+        - name: Sign certificate with CA
+          local_action:
+            module: shell
+            cmd: |
+              cd {{ playbook_dir }}/../docker/compose/certs
+              openssl x509 -req \
+                -in /tmp/mqtt_certs/{{ client_id }}.csr \
+                -CA ca.crt \
+                -CAkey ca.key \
+                -CAcreateserial \
+                -out /tmp/mqtt_certs/{{ client_id }}.crt \
+                -days 365 \
+                -sha256 \
+                -extfile <(echo "extendedKeyUsage = clientAuth")
+          args:
+            executable: /bin/bash
+          become: no
+
+        - name: Display certificate location
+          debug:
+            msg: |
+              ✅ Client certificate generated!
+
+              Certificate: /tmp/mqtt_certs/{{ client_id }}.crt
+              Private Key: /tmp/mqtt_certs/{{ client_id }}.key
+
+              Distribute these files securely to the client.
+      when: action == "add" and client_role == "edge"
+
+    - name: Add ACL rules for new user
+      blockinfile:
+        path: "{{ emqx_acl_file }}"
+        marker: "%% {mark} ANSIBLE MANAGED BLOCK - {{ client_id }}"
+        block: |
+          %% ACL rules for {{ client_id }} ({{ client_role }})
+          {% if client_role == 'edge' %}
+          {allow, {user, "{{ client_id }}"}, publish, ["spBv1.0/+/NBIRTH/{{ client_id }}", "spBv1.0/+/NDEATH/{{ client_id }}", "spBv1.0/+/NDATA/{{ client_id }}", "spBv1.0/+/NCMD/{{ client_id }}"]}.
+          {allow, {user, "{{ client_id }}"}, publish, ["spBv1.0/+/DBIRTH/{{ client_id }}/+", "spBv1.0/+/DDEATH/{{ client_id }}/+", "spBv1.0/+/DDATA/{{ client_id }}/+", "spBv1.0/+/DCMD/{{ client_id }}/+"]}.
+          {deny, {user, "{{ client_id }}"}, subscribe, ["#"]}.
+          {% elif client_role == 'analytics' %}
+          {allow, {user, "{{ client_id }}"}, subscribe, ["spBv1.0/#", "$SYS/#"]}.
+          {deny, {user, "{{ client_id }}"}, publish, ["#"]}.
+          {% elif client_role == 'scada' %}
+          {allow, {user, "{{ client_id }}"}, subscribe, ["spBv1.0/+/NBIRTH/+", "spBv1.0/+/NDATA/+", "spBv1.0/+/DBIRTH/+/+", "spBv1.0/+/DDATA/+/+"]}.
+          {allow, {user, "{{ client_id }}"}, publish, ["spBv1.0/+/NCMD/+", "spBv1.0/+/DCMD/+/+", "spBv1.0/STATE/+"]}.
+          {% elif client_role == 'dashboard' %}
+          {allow, {user, "{{ client_id }}"}, subscribe, ["spBv1.0/+/NDATA/+", "spBv1.0/+/DDATA/+/+", "spBv1.0/+/NBIRTH/+", "spBv1.0/+/DBIRTH/+/+", "oee/#"]}.
+          {deny, {user, "{{ client_id }}"}, publish, ["#"]}.
+          {% elif client_role == 'admin' %}
+          {allow, {user, "{{ client_id }}"}, publish, ["#"]}.
+          {allow, {user, "{{ client_id }}"}, subscribe, ["#"]}.
+          {% endif %}
+        create: yes
+      when: action == "add"
+      notify: reload emqx acl
+
+    - name: Display success message
+      debug:
+        msg: |
+          ✅ MQTT User Added Successfully!
+
+          Client ID: {{ client_id }}
+          Role: {{ client_role }}
+          {% if client_role == 'edge' %}
+          Certificate: /tmp/mqtt_certs/{{ client_id }}.crt
+          Private Key: /tmp/mqtt_certs/{{ client_id }}.key
+
+          ⚠️  IMPORTANT: Securely transfer certificate to edge gateway!
+          {% endif %}
+
+          ACL Permissions:
+          {% if client_role == 'edge' %}
+          - Publish: spBv1.0/+/{NBIRTH,NDATA,DBIRTH,DDATA}/{{ client_id }}/*
+          - Subscribe: DENIED
+          {% elif client_role == 'analytics' %}
+          - Subscribe: spBv1.0/#, $SYS/#
+          - Publish: DENIED
+          {% elif client_role == 'scada' %}
+          - Subscribe: spBv1.0/+/*DATA/+
+          - Publish: spBv1.0/+/*CMD/+
+          {% elif client_role == 'dashboard' %}
+          - Subscribe: spBv1.0/+/*DATA/+, oee/#
+          - Publish: DENIED
+          {% elif client_role == 'admin' %}
+          - Full Access
+          {% endif %}
+      when: action == "add"
+
+    # ========================================
+    # REMOVE USER
+    # ========================================
+
+    - name: Remove MQTT user
+      command: "{{ emqx_cli }} users del {{ client_id }}"
+      when: action == "remove"
+      register: remove_user_result
+
+    - name: Remove ACL rules for deleted user
+      blockinfile:
+        path: "{{ emqx_acl_file }}"
+        marker: "%% {mark} ANSIBLE MANAGED BLOCK - {{ client_id }}"
+        state: absent
+      when: action == "remove"
+      notify: reload emqx acl
+
+    - name: Display removal confirmation
+      debug:
+        msg: |
+          ✅ MQTT User Removed!
+
+          Client ID: {{ client_id }}
+
+          ⚠️  Don't forget to:
+          1. Revoke/delete client certificate
+          2. Remove from edge gateway if deployed
+      when: action == "remove"
+
+  handlers:
+    - name: reload emqx acl
+      command: "{{ emqx_cli }} acl reload"
+
+    - name: verify acl syntax
+      command: "{{ emqx_cli }} acl check"
+      register: acl_check
+      failed_when: acl_check.rc != 0

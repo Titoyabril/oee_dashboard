@@ -1,0 +1,92 @@
+---
+# Global variables for all OEE hosts
+
+# Ansible Configuration
+ansible_python_interpreter: /usr/bin/python3
+ansible_user: oeeadmin
+
+# OEE System Version
+oee_version: "1.0.0"
+
+# Directory Structure
+edge_install_dir: /opt/oee/edge
+edge_config_dir: /etc/oee
+edge_certs_dir: /etc/oee/certs
+edge_logs_dir: /var/log/oee
+edge_data_dir: /var/lib/oee
+
+# Service User/Group
+edge_user: oee
+edge_group: oee
+
+# Python Configuration
+python_version: "3.11"
+pip_requirements:
+  - paho-mqtt==2.1.0
+  - asyncua==1.1.5
+  - redis==5.0.6
+  - pytz==2024.1
+  - pyyaml==6.0.1
+  - prometheus-client==0.20.0
+
+# Systemd Configuration
+systemd_restart: on-failure
+systemd_restart_sec: 10
+
+# Logging Configuration
+log_level: INFO
+log_retention_days: 30
+log_max_size_mb: 100
+
+# Certificate Configuration
+cert_validity_days: 365
+cert_renewal_threshold_days: 30
+
+# MQTT Configuration
+mqtt_keepalive_seconds: 60
+mqtt_qos: 1
+mqtt_clean_session: false
+mqtt_connect_timeout_seconds: 10
+
+# Store-and-Forward Configuration
+store_forward_enabled: true
+store_forward_max_size_mb: 500
+store_forward_backend: redis  # redis or rocksdb
+
+# Backpressure Configuration
+backpressure_enabled: true
+backpressure_threshold: 1000
+backpressure_resume_threshold: 500
+backpressure_transition_delay_seconds: 5
+
+# OPC-UA Configuration
+opcua_default_sampling_interval_ms: 250
+opcua_connection_timeout_seconds: 30
+opcua_reconnect_delay_seconds: 10
+opcua_max_reconnect_attempts: -1  # Infinite
+
+# Monitoring Configuration
+prometheus_exporter_port: 9100
+health_check_interval_seconds: 60
+metrics_scrape_interval_seconds: 15
+
+# Security Configuration
+enable_security_hardening: true
+allow_root_login: false
+require_strong_passwords: true
+
+# Firewall Rules
+firewall_allowed_ports:
+  - 22    # SSH
+  - 9100  # Prometheus metrics
+
+# NTP Servers
+ntp_servers:
+  - 0.pool.ntp.org
+  - 1.pool.ntp.org
+  - 2.pool.ntp.org
+  - 3.pool.ntp.org
+
+# Backup Configuration
+backup_retention_days: 30
+backup_schedule: "0 2 * * *"  # Daily at 2 AM

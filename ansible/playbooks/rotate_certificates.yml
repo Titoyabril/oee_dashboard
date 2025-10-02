@@ -1,0 +1,248 @@
+---
+# Certificate Rotation Playbook for OEE Edge Gateways
+# Automates the 1-year certificate renewal process
+
+- name: Rotate Edge Gateway Certificates
+  hosts: edge_gateways
+  become: yes
+  gather_facts: yes
+  serial: 1  # Rotate one at a time to avoid mass outage
+
+  vars:
+    edge_certs_dir: /etc/oee/certs
+    cert_backup_dir: /etc/oee/certs/backup
+    ca_cert_source: "{{ playbook_dir }}/../docker/compose/certs/ca.crt"
+    cert_validity_days: 365
+    min_days_remaining: 30  # Trigger rotation if < 30 days
+
+  pre_tasks:
+    - name: Create backup directory
+      file:
+        path: "{{ cert_backup_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Check current certificate expiration
+      openssl_certificate_info:
+        path: "{{ edge_certs_dir }}/client.crt"
+      register: current_cert
+      ignore_errors: yes
+
+    - name: Calculate days until expiration
+      set_fact:
+        days_remaining: "{{ ((current_cert.not_after | to_datetime('%Y%m%d%H%M%SZ')) - (ansible_date_time.iso8601 | to_datetime('%Y-%m-%dT%H:%M:%SZ'))).days }}"
+      when: current_cert is succeeded
+
+    - name: Display certificate status
+      debug:
+        msg: |
+          Current Certificate Status:
+          Subject: {{ current_cert.subject.CN | default('No certificate') }}
+          Expiration: {{ current_cert.not_after | default('N/A') }}
+          Days Remaining: {{ days_remaining | default('N/A') }}
+
+          {% if days_remaining|int < min_days_remaining %}
+          ⚠️  Certificate rotation required!
+          {% else %}
+          ✅ Certificate still valid
+          {% endif %}
+
+    - name: Determine if rotation needed
+      set_fact:
+        needs_rotation: "{{ (days_remaining|int < min_days_remaining) or (current_cert is failed) }}"
+
+  tasks:
+    - name: Backup existing certificate
+      copy:
+        src: "{{ edge_certs_dir }}/{{ item }}"
+        dest: "{{ cert_backup_dir }}/{{ item }}.{{ ansible_date_time.date }}"
+        remote_src: yes
+      loop:
+        - client.crt
+        - client.key
+      when: needs_rotation | bool
+      ignore_errors: yes
+
+    - name: Generate new private key on edge gateway
+      openssl_privatekey:
+        path: "{{ edge_certs_dir }}/client_new.key"
+        size: 2048
+        mode: '0600'
+      when: needs_rotation | bool
+
+    - name: Generate CSR for new certificate
+      openssl_csr:
+        path: "{{ edge_certs_dir }}/client_new.csr"
+        privatekey_path: "{{ edge_certs_dir }}/client_new.key"
+        common_name: "{{ edge_node_id }}"
+        organization_name: "OEE-Manufacturing"
+        organizational_unit_name: "Edge-Gateways"
+        country_name: "US"
+        state_or_province_name: "State"
+        locality_name: "City"
+      when: needs_rotation | bool
+
+    - name: Fetch CSR to Ansible controller
+      fetch:
+        src: "{{ edge_certs_dir }}/client_new.csr"
+        dest: "/tmp/{{ edge_node_id }}.csr"
+        flat: yes
+      when: needs_rotation | bool
+
+- name: Sign New Certificates with CA
+  hosts: localhost
+  gather_facts: no
+  become: no
+
+  vars:
+    ca_dir: "{{ playbook_dir }}/../docker/compose/certs"
+    cert_validity_days: 365
+
+  tasks:
+    - name: Sign new certificates for each edge gateway
+      shell: |
+        openssl x509 -req \
+          -in /tmp/{{ hostvars[item].edge_node_id }}.csr \
+          -CA {{ ca_dir }}/ca.crt \
+          -CAkey {{ ca_dir }}/ca.key \
+          -CAcreateserial \
+          -out /tmp/{{ hostvars[item].edge_node_id }}.crt \
+          -days {{ cert_validity_days }} \
+          -sha256 \
+          -extfile <(echo "extendedKeyUsage = clientAuth")
+      args:
+        executable: /bin/bash
+      loop: "{{ groups['edge_gateways'] }}"
+      when: hostvars[item].needs_rotation | default(false) | bool
+
+- name: Deploy New Certificates
+  hosts: edge_gateways
+  become: yes
+  gather_facts: no
+
+  vars:
+    edge_certs_dir: /etc/oee/certs
+
+  tasks:
+    - name: Copy new certificate to edge gateway
+      copy:
+        src: "/tmp/{{ edge_node_id }}.crt"
+        dest: "{{ edge_certs_dir }}/client_new.crt"
+        owner: root
+        group: root
+        mode: '0644'
+      when: needs_rotation | bool
+
+    - name: Verify new certificate
+      openssl_certificate:
+        path: "{{ edge_certs_dir }}/client_new.crt"
+        provider: assertonly
+        issuer:
+          CN: OEE-MQTT-CA
+        valid_in: "{{ cert_validity_days * 86400 }}"  # Seconds
+      when: needs_rotation | bool
+
+    - name: Atomic swap - replace old certificate with new
+      block:
+        - name: Stop edge gateway service
+          systemd:
+            name: oee-edge-gateway
+            state: stopped
+
+        - name: Replace certificate files
+          shell: |
+            mv {{ edge_certs_dir }}/client.crt {{ edge_certs_dir }}/client_old.crt
+            mv {{ edge_certs_dir }}/client.key {{ edge_certs_dir }}/client_old.key
+            mv {{ edge_certs_dir }}/client_new.crt {{ edge_certs_dir }}/client.crt
+            mv {{ edge_certs_dir }}/client_new.key {{ edge_certs_dir }}/client.key
+
+        - name: Set correct permissions
+          file:
+            path: "{{ edge_certs_dir }}/{{ item }}"
+            owner: oee
+            group: oee
+            mode: '{{ "0600" if "key" in item else "0644" }}'
+          loop:
+            - client.crt
+            - client.key
+
+        - name: Start edge gateway service
+          systemd:
+            name: oee-edge-gateway
+            state: started
+            enabled: yes
+          register: service_restart
+
+        - name: Wait for service to become healthy
+          uri:
+            url: "http://localhost:9100/health"
+            status_code: 200
+          register: health_check
+          until: health_check.status == 200
+          retries: 12
+          delay: 5
+
+      when: needs_rotation | bool
+
+    - name: Cleanup old certificate files after successful rotation
+      file:
+        path: "{{ edge_certs_dir }}/{{ item }}"
+        state: absent
+      loop:
+        - client_old.crt
+        - client_old.key
+        - client_new.csr
+      when: needs_rotation | bool and health_check.status == 200
+
+  post_tasks:
+    - name: Verify MQTT connection with new certificate
+      command: >
+        mosquitto_pub
+        --cafile {{ edge_certs_dir }}/ca.crt
+        --cert {{ edge_certs_dir }}/client.crt
+        --key {{ edge_certs_dir }}/client.key
+        -h {{ mqtt_broker_host }}
+        -p {{ mqtt_broker_port }}
+        -t "test/{{ edge_node_id }}"
+        -m "Certificate rotation test"
+        -q 1
+      register: mqtt_test
+      ignore_errors: yes
+      when: needs_rotation | bool
+
+    - name: Display rotation summary
+      debug:
+        msg: |
+          {% if needs_rotation | bool %}
+          ✅ Certificate Rotation Complete!
+
+          Edge Gateway: {{ edge_node_id }}
+          Old Certificate Backed Up: {{ cert_backup_dir }}/
+          New Certificate Valid Until: {{ (ansible_date_time.epoch|int + (cert_validity_days * 86400)) | to_datetime }}
+          Service Status: {{ service_restart.status.ActiveState | default('N/A') }}
+          MQTT Connection: {{ 'OK' if mqtt_test.rc == 0 else 'FAILED' }}
+
+          {% else %}
+          ℹ️  Certificate rotation not needed ({{ days_remaining }} days remaining)
+          {% endif %}
+
+- name: Cleanup Temporary Files
+  hosts: localhost
+  gather_facts: no
+  become: no
+
+  tasks:
+    - name: Remove CSR and certificate files from controller
+      file:
+        path: "/tmp/{{ hostvars[item].edge_node_id }}.{{ ext }}"
+        state: absent
+      loop: "{{ groups['edge_gateways'] }}"
+      loop_control:
+        loop_var: item
+      with_items:
+        - csr
+        - crt
+      vars:
+        ext: "{{ item }}"

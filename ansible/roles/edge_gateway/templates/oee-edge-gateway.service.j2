@@ -1,0 +1,51 @@
+[Unit]
+Description=OEE Edge Gateway - {{ edge_node_id }}
+Documentation=https://github.com/your-org/oee-analytics
+After=network-online.target ntp.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ edge_user }}
+Group={{ edge_group }}
+WorkingDirectory={{ edge_install_dir }}
+
+# Environment
+Environment="PATH={{ edge_install_dir }}/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="OEE_CONFIG={{ edge_config_dir }}/edge_gateway.yml"
+Environment="OEE_ENVIRONMENT={{ oee_environment }}"
+
+# Execution
+ExecStart={{ edge_install_dir }}/start_edge_gateway.sh
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Restart policy
+Restart={{ systemd_restart }}
+RestartSec={{ systemd_restart_sec }}
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{ edge_logs_dir }} {{ edge_data_dir }}
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=32768
+MemoryLimit=2G
+CPUQuota=200%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=oee-edge-gateway
+
+[Install]
+WantedBy=multi-user.target

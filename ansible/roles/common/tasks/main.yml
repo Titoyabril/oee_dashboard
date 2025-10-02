@@ -1,0 +1,94 @@
+---
+# Common role - base system configuration for all hosts
+
+- name: Update package cache (Debian/Ubuntu)
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: Update package cache (RHEL/CentOS)
+  yum:
+    update_cache: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Install common packages
+  package:
+    name:
+      - curl
+      - wget
+      - git
+      - vim
+      - htop
+      - net-tools
+      - ntp
+      - openssl
+      - ca-certificates
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Create OEE user
+  user:
+    name: "{{ edge_user }}"
+    comment: "OEE Edge Gateway Service User"
+    system: yes
+    create_home: yes
+    home: /home/oee
+    shell: /bin/bash
+
+- name: Create OEE directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ edge_user }}"
+    group: "{{ edge_group }}"
+    mode: '0755'
+  loop:
+    - "{{ edge_install_dir }}"
+    - "{{ edge_config_dir }}"
+    - "{{ edge_logs_dir }}"
+    - "{{ edge_data_dir }}"
+    - "{{ edge_certs_dir }}"
+
+- name: Set correct permissions on certs directory
+  file:
+    path: "{{ edge_certs_dir }}"
+    state: directory
+    owner: root
+    group: "{{ edge_group }}"
+    mode: '0750'
+
+- name: Configure NTP for time synchronization
+  service:
+    name: "{{ 'ntp' if ansible_os_family == 'Debian' else 'ntpd' }}"
+    state: started
+    enabled: yes
+
+- name: Set timezone to UTC
+  timezone:
+    name: UTC
+
+- name: Configure system limits for edge gateway
+  pam_limits:
+    domain: "{{ edge_user }}"
+    limit_type: "{{ item.type }}"
+    limit_item: "{{ item.item }}"
+    value: "{{ item.value }}"
+  loop:
+    - { type: 'soft', item: 'nofile', value: '65536' }
+    - { type: 'hard', item: 'nofile', value: '65536' }
+    - { type: 'soft', item: 'nproc', value: '32768' }
+    - { type: 'hard', item: 'nproc', value: '32768' }
+
+- name: Configure sysctl for network performance
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { name: 'net.core.rmem_max', value: '134217728' }
+    - { name: 'net.core.wmem_max', value: '134217728' }
+    - { name: 'net.ipv4.tcp_rmem', value: '4096 87380 67108864' }
+    - { name: 'net.ipv4.tcp_wmem', value: '4096 65536 67108864' }

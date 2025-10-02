@@ -1,0 +1,57 @@
+---
+# Staging environment specific variables
+
+# Environment
+oee_environment: staging
+
+# Logging (more verbose for debugging)
+log_level: DEBUG
+log_retention_days: 14
+verbose_logging: true
+debug_mode: true
+log_mqtt_payloads: true
+log_opcua_traffic: true
+
+# Security (relaxed for testing)
+enable_security_hardening: false
+allow_root_login: true
+
+# Performance (smaller limits for lab)
+edge_gateway_worker_threads: 2
+edge_gateway_queue_max_size: 5000
+edge_gateway_memory_limit: "1G"
+
+# MQTT Broker
+mqtt_broker_host: mqtt.oee.staging.local
+mqtt_broker_port: 1883  # Non-TLS for easier debugging
+mqtt_use_tls: false
+
+# TimescaleDB
+timescaledb_host: timescaledb.oee.staging.local
+timescaledb_port: 5432
+timescaledb_database: oee_analytics_staging
+
+# Backups (less frequent)
+backup_enabled: false
+backup_retention_days: 7
+backup_schedule: "0 3 * * 0"  # Weekly
+
+# Monitoring (optional in staging)
+enable_metrics_export: true
+enable_health_endpoint: true
+
+# Certificate Management (shorter validity for testing rotation)
+cert_validity_days: 90
+cert_renewal_threshold_days: 14
+
+# OPC-UA (slower sampling for simulator)
+opcua_default_sampling_interval_ms: 1000
+
+# Feature Flags (enable experimental features)
+enable_adaptive_sampling: true
+enable_local_cache: true
+message_deduplication_enabled: true
+
+# Test Data Generation
+generate_test_data: true
+test_data_interval_seconds: 10
