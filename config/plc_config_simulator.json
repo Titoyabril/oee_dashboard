@@ -348,6 +348,790 @@
         "model": "ControlLogix",
         "location": "Building A - Floor 1"
       }
+    },
+    {
+      "name": "LINE-004-ControlLogix",
+      "type": "ALLEN_BRADLEY",
+      "family": "CONTROLLOGIX",
+      "enabled": true,
+      "connection": {
+        "ip_address": "controllogix-line004",
+        "port": 44818,
+        "slot": 0,
+        "timeout": 5.0,
+        "simulator_mode": true
+      },
+      "polling": {
+        "interval_ms": 1000,
+        "batch_size": 20
+      },
+      "tags": [
+        {
+          "name": "ProductionCount",
+          "address": "Line_LINE_004_ProductionCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "production_count"
+        },
+        {
+          "name": "TargetCount",
+          "address": "Line_LINE_004_TargetCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "target_count"
+        },
+        {
+          "name": "GoodCount",
+          "address": "Line_LINE_004_GoodCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "good_count"
+        },
+        {
+          "name": "RejectCount",
+          "address": "Line_LINE_004_RejectCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "reject_count"
+        },
+        {
+          "name": "MachineRunning",
+          "address": "Line_LINE_004_Running",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_running"
+        },
+        {
+          "name": "MachineFaulted",
+          "address": "Line_LINE_004_Faulted",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_faulted"
+        },
+        {
+          "name": "OEE",
+          "address": "Line_LINE_004_OEE",
+          "data_type": "REAL",
+          "sparkplug_metric": "oee",
+          "units": "%"
+        },
+        {
+          "name": "Availability",
+          "address": "Line_LINE_004_Availability",
+          "data_type": "REAL",
+          "sparkplug_metric": "availability",
+          "units": "%"
+        },
+        {
+          "name": "Performance",
+          "address": "Line_LINE_004_Performance",
+          "data_type": "REAL",
+          "sparkplug_metric": "performance",
+          "units": "%"
+        },
+        {
+          "name": "Quality",
+          "address": "Line_LINE_004_Quality",
+          "data_type": "REAL",
+          "sparkplug_metric": "quality",
+          "units": "%"
+        },
+        {
+          "name": "CycleTime",
+          "address": "Line_LINE_004_CycleTime",
+          "data_type": "REAL",
+          "sparkplug_metric": "cycle_time",
+          "units": "seconds"
+        },
+        {
+          "name": "DowntimeMinutes",
+          "address": "Line_LINE_004_DowntimeMinutes",
+          "data_type": "REAL",
+          "sparkplug_metric": "downtime_minutes",
+          "units": "minutes"
+        },
+        {
+          "name": "LastFaultCode",
+          "address": "Line_LINE_004_LastFaultCode",
+          "data_type": "INT",
+          "sparkplug_metric": "last_fault_code"
+        }
+      ],
+      "metadata": {
+        "site_id": "SITE-001",
+        "area_id": "AREA-001",
+        "line_id": "LINE-004",
+        "machine_type": "Assembly Line",
+        "manufacturer": "Rockwell Automation",
+        "model": "ControlLogix",
+        "location": "Building A - Floor 2"
+      }
+    },
+    {
+      "name": "LINE-005-ControlLogix",
+      "type": "ALLEN_BRADLEY",
+      "family": "CONTROLLOGIX",
+      "enabled": true,
+      "connection": {
+        "ip_address": "controllogix-line005",
+        "port": 44818,
+        "slot": 0,
+        "timeout": 5.0,
+        "simulator_mode": true
+      },
+      "polling": {
+        "interval_ms": 1000,
+        "batch_size": 20
+      },
+      "tags": [
+        {
+          "name": "ProductionCount",
+          "address": "Line_LINE_005_ProductionCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "production_count"
+        },
+        {
+          "name": "TargetCount",
+          "address": "Line_LINE_005_TargetCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "target_count"
+        },
+        {
+          "name": "GoodCount",
+          "address": "Line_LINE_005_GoodCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "good_count"
+        },
+        {
+          "name": "RejectCount",
+          "address": "Line_LINE_005_RejectCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "reject_count"
+        },
+        {
+          "name": "MachineRunning",
+          "address": "Line_LINE_005_Running",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_running"
+        },
+        {
+          "name": "MachineFaulted",
+          "address": "Line_LINE_005_Faulted",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_faulted"
+        },
+        {
+          "name": "OEE",
+          "address": "Line_LINE_005_OEE",
+          "data_type": "REAL",
+          "sparkplug_metric": "oee",
+          "units": "%"
+        },
+        {
+          "name": "Availability",
+          "address": "Line_LINE_005_Availability",
+          "data_type": "REAL",
+          "sparkplug_metric": "availability",
+          "units": "%"
+        },
+        {
+          "name": "Performance",
+          "address": "Line_LINE_005_Performance",
+          "data_type": "REAL",
+          "sparkplug_metric": "performance",
+          "units": "%"
+        },
+        {
+          "name": "Quality",
+          "address": "Line_LINE_005_Quality",
+          "data_type": "REAL",
+          "sparkplug_metric": "quality",
+          "units": "%"
+        },
+        {
+          "name": "CycleTime",
+          "address": "Line_LINE_005_CycleTime",
+          "data_type": "REAL",
+          "sparkplug_metric": "cycle_time",
+          "units": "seconds"
+        },
+        {
+          "name": "DowntimeMinutes",
+          "address": "Line_LINE_005_DowntimeMinutes",
+          "data_type": "REAL",
+          "sparkplug_metric": "downtime_minutes",
+          "units": "minutes"
+        },
+        {
+          "name": "LastFaultCode",
+          "address": "Line_LINE_005_LastFaultCode",
+          "data_type": "INT",
+          "sparkplug_metric": "last_fault_code"
+        }
+      ],
+      "metadata": {
+        "site_id": "SITE-001",
+        "area_id": "AREA-001",
+        "line_id": "LINE-005",
+        "machine_type": "Assembly Line",
+        "manufacturer": "Rockwell Automation",
+        "model": "ControlLogix",
+        "location": "Building A - Floor 2"
+      }
+    },
+    {
+      "name": "LINE-006-ControlLogix",
+      "type": "ALLEN_BRADLEY",
+      "family": "CONTROLLOGIX",
+      "enabled": true,
+      "connection": {
+        "ip_address": "controllogix-line006",
+        "port": 44818,
+        "slot": 0,
+        "timeout": 5.0,
+        "simulator_mode": true
+      },
+      "polling": {
+        "interval_ms": 1000,
+        "batch_size": 20
+      },
+      "tags": [
+        {
+          "name": "ProductionCount",
+          "address": "Line_LINE_006_ProductionCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "production_count"
+        },
+        {
+          "name": "TargetCount",
+          "address": "Line_LINE_006_TargetCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "target_count"
+        },
+        {
+          "name": "GoodCount",
+          "address": "Line_LINE_006_GoodCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "good_count"
+        },
+        {
+          "name": "RejectCount",
+          "address": "Line_LINE_006_RejectCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "reject_count"
+        },
+        {
+          "name": "MachineRunning",
+          "address": "Line_LINE_006_Running",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_running"
+        },
+        {
+          "name": "MachineFaulted",
+          "address": "Line_LINE_006_Faulted",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_faulted"
+        },
+        {
+          "name": "OEE",
+          "address": "Line_LINE_006_OEE",
+          "data_type": "REAL",
+          "sparkplug_metric": "oee",
+          "units": "%"
+        },
+        {
+          "name": "Availability",
+          "address": "Line_LINE_006_Availability",
+          "data_type": "REAL",
+          "sparkplug_metric": "availability",
+          "units": "%"
+        },
+        {
+          "name": "Performance",
+          "address": "Line_LINE_006_Performance",
+          "data_type": "REAL",
+          "sparkplug_metric": "performance",
+          "units": "%"
+        },
+        {
+          "name": "Quality",
+          "address": "Line_LINE_006_Quality",
+          "data_type": "REAL",
+          "sparkplug_metric": "quality",
+          "units": "%"
+        },
+        {
+          "name": "CycleTime",
+          "address": "Line_LINE_006_CycleTime",
+          "data_type": "REAL",
+          "sparkplug_metric": "cycle_time",
+          "units": "seconds"
+        },
+        {
+          "name": "DowntimeMinutes",
+          "address": "Line_LINE_006_DowntimeMinutes",
+          "data_type": "REAL",
+          "sparkplug_metric": "downtime_minutes",
+          "units": "minutes"
+        },
+        {
+          "name": "LastFaultCode",
+          "address": "Line_LINE_006_LastFaultCode",
+          "data_type": "INT",
+          "sparkplug_metric": "last_fault_code"
+        }
+      ],
+      "metadata": {
+        "site_id": "SITE-001",
+        "area_id": "AREA-002",
+        "line_id": "LINE-006",
+        "machine_type": "Assembly Line",
+        "manufacturer": "Rockwell Automation",
+        "model": "ControlLogix",
+        "location": "Building B - Floor 1"
+      }
+    },
+    {
+      "name": "LINE-007-ControlLogix",
+      "type": "ALLEN_BRADLEY",
+      "family": "CONTROLLOGIX",
+      "enabled": true,
+      "connection": {
+        "ip_address": "controllogix-line007",
+        "port": 44818,
+        "slot": 0,
+        "timeout": 5.0,
+        "simulator_mode": true
+      },
+      "polling": {
+        "interval_ms": 1000,
+        "batch_size": 20
+      },
+      "tags": [
+        {
+          "name": "ProductionCount",
+          "address": "Line_LINE_007_ProductionCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "production_count"
+        },
+        {
+          "name": "TargetCount",
+          "address": "Line_LINE_007_TargetCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "target_count"
+        },
+        {
+          "name": "GoodCount",
+          "address": "Line_LINE_007_GoodCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "good_count"
+        },
+        {
+          "name": "RejectCount",
+          "address": "Line_LINE_007_RejectCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "reject_count"
+        },
+        {
+          "name": "MachineRunning",
+          "address": "Line_LINE_007_Running",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_running"
+        },
+        {
+          "name": "MachineFaulted",
+          "address": "Line_LINE_007_Faulted",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_faulted"
+        },
+        {
+          "name": "OEE",
+          "address": "Line_LINE_007_OEE",
+          "data_type": "REAL",
+          "sparkplug_metric": "oee",
+          "units": "%"
+        },
+        {
+          "name": "Availability",
+          "address": "Line_LINE_007_Availability",
+          "data_type": "REAL",
+          "sparkplug_metric": "availability",
+          "units": "%"
+        },
+        {
+          "name": "Performance",
+          "address": "Line_LINE_007_Performance",
+          "data_type": "REAL",
+          "sparkplug_metric": "performance",
+          "units": "%"
+        },
+        {
+          "name": "Quality",
+          "address": "Line_LINE_007_Quality",
+          "data_type": "REAL",
+          "sparkplug_metric": "quality",
+          "units": "%"
+        },
+        {
+          "name": "CycleTime",
+          "address": "Line_LINE_007_CycleTime",
+          "data_type": "REAL",
+          "sparkplug_metric": "cycle_time",
+          "units": "seconds"
+        },
+        {
+          "name": "DowntimeMinutes",
+          "address": "Line_LINE_007_DowntimeMinutes",
+          "data_type": "REAL",
+          "sparkplug_metric": "downtime_minutes",
+          "units": "minutes"
+        },
+        {
+          "name": "LastFaultCode",
+          "address": "Line_LINE_007_LastFaultCode",
+          "data_type": "INT",
+          "sparkplug_metric": "last_fault_code"
+        }
+      ],
+      "metadata": {
+        "site_id": "SITE-001",
+        "area_id": "AREA-002",
+        "line_id": "LINE-007",
+        "machine_type": "Assembly Line",
+        "manufacturer": "Rockwell Automation",
+        "model": "ControlLogix",
+        "location": "Building B - Floor 1"
+      }
+    },
+    {
+      "name": "LINE-008-ControlLogix",
+      "type": "ALLEN_BRADLEY",
+      "family": "CONTROLLOGIX",
+      "enabled": true,
+      "connection": {
+        "ip_address": "controllogix-line008",
+        "port": 44818,
+        "slot": 0,
+        "timeout": 5.0,
+        "simulator_mode": true
+      },
+      "polling": {
+        "interval_ms": 1000,
+        "batch_size": 20
+      },
+      "tags": [
+        {
+          "name": "ProductionCount",
+          "address": "Line_LINE_008_ProductionCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "production_count"
+        },
+        {
+          "name": "TargetCount",
+          "address": "Line_LINE_008_TargetCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "target_count"
+        },
+        {
+          "name": "GoodCount",
+          "address": "Line_LINE_008_GoodCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "good_count"
+        },
+        {
+          "name": "RejectCount",
+          "address": "Line_LINE_008_RejectCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "reject_count"
+        },
+        {
+          "name": "MachineRunning",
+          "address": "Line_LINE_008_Running",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_running"
+        },
+        {
+          "name": "MachineFaulted",
+          "address": "Line_LINE_008_Faulted",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_faulted"
+        },
+        {
+          "name": "OEE",
+          "address": "Line_LINE_008_OEE",
+          "data_type": "REAL",
+          "sparkplug_metric": "oee",
+          "units": "%"
+        },
+        {
+          "name": "Availability",
+          "address": "Line_LINE_008_Availability",
+          "data_type": "REAL",
+          "sparkplug_metric": "availability",
+          "units": "%"
+        },
+        {
+          "name": "Performance",
+          "address": "Line_LINE_008_Performance",
+          "data_type": "REAL",
+          "sparkplug_metric": "performance",
+          "units": "%"
+        },
+        {
+          "name": "Quality",
+          "address": "Line_LINE_008_Quality",
+          "data_type": "REAL",
+          "sparkplug_metric": "quality",
+          "units": "%"
+        },
+        {
+          "name": "CycleTime",
+          "address": "Line_LINE_008_CycleTime",
+          "data_type": "REAL",
+          "sparkplug_metric": "cycle_time",
+          "units": "seconds"
+        },
+        {
+          "name": "DowntimeMinutes",
+          "address": "Line_LINE_008_DowntimeMinutes",
+          "data_type": "REAL",
+          "sparkplug_metric": "downtime_minutes",
+          "units": "minutes"
+        },
+        {
+          "name": "LastFaultCode",
+          "address": "Line_LINE_008_LastFaultCode",
+          "data_type": "INT",
+          "sparkplug_metric": "last_fault_code"
+        }
+      ],
+      "metadata": {
+        "site_id": "SITE-001",
+        "area_id": "AREA-002",
+        "line_id": "LINE-008",
+        "machine_type": "Assembly Line",
+        "manufacturer": "Rockwell Automation",
+        "model": "ControlLogix",
+        "location": "Building B - Floor 2"
+      }
+    },
+    {
+      "name": "LINE-009-ControlLogix",
+      "type": "ALLEN_BRADLEY",
+      "family": "CONTROLLOGIX",
+      "enabled": true,
+      "connection": {
+        "ip_address": "controllogix-line009",
+        "port": 44818,
+        "slot": 0,
+        "timeout": 5.0,
+        "simulator_mode": true
+      },
+      "polling": {
+        "interval_ms": 1000,
+        "batch_size": 20
+      },
+      "tags": [
+        {
+          "name": "ProductionCount",
+          "address": "Line_LINE_009_ProductionCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "production_count"
+        },
+        {
+          "name": "TargetCount",
+          "address": "Line_LINE_009_TargetCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "target_count"
+        },
+        {
+          "name": "GoodCount",
+          "address": "Line_LINE_009_GoodCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "good_count"
+        },
+        {
+          "name": "RejectCount",
+          "address": "Line_LINE_009_RejectCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "reject_count"
+        },
+        {
+          "name": "MachineRunning",
+          "address": "Line_LINE_009_Running",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_running"
+        },
+        {
+          "name": "MachineFaulted",
+          "address": "Line_LINE_009_Faulted",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_faulted"
+        },
+        {
+          "name": "OEE",
+          "address": "Line_LINE_009_OEE",
+          "data_type": "REAL",
+          "sparkplug_metric": "oee",
+          "units": "%"
+        },
+        {
+          "name": "Availability",
+          "address": "Line_LINE_009_Availability",
+          "data_type": "REAL",
+          "sparkplug_metric": "availability",
+          "units": "%"
+        },
+        {
+          "name": "Performance",
+          "address": "Line_LINE_009_Performance",
+          "data_type": "REAL",
+          "sparkplug_metric": "performance",
+          "units": "%"
+        },
+        {
+          "name": "Quality",
+          "address": "Line_LINE_009_Quality",
+          "data_type": "REAL",
+          "sparkplug_metric": "quality",
+          "units": "%"
+        },
+        {
+          "name": "CycleTime",
+          "address": "Line_LINE_009_CycleTime",
+          "data_type": "REAL",
+          "sparkplug_metric": "cycle_time",
+          "units": "seconds"
+        },
+        {
+          "name": "DowntimeMinutes",
+          "address": "Line_LINE_009_DowntimeMinutes",
+          "data_type": "REAL",
+          "sparkplug_metric": "downtime_minutes",
+          "units": "minutes"
+        },
+        {
+          "name": "LastFaultCode",
+          "address": "Line_LINE_009_LastFaultCode",
+          "data_type": "INT",
+          "sparkplug_metric": "last_fault_code"
+        }
+      ],
+      "metadata": {
+        "site_id": "SITE-001",
+        "area_id": "AREA-002",
+        "line_id": "LINE-009",
+        "machine_type": "Assembly Line",
+        "manufacturer": "Rockwell Automation",
+        "model": "ControlLogix",
+        "location": "Building B - Floor 2"
+      }
+    },
+    {
+      "name": "LINE-010-ControlLogix",
+      "type": "ALLEN_BRADLEY",
+      "family": "CONTROLLOGIX",
+      "enabled": true,
+      "connection": {
+        "ip_address": "controllogix-line010",
+        "port": 44818,
+        "slot": 0,
+        "timeout": 5.0,
+        "simulator_mode": true
+      },
+      "polling": {
+        "interval_ms": 1000,
+        "batch_size": 20
+      },
+      "tags": [
+        {
+          "name": "ProductionCount",
+          "address": "Line_LINE_010_ProductionCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "production_count"
+        },
+        {
+          "name": "TargetCount",
+          "address": "Line_LINE_010_TargetCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "target_count"
+        },
+        {
+          "name": "GoodCount",
+          "address": "Line_LINE_010_GoodCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "good_count"
+        },
+        {
+          "name": "RejectCount",
+          "address": "Line_LINE_010_RejectCount",
+          "data_type": "DINT",
+          "sparkplug_metric": "reject_count"
+        },
+        {
+          "name": "MachineRunning",
+          "address": "Line_LINE_010_Running",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_running"
+        },
+        {
+          "name": "MachineFaulted",
+          "address": "Line_LINE_010_Faulted",
+          "data_type": "BOOL",
+          "sparkplug_metric": "machine_faulted"
+        },
+        {
+          "name": "OEE",
+          "address": "Line_LINE_010_OEE",
+          "data_type": "REAL",
+          "sparkplug_metric": "oee",
+          "units": "%"
+        },
+        {
+          "name": "Availability",
+          "address": "Line_LINE_010_Availability",
+          "data_type": "REAL",
+          "sparkplug_metric": "availability",
+          "units": "%"
+        },
+        {
+          "name": "Performance",
+          "address": "Line_LINE_010_Performance",
+          "data_type": "REAL",
+          "sparkplug_metric": "performance",
+          "units": "%"
+        },
+        {
+          "name": "Quality",
+          "address": "Line_LINE_010_Quality",
+          "data_type": "REAL",
+          "sparkplug_metric": "quality",
+          "units": "%"
+        },
+        {
+          "name": "CycleTime",
+          "address": "Line_LINE_010_CycleTime",
+          "data_type": "REAL",
+          "sparkplug_metric": "cycle_time",
+          "units": "seconds"
+        },
+        {
+          "name": "DowntimeMinutes",
+          "address": "Line_LINE_010_DowntimeMinutes",
+          "data_type": "REAL",
+          "sparkplug_metric": "downtime_minutes",
+          "units": "minutes"
+        },
+        {
+          "name": "LastFaultCode",
+          "address": "Line_LINE_010_LastFaultCode",
+          "data_type": "INT",
+          "sparkplug_metric": "last_fault_code"
+        }
+      ],
+      "metadata": {
+        "site_id": "SITE-001",
+        "area_id": "AREA-003",
+        "line_id": "LINE-010",
+        "machine_type": "Assembly Line",
+        "manufacturer": "Rockwell Automation",
+        "model": "ControlLogix",
+        "location": "Building C - Floor 1"
+      }
     }
   ],
   "global_settings": {

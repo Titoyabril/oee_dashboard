@@ -56,7 +56,10 @@ class ControlLogixSimulator:
         self.connected = False
 
         # Production lines to simulate
-        self.production_lines = ["LINE-001", "LINE-002", "LINE-003"]
+        self.production_lines = [
+            "LINE-001", "LINE-002", "LINE-003", "LINE-004", "LINE-005",
+            "LINE-006", "LINE-007", "LINE-008", "LINE-009", "LINE-010"
+        ]
 
         # Initialize tag database
         self.tags: Dict[str, Tag] = {}
