@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # ControlLogix PLC Simulator - Line 1
+  controllogix-line001:
+    build:
+      context: ../../simulators
+      dockerfile: Dockerfile
+    container_name: plc_controllogix_line001
+    hostname: controllogix-line001
+    environment:
+      - PLC_NAME=LINE-001
+      - PLC_IP=192.168.100.10
+    ports:
+      - "44818:44818"
+    networks:
+      - oee_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost',44818)); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ControlLogix PLC Simulator - Line 2
+  controllogix-line002:
+    build:
+      context: ../../simulators
+      dockerfile: Dockerfile
+    container_name: plc_controllogix_line002
+    hostname: controllogix-line002
+    environment:
+      - PLC_NAME=LINE-002
+      - PLC_IP=192.168.100.11
+    ports:
+      - "44819:44818"
+    networks:
+      - oee_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost',44818)); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ControlLogix PLC Simulator - Line 3
+  controllogix-line003:
+    build:
+      context: ../../simulators
+      dockerfile: Dockerfile
+    container_name: plc_controllogix_line003
+    hostname: controllogix-line003
+    environment:
+      - PLC_NAME=LINE-003
+      - PLC_IP=192.168.100.12
+    ports:
+      - "44820:44818"
+    networks:
+      - oee_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost',44818)); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  oee_network:
+    name: compose_oee_backend
+    external: true

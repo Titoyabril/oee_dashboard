@@ -5,7 +5,31 @@ Supports: ControlLogix, CompactLogix, MicroLogix, PLC-5, SLC-500, Micro800
 """
 
 import asyncio
-from pycomm3 import LogixDriver, SLCDriver
+import os
+import sys
+
+# Import real drivers
+try:
+    from pycomm3 import LogixDriver as RealLogixDriver, SLCDriver
+    PYCOMM3_AVAILABLE = True
+except ImportError:
+    RealLogixDriver = None
+    SLCDriver = None
+    PYCOMM3_AVAILABLE = False
+
+# Import simulator driver
+try:
+    # Add simulators directory to path
+    simulators_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'simulators')
+    if simulators_path not in sys.path:
+        sys.path.insert(0, simulators_path)
+
+    from pycomm3_shim import SimulatorLogixDriver
+    SIMULATOR_AVAILABLE = True
+except ImportError:
+    SimulatorLogixDriver = None
+    SIMULATOR_AVAILABLE = False
+
 from pylogix import PLC
 from typing import Dict, Any, List, Optional, Tuple, Union
 from datetime import datetime
@@ -15,7 +39,7 @@ from dataclasses import dataclass
 import re
 
 from .base import (
-    BasePLCConnector, PLCConnectionConfig, PLCTagDefinition, 
+    BasePLCConnector, PLCConnectionConfig, PLCTagDefinition,
     PLCDataPoint, PLCStatus, PLCConnectionError, PLCDataError
 )
 
@@ -25,19 +49,20 @@ class AllenBradleyConfig(PLCConnectionConfig):
     """Extended configuration for Allen-Bradley PLCs"""
     plc_family: str = "ControlLogix"  # ControlLogix, CompactLogix, MicroLogix, PLC5, SLC500, Micro800
     processor_type: str = "AUTO"      # AUTO, 1756-L61, 1769-L32E, etc.
-    
+
     # EtherNet/IP specific
     vendor_id: int = 0x001
     device_type: int = 0x0E
     product_code: int = 0x0000
-    
+
     # Connection parameters
     micro800_port: int = 44818  # Micro800 uses different port
     use_connected_msg: bool = True
-    
+    simulator_mode: bool = False  # Use PLC simulator instead of real hardware
+
     # Legacy parameters for older PLCs
     node_address: Optional[int] = None  # For DH+ networks
-    
+
     # Performance settings
     read_timeout: float = 10.0
     write_timeout: float = 10.0
@@ -77,16 +102,22 @@ class AllenBradleyConnector(BasePLCConnector):
         'R': 'CONTROL', # Control
     }
     
-    def __init__(self, config: Union[PLCConnectionConfig, AllenBradleyConfig], 
+    def __init__(self, config: Union[PLCConnectionConfig, AllenBradleyConfig],
                  logger: Optional[logging.Logger] = None):
         # Convert to AB-specific config if needed
         if isinstance(config, PLCConnectionConfig) and not isinstance(config, AllenBradleyConfig):
             config = AllenBradleyConfig(**config.__dict__)
-        
+
         super().__init__(config, logger)
         self.driver = None
         self.legacy_driver = None
         self.plc_family = config.plc_family.upper()
+        self.simulator_mode = getattr(config, 'simulator_mode', False)
+
+        if self.simulator_mode:
+            self.logger.info(f"Allen-Bradley connector initialized in SIMULATOR MODE for {self.config.host}")
+            if not SIMULATOR_AVAILABLE:
+                raise PLCConnectionError("Simulator mode requested but simulator not available")
         
     async def connect(self) -> bool:
         """Establish connection to Allen-Bradley PLC"""
@@ -117,17 +148,23 @@ class AllenBradleyConnector(BasePLCConnector):
     
     async def _connect_logix(self):
         """Connect to Logix-based PLCs (ControlLogix, CompactLogix, Micro800)"""
-        self.driver = LogixDriver(self.config.host, self.config.port)
-        
+        # Choose driver based on simulator mode
+        if self.simulator_mode:
+            self.driver = SimulatorLogixDriver(self.config.host, port=self.config.port)
+        else:
+            if not PYCOMM3_AVAILABLE:
+                raise PLCConnectionError("pycomm3 not installed - cannot connect to real PLC")
+            self.driver = RealLogixDriver(self.config.host, self.config.port)
+
         # Configure driver settings
-        if hasattr(self.config, 'read_timeout'):
+        if hasattr(self.config, 'read_timeout') and hasattr(self.driver, 'socket_timeout'):
             self.driver.socket_timeout = self.config.read_timeout
-        
+
         # Open connection
         await asyncio.get_event_loop().run_in_executor(
             None, self.driver.open
         )
-        
+
         if not self.driver.connected:
             raise PLCConnectionError("Failed to connect to Logix PLC")
     
