@@ -20,13 +20,15 @@ except ImportError:
 # Import simulator driver
 try:
     # Add simulators directory to path
-    simulators_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'simulators')
+    # Go up 4 levels: connectors -> sparkplug -> oee_analytics -> oee_dashboard -> simulators
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    simulators_path = os.path.join(base_dir, 'simulators')
     if simulators_path not in sys.path:
         sys.path.insert(0, simulators_path)
 
     from pycomm3_shim import SimulatorLogixDriver
     SIMULATOR_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     SimulatorLogixDriver = None
     SIMULATOR_AVAILABLE = False
 

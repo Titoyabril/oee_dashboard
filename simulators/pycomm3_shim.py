@@ -121,6 +121,22 @@ class SimulatorLogixDriver:
         - Single tag: driver.read('tag1') -> Tag object
         - Multiple tags: driver.read('tag1', 'tag2') -> List[Tag]
         """
+        # Try to use existing event loop if running in async context
+        try:
+            loop = asyncio.get_running_loop()
+            # We're in an async context, need to run in executor
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(self._sync_read, tags)
+                # Can't use loop.run_in_executor here as we're already in the loop
+                # Return a blocking result
+                return future.result()
+        except RuntimeError:
+            # No running loop, create new one
+            return self._sync_read(tags)
+
+    def _sync_read(self, tags: tuple) -> Any:
+        """Synchronous read implementation"""
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
@@ -131,22 +147,22 @@ class SimulatorLogixDriver:
             if not response.get('success'):
                 error_msg = response.get('error', 'Unknown error')
                 # Return error Tag objects
-                return [Tag(tag=t, value=None, error=error_msg) for t in tags]
-
-            results = response.get('results', [])
-            tag_objects = [
-                Tag(
-                    tag=r['tag'],
-                    value=r['value'],
-                    error=r.get('error')
-                )
-                for r in results
-            ]
+                result = [Tag(tag=t, value=None, error=error_msg) for t in tags]
+            else:
+                results = response.get('results', [])
+                result = [
+                    Tag(
+                        tag=r['tag'],
+                        value=r['value'],
+                        error=r.get('error')
+                    )
+                    for r in results
+                ]
 
             # Return single Tag if single tag requested, else list
-            if len(tag_objects) == 1:
-                return tag_objects[0]
-            return tag_objects
+            if len(result) == 1:
+                return result[0]
+            return result
 
         finally:
             loop.close()
