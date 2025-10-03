@@ -1132,6 +1132,260 @@
         "model": "ControlLogix",
         "location": "Building C - Floor 1"
       }
+    },
+    {
+      "name": "SIEMENS-001-S7-1500",
+      "type": "SIEMENS",
+      "family": "S7_1500",
+      "protocol": "OPCUA",
+      "enabled": true,
+      "connection": {
+        "endpoint_url": "opc.tcp://siemens-s7-line001:4840/freeopcua/server/",
+        "namespace_idx": 2,
+        "security_mode": "None",
+        "auth_mode": "Anonymous",
+        "timeout": 10.0,
+        "simulator_mode": true
+      },
+      "polling": {
+        "interval_ms": 1000,
+        "batch_size": 20
+      },
+      "tags": [
+        {
+          "name": "ProductionCount",
+          "address": "ns=2;i=4",
+          "data_type": "Int32",
+          "description": "Total production count",
+          "sparkplug_metric": "production_count"
+        },
+        {
+          "name": "TargetCount",
+          "address": "ns=2;i=5",
+          "data_type": "Int32",
+          "description": "Shift target count",
+          "sparkplug_metric": "target_count"
+        },
+        {
+          "name": "GoodCount",
+          "address": "ns=2;i=6",
+          "data_type": "Int32",
+          "description": "Good parts count",
+          "sparkplug_metric": "good_count"
+        },
+        {
+          "name": "RejectCount",
+          "address": "ns=2;i=7",
+          "data_type": "Int32",
+          "description": "Rejected parts count",
+          "sparkplug_metric": "reject_count"
+        },
+        {
+          "name": "MachineRunning",
+          "address": "ns=2;i=8",
+          "data_type": "Boolean",
+          "description": "Machine running status",
+          "sparkplug_metric": "machine_running"
+        },
+        {
+          "name": "MachineFaulted",
+          "address": "ns=2;i=9",
+          "data_type": "Boolean",
+          "description": "Machine fault status",
+          "sparkplug_metric": "machine_faulted"
+        },
+        {
+          "name": "OEE",
+          "address": "ns=2;i=11",
+          "data_type": "Float",
+          "description": "Overall Equipment Effectiveness",
+          "sparkplug_metric": "oee",
+          "units": "%"
+        },
+        {
+          "name": "Availability",
+          "address": "ns=2;i=12",
+          "data_type": "Float",
+          "description": "Availability percentage",
+          "sparkplug_metric": "availability",
+          "units": "%"
+        },
+        {
+          "name": "Performance",
+          "address": "ns=2;i=13",
+          "data_type": "Float",
+          "description": "Performance percentage",
+          "sparkplug_metric": "performance",
+          "units": "%"
+        },
+        {
+          "name": "Quality",
+          "address": "ns=2;i=14",
+          "data_type": "Float",
+          "description": "Quality percentage",
+          "sparkplug_metric": "quality",
+          "units": "%"
+        },
+        {
+          "name": "CycleTime",
+          "address": "ns=2;i=15",
+          "data_type": "Float",
+          "description": "Current cycle time",
+          "sparkplug_metric": "cycle_time",
+          "units": "seconds"
+        },
+        {
+          "name": "DowntimeMinutes",
+          "address": "ns=2;i=17",
+          "data_type": "Float",
+          "description": "Downtime in minutes",
+          "sparkplug_metric": "downtime_minutes",
+          "units": "minutes"
+        },
+        {
+          "name": "LastFaultCode",
+          "address": "ns=2;i=18",
+          "data_type": "Int16",
+          "description": "Last fault code",
+          "sparkplug_metric": "last_fault_code"
+        }
+      ],
+      "metadata": {
+        "site_id": "SITE-001",
+        "area_id": "AREA-003",
+        "line_id": "SIEMENS-001",
+        "machine_type": "Assembly Line",
+        "manufacturer": "Siemens AG",
+        "model": "S7-1500",
+        "location": "Building C - Floor 2"
+      }
+    },
+    {
+      "name": "SIEMENS-002-S7-1500",
+      "type": "SIEMENS",
+      "family": "S7_1500",
+      "protocol": "OPCUA",
+      "enabled": true,
+      "connection": {
+        "endpoint_url": "opc.tcp://siemens-s7-line002:4840/freeopcua/server/",
+        "namespace_idx": 2,
+        "security_mode": "None",
+        "auth_mode": "Anonymous",
+        "timeout": 10.0,
+        "simulator_mode": true
+      },
+      "polling": {
+        "interval_ms": 1000,
+        "batch_size": 20
+      },
+      "tags": [
+        {
+          "name": "ProductionCount",
+          "address": "ns=2;i=4",
+          "data_type": "Int32",
+          "description": "Total production count",
+          "sparkplug_metric": "production_count"
+        },
+        {
+          "name": "TargetCount",
+          "address": "ns=2;i=5",
+          "data_type": "Int32",
+          "description": "Shift target count",
+          "sparkplug_metric": "target_count"
+        },
+        {
+          "name": "GoodCount",
+          "address": "ns=2;i=6",
+          "data_type": "Int32",
+          "description": "Good parts count",
+          "sparkplug_metric": "good_count"
+        },
+        {
+          "name": "RejectCount",
+          "address": "ns=2;i=7",
+          "data_type": "Int32",
+          "description": "Rejected parts count",
+          "sparkplug_metric": "reject_count"
+        },
+        {
+          "name": "MachineRunning",
+          "address": "ns=2;i=8",
+          "data_type": "Boolean",
+          "description": "Machine running status",
+          "sparkplug_metric": "machine_running"
+        },
+        {
+          "name": "MachineFaulted",
+          "address": "ns=2;i=9",
+          "data_type": "Boolean",
+          "description": "Machine fault status",
+          "sparkplug_metric": "machine_faulted"
+        },
+        {
+          "name": "OEE",
+          "address": "ns=2;i=11",
+          "data_type": "Float",
+          "description": "Overall Equipment Effectiveness",
+          "sparkplug_metric": "oee",
+          "units": "%"
+        },
+        {
+          "name": "Availability",
+          "address": "ns=2;i=12",
+          "data_type": "Float",
+          "description": "Availability percentage",
+          "sparkplug_metric": "availability",
+          "units": "%"
+        },
+        {
+          "name": "Performance",
+          "address": "ns=2;i=13",
+          "data_type": "Float",
+          "description": "Performance percentage",
+          "sparkplug_metric": "performance",
+          "units": "%"
+        },
+        {
+          "name": "Quality",
+          "address": "ns=2;i=14",
+          "data_type": "Float",
+          "description": "Quality percentage",
+          "sparkplug_metric": "quality",
+          "units": "%"
+        },
+        {
+          "name": "CycleTime",
+          "address": "ns=2;i=15",
+          "data_type": "Float",
+          "description": "Current cycle time",
+          "sparkplug_metric": "cycle_time",
+          "units": "seconds"
+        },
+        {
+          "name": "DowntimeMinutes",
+          "address": "ns=2;i=17",
+          "data_type": "Float",
+          "description": "Downtime in minutes",
+          "sparkplug_metric": "downtime_minutes",
+          "units": "minutes"
+        },
+        {
+          "name": "LastFaultCode",
+          "address": "ns=2;i=18",
+          "data_type": "Int16",
+          "description": "Last fault code",
+          "sparkplug_metric": "last_fault_code"
+        }
+      ],
+      "metadata": {
+        "site_id": "SITE-001",
+        "area_id": "AREA-003",
+        "line_id": "SIEMENS-002",
+        "machine_type": "Assembly Line",
+        "manufacturer": "Siemens AG",
+        "model": "S7-1500",
+        "location": "Building C - Floor 2"
+      }
     }
   ],
   "global_settings": {

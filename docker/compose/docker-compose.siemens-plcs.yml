@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Siemens S7-1500 PLC Simulator - Line 1
+  siemens-s7-line001:
+    build:
+      context: ../../simulators
+      dockerfile: Dockerfile.siemens
+    container_name: plc_siemens_s7_line001
+    hostname: siemens-s7-line001
+    environment:
+      - LINE_ID=SIEMENS-001
+      - OPCUA_PORT=4840
+    ports:
+      - "4841:4840"
+    networks:
+      - oee_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost',4840)); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Siemens S7-1500 PLC Simulator - Line 2
+  siemens-s7-line002:
+    build:
+      context: ../../simulators
+      dockerfile: Dockerfile.siemens
+    container_name: plc_siemens_s7_line002
+    hostname: siemens-s7-line002
+    environment:
+      - LINE_ID=SIEMENS-002
+      - OPCUA_PORT=4840
+    ports:
+      - "4842:4840"
+    networks:
+      - oee_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.socket(); s.connect(('localhost',4840)); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  oee_network:
+    name: compose_oee_backend
+    external: true

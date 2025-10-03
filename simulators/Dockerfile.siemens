@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir asyncua
+
+# Copy simulator files
+COPY siemens_opcua_simulator.py .
+
+# Expose OPC UA port
+EXPOSE 4840
+
+# Run simulator
+CMD ["python", "siemens_opcua_simulator.py"]
