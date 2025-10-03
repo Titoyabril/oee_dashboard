@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import views_plc_monitor
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -8,6 +9,11 @@ urlpatterns = [
     path('threejs-dashboard/', views.threejs_dashboard, name='threejs_dashboard'),  # Three.js version
     path('threejs-dashboard-clone/', views.threejs_dashboard_clone, name='threejs_dashboard_clone'),  # Clone for development
     path('dataflow-monitor/', views.dataflow_monitor, name='dataflow_monitor'),  # Data flow monitoring dashboard
+
+    # PLC Real-time Monitoring
+    path('plc-monitor/', views_plc_monitor.plc_monitor_dashboard, name='plc_monitor_dashboard'),
+    path('plc-monitor/stream/', views_plc_monitor.plc_stream, name='plc_stream'),
+    path('api/plc-data/', views_plc_monitor.plc_data_api, name='plc_data_api'),
     path('shifts/', views.dashboard, name='shifts'),  # Placeholder
     path('challenges/', views.dashboard, name='challenges'),  # Placeholder
     path('achievements/', views.dashboard, name='achievements'),  # Placeholder
