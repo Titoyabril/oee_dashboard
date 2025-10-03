@@ -505,3 +505,72 @@ def trend_data(request):
 
     serializer = TrendDataSerializer(trend_data)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticatedOrReadOnly])
+def machines_status(request):
+    """
+    Get current status of all machines
+
+    Returns machine status overview with latest metrics and active issues
+
+    Query parameters:
+    - site_id: Filter by site
+    - line_id: Filter by production line
+    """
+    site_id = request.query_params.get('site_id')
+    line_id = request.query_params.get('line_id')
+
+    # Get latest metrics for each machine/line
+    lines = ProductionMetrics.objects.values('line_id').distinct()
+
+    machine_statuses = []
+    for line in lines:
+        line_id_val = line['line_id']
+
+        # Get latest metrics
+        latest = ProductionMetrics.objects.filter(
+            line_id=line_id_val
+        ).order_by('-timestamp').first()
+
+        if latest:
+            # Check for active downtime events
+            active_downtime = DowntimeEvent.objects.filter(
+                line_id=line_id_val,
+                ts__gte=timezone.now() - timedelta(hours=1)
+            ).count()
+
+            # Determine status based on metrics
+            if active_downtime > 0:
+                status_val = 'fault'
+            elif latest.oee >= 85:
+                status_val = 'running'
+            elif latest.oee >= 60:
+                status_val = 'degraded'
+            else:
+                status_val = 'stopped'
+
+            machine_statuses.append({
+                'machine_id': line_id_val,
+                'status': status_val,
+                'oee': latest.oee,
+                'availability': latest.availability,
+                'performance': latest.performance,
+                'quality': latest.quality,
+                'current_production': latest.actual_count,
+                'target_production': latest.target_count,
+                'active_faults': active_downtime,
+                'last_update': latest.timestamp
+            })
+
+    # Apply filters if provided
+    if site_id:
+        machine_statuses = [m for m in machine_statuses if m.get('site_id') == site_id]
+    if line_id:
+        machine_statuses = [m for m in machine_statuses if m['machine_id'] == line_id]
+
+    return Response({
+        'count': len(machine_statuses),
+        'machines': machine_statuses
+    })

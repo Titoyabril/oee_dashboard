@@ -12,7 +12,7 @@ from .views import (
     ProductionMetricsViewSet, DowntimeEventViewSet,
     SparkplugNodeViewSet, SparkplugDeviceViewSet, SparkplugMetricViewSet,
     MLModelRegistryViewSet, MLInferenceViewSet,
-    dashboard_summary, trend_data
+    dashboard_summary, trend_data, machines_status
 )
 
 # Try to import SQL Server viewsets
@@ -65,6 +65,11 @@ urlpatterns = [
     # Dashboard endpoints
     path('dashboard/summary/', dashboard_summary, name='dashboard-summary'),
     path('dashboard/trend/', trend_data, name='trend-data'),
+
+    # REST API CRUD endpoints (clean aliases)
+    path('kpi/current/', dashboard_summary, name='kpi-current'),
+    path('trend/', trend_data, name='trend'),
+    path('machines/status/', machines_status, name='machines-status'),
 
     # Authentication
     path('auth/token/', obtain_auth_token, name='api-token'),
