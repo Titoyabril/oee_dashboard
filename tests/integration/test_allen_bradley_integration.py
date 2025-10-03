@@ -13,8 +13,8 @@ from unittest.mock import Mock, AsyncMock, patch, MagicMock
 from oee_analytics.sparkplug.connectors.allen_bradley import (
     AllenBradleyConnector,
     AllenBradleyConfig,
-    TagValue,
 )
+from oee_analytics.sparkplug.connectors.base import PLCDataPoint
 
 
 class TestAllenBradleyConnectorBasics:
@@ -24,18 +24,12 @@ class TestAllenBradleyConnectorBasics:
     def ab_config(self):
         """Create test configuration."""
         return AllenBradleyConfig(
-            plc_ip="192.168.1.100",
-            plc_slot=0,
-            tags=[
-                "Program:MainProgram.ProductionCount",
-                "Program:MainProgram.MachineStatus",
-                "Program:MainProgram.Temperature",
-                "Program:MainProgram.Speed",
-            ],
-            polling_interval_ms=100,
-            connection_timeout_s=5.0,
-            enable_array_tags=True,
+            host="192.168.1.100",
+            port=44818,
+            slot=0,
+            timeout=5.0,
             max_retries=3,
+            plc_family="ControlLogix",
         )
 
     @pytest.fixture

@@ -14,9 +14,8 @@ import struct
 from oee_analytics.sparkplug.connectors.siemens import (
     SiemensS7Connector,
     SiemensS7Config,
-    S7DataBlock,
-    S7TagValue,
 )
+from oee_analytics.sparkplug.connectors.base import PLCDataPoint, PLCTagDefinition
 
 
 class TestSiemensS7ConnectorBasics:
@@ -26,32 +25,12 @@ class TestSiemensS7ConnectorBasics:
     def s7_config(self):
         """Create test configuration."""
         return SiemensS7Config(
-            plc_ip="192.168.0.1",
-            plc_rack=0,
-            plc_slot=1,
-            plc_type="S7-1200",  # or S7-300, S7-400, S7-1500
-            data_blocks=[
-                S7DataBlock(
-                    db_number=1,
-                    name="Production",
-                    tags=[
-                        {"name": "GoodCount", "offset": 0, "type": "INT"},
-                        {"name": "RejectCount", "offset": 2, "type": "INT"},
-                        {"name": "Speed", "offset": 4, "type": "REAL"},
-                        {"name": "Running", "offset": 8, "type": "BOOL", "bit": 0},
-                    ]
-                ),
-                S7DataBlock(
-                    db_number=2,
-                    name="Quality",
-                    tags=[
-                        {"name": "Temperature", "offset": 0, "type": "REAL"},
-                        {"name": "Pressure", "offset": 4, "type": "REAL"},
-                    ]
-                ),
-            ],
-            polling_interval_ms=200,
-            connection_timeout_s=5.0,
+            host="192.168.0.1",
+            rack=0,
+            slot=1,
+            port=102,
+            timeout=5.0,
+            plc_type="S7_1200",
         )
 
     @pytest.fixture

@@ -15,21 +15,22 @@ pytestmark = [
 ]
 
 
-@pytest.mark.asyncio
-async def test_timescaledb_hypertable_creation(
+def test_timescaledb_hypertable_creation(
     clean_timescaledb
 ):
     """
     Verify TimescaleDB hypertables are properly configured
     """
+    cursor = clean_timescaledb.cursor()
 
     # Check telemetry hypertable
-    result = await clean_timescaledb.fetchrow(
+    cursor.execute(
         """
         SELECT * FROM timescaledb_information.hypertables
         WHERE hypertable_name = 'telemetry'
         """
     )
+    result = cursor.fetchone()
 
     assert result is not None, "Telemetry hypertable not found"
     print(f"✅ Telemetry hypertable exists")
@@ -37,13 +38,14 @@ async def test_timescaledb_hypertable_creation(
     print(f"   Number of dimensions: {result['num_dimensions']}")
 
     # Check dimensions (time + space partitioning)
-    dimensions = await clean_timescaledb.fetch(
+    cursor.execute(
         """
         SELECT dimension_name, num_partitions
         FROM timescaledb_information.dimensions
         WHERE hypertable_name = 'telemetry'
         """
     )
+    dimensions = cursor.fetchall()
 
     assert len(dimensions) >= 1, "No dimensions found"
 
@@ -56,20 +58,21 @@ async def test_timescaledb_hypertable_creation(
         print(f"✅ Space partitioning enabled: {space_dims[0]['num_partitions']} partitions")
 
 
-@pytest.mark.asyncio
-async def test_timescaledb_compression_policy(
+def test_timescaledb_compression_policy(
     clean_timescaledb
 ):
     """
     Verify compression policies are configured
     """
+    cursor = clean_timescaledb.cursor()
 
-    result = await clean_timescaledb.fetchrow(
+    cursor.execute(
         """
         SELECT * FROM timescaledb_information.compression_settings
         WHERE hypertable_name = 'telemetry'
         """
     )
+    result = cursor.fetchone()
 
     if result:
         print(f"✅ Compression enabled for telemetry")
@@ -77,13 +80,14 @@ async def test_timescaledb_compression_policy(
         print(f"   Orderby: {result.get('orderby')}")
 
     # Check compression policy
-    policy = await clean_timescaledb.fetchrow(
+    cursor.execute(
         """
         SELECT * FROM timescaledb_information.jobs
         WHERE proc_name = 'policy_compression'
         AND hypertable_name = 'telemetry'
         """
     )
+    policy = cursor.fetchone()
 
     if policy:
         print(f"✅ Compression policy active")

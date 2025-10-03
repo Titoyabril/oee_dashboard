@@ -13,6 +13,16 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+# Configure Django settings before any Django imports
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'oee_dashboard.settings')
+
+# Initialize Django
+import django
+try:
+    django.setup()
+except Exception as e:
+    logging.warning(f"Django setup failed (may not be needed for all tests): {e}")
+
 # Configure logging for tests
 logging.basicConfig(
     level=logging.INFO,
@@ -40,15 +50,15 @@ def event_loop():
 def test_config():
     """Test environment configuration"""
     return {
-        'mqtt_broker': os.getenv('TEST_MQTT_BROKER', 'localhost'),
+        'mqtt_broker': os.getenv('TEST_MQTT_BROKER', '127.0.0.1'),
         'mqtt_port': int(os.getenv('TEST_MQTT_PORT', '1883')),
         'mqtt_port_ssl': int(os.getenv('TEST_MQTT_PORT_SSL', '8883')),
-        'timescale_host': os.getenv('TEST_TIMESCALE_HOST', 'localhost'),
+        'timescale_host': os.getenv('TEST_TIMESCALE_HOST', '127.0.0.1'),  # Use IPv4 explicitly
         'timescale_port': int(os.getenv('TEST_TIMESCALE_PORT', '5432')),
         'timescale_db': os.getenv('TEST_TIMESCALE_DB', 'oee_analytics_test'),
         'timescale_user': os.getenv('TEST_TIMESCALE_USER', 'oeeuser'),
         'timescale_password': os.getenv('TEST_TIMESCALE_PASSWORD', 'OEE_Analytics2024!'),
-        'redis_host': os.getenv('TEST_REDIS_HOST', 'localhost'),
+        'redis_host': os.getenv('TEST_REDIS_HOST', '127.0.0.1'),
         'redis_port': int(os.getenv('TEST_REDIS_PORT', '6379')),
         'cert_dir': Path(__file__).parent.parent / 'docker' / 'compose' / 'certs',
     }
@@ -70,35 +80,45 @@ def test_certs(test_config):
 # ========================================
 
 @pytest.fixture(scope="session")
-async def timescaledb_connection(test_config):
-    """TimescaleDB connection for tests"""
-    import asyncpg
+def timescaledb_connection(test_config):
+    """TimescaleDB connection for tests (using psycopg2 for Windows compatibility)"""
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
 
-    conn = await asyncpg.connect(
+    conn = psycopg2.connect(
         host=test_config['timescale_host'],
         port=test_config['timescale_port'],
         database=test_config['timescale_db'],
         user=test_config['timescale_user'],
         password=test_config['timescale_password'],
+        cursor_factory=RealDictCursor
     )
+    conn.autocommit = True
 
     yield conn
 
-    await conn.close()
+    conn.close()
 
 
 @pytest.fixture(scope="function")
-async def clean_timescaledb(timescaledb_connection):
+def clean_timescaledb(timescaledb_connection):
     """Clean TimescaleDB before each test"""
     conn = timescaledb_connection
+    cursor = conn.cursor()
 
-    # Truncate test tables
-    await conn.execute("TRUNCATE TABLE telemetry, events RESTART IDENTITY CASCADE")
+    # Truncate test tables (ignore errors if tables don't exist)
+    try:
+        cursor.execute("TRUNCATE TABLE IF EXISTS telemetry, events RESTART IDENTITY CASCADE")
+    except Exception as e:
+        logging.warning(f"Could not truncate tables: {e}")
 
     yield conn
 
     # Cleanup after test
-    await conn.execute("TRUNCATE TABLE telemetry, events RESTART IDENTITY CASCADE")
+    try:
+        cursor.execute("TRUNCATE TABLE IF EXISTS telemetry, events RESTART IDENTITY CASCADE")
+    except:
+        pass
 
 
 # ========================================

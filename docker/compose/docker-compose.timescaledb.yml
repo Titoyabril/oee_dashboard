@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # TimescaleDB for time-series data
   timescaledb:
-    image: timescale/timescaledb-ha:pg16-latest
+    image: timescale/timescaledb:latest-pg16
     container_name: oee_timescaledb
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-oee_analytics}
@@ -46,7 +46,7 @@ services:
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     volumes:
       - pgadmin_data:/var/lib/pgadmin
-      - ./timescaledb/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      # - ./timescaledb/pgadmin/servers.json:/pgadmin4/servers.json:ro
     ports:
       - "${PGADMIN_PORT:-5050}:80"
     networks:
@@ -61,9 +61,9 @@ services:
     container_name: oee_postgres_exporter
     environment:
       DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-oeeuser}:${POSTGRES_PASSWORD:-OEE_Analytics2024!}@timescaledb:5432/${POSTGRES_DB:-oee_analytics}?sslmode=disable"
-      PG_EXPORTER_EXTEND_QUERY_PATH: /etc/postgres_exporter/queries.yaml
-    volumes:
-      - ./timescaledb/exporter/queries.yaml:/etc/postgres_exporter/queries.yaml:ro
+      # PG_EXPORTER_EXTEND_QUERY_PATH: /etc/postgres_exporter/queries.yaml
+    # volumes:
+      # - ./timescaledb/exporter/queries.yaml:/etc/postgres_exporter/queries.yaml:ro
     ports:
       - "9187:9187"
     networks:

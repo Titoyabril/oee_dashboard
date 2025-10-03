@@ -43,7 +43,13 @@
       "Bash(py manage.py check:*)",
       "Bash(py:*)",
       "Bash(winget:*)",
-      "Bash(wsl:*)"
+      "Bash(wsl:*)",
+      "Bash(git rm:*)",
+      "Bash(docker:*)",
+      "Bash(Select-String \"emqx\")",
+      "Bash(test:*)",
+      "Bash(grep:*)",
+      "Bash(column:*)"
     ],
     "deny": [],
     "ask": []

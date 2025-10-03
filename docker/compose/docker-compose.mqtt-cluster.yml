@@ -40,7 +40,6 @@ services:
       # Persistence
       - EMQX_RETAINER__ENABLE=true
       - EMQX_RETAINER__MAX_PAYLOAD_SIZE=1MB
-      - EMQX_RETAINER__MSG_EXPIRY_INTERVAL=never
       # Shared subscriptions
       - EMQX_MQTT__SHARED_SUBSCRIPTION=true
       - EMQX_MQTT__SHARED_SUBSCRIPTION_STRATEGY=round_robin
@@ -52,11 +51,8 @@ services:
       - emqx1_data:/opt/emqx/data
       - emqx1_log:/opt/emqx/log
       - ./certs:/etc/emqx/certs:ro
-      - ./emqx_config:/opt/emqx/etc:ro
     ports:
       - "18083:18083"  # Dashboard
-      - "8883:8883"    # MQTT SSL
-      - "8083:8083"    # MQTT WebSocket
     networks:
       mqtt_cluster:
         aliases:
@@ -97,10 +93,8 @@ services:
       - emqx2_data:/opt/emqx/data
       - emqx2_log:/opt/emqx/log
       - ./certs:/etc/emqx/certs:ro
-      - ./emqx_config:/opt/emqx/etc:ro
     ports:
       - "28083:18083"  # Dashboard
-      - "8884:8883"    # MQTT SSL
     networks:
       mqtt_cluster:
         aliases:
@@ -141,10 +135,8 @@ services:
       - emqx3_data:/opt/emqx/data
       - emqx3_log:/opt/emqx/log
       - ./certs:/etc/emqx/certs:ro
-      - ./emqx_config:/opt/emqx/etc:ro
     ports:
       - "38083:18083"  # Dashboard
-      - "8885:8883"    # MQTT SSL
     networks:
       mqtt_cluster:
         aliases:
@@ -161,6 +153,7 @@ services:
     container_name: mqtt_loadbalancer
     volumes:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./certs:/usr/local/etc/haproxy/certs:ro
     ports:
       - "1883:1883"    # MQTT TCP (load balanced)
       - "8883:8883"    # MQTT SSL (load balanced)

@@ -22,7 +22,7 @@ class Site(models.Model):
     # Location
     address = models.TextField(blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True)
-    timezone = models.CharField(max_length=50, default='UTC')
+    site_timezone = models.CharField(max_length=50, default='UTC')
 
     # Contact information
     site_manager = models.CharField(max_length=100, blank=True, null=True)

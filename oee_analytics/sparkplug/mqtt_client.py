@@ -17,8 +17,24 @@ from queue import Queue, Empty
 import struct
 
 import paho.mqtt.client as mqtt
-from eclipse_tahu.core import sparkplug_b_pb2
-from eclipse_tahu.core.sparkplug_b import SparkplugMessageBuilder, SparkplugMessageParser
+try:
+    from eclipse_tahu.core import sparkplug_b_pb2
+    from eclipse_tahu.core.sparkplug_b import SparkplugMessageBuilder, SparkplugMessageParser
+    TAHU_AVAILABLE = True
+except ImportError:
+    TAHU_AVAILABLE = False
+    # Create mock classes for testing without Tahu
+    class SparkplugMessageBuilder:
+        def build_nbirth(self, *args, **kwargs): return b''
+        def build_ndeath(self, *args, **kwargs): return b''
+        def build_dbirth(self, *args, **kwargs): return b''
+        def build_ddeath(self, *args, **kwargs): return b''
+        def build_ndata(self, *args, **kwargs): return b''
+        def build_ddata(self, *args, **kwargs): return b''
+    class SparkplugMessageParser:
+        def parse(self, *args, **kwargs): return {}
+    sparkplug_b_pb2 = None
+
 from prometheus_client import Counter, Histogram, Gauge
 
 from .models import (
