@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Import PLC Configuration{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-upload"></i> Import PLC Configuration</h4>
+                </div>
+                <div class="card-body">
+                    <p>Upload a JSON configuration file to import PLC connections and tags.</p>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="config_file" class="form-label">
+                                Configuration JSON File
+                            </label>
+                            <input type="file"
+                                   class="form-control"
+                                   id="config_file"
+                                   name="config_file"
+                                   accept=".json"
+                                   required>
+                            <div class="form-text">
+                                Select a JSON file exported from this system or manually created
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>Note:</strong> Importing will create new connections or update existing ones based on the connection name. Existing tags will be replaced.
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'plc_config_dashboard' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload"></i> Import Configuration
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Example format -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Example JSON Format</h5>
+                </div>
+                <div class="card-body">
+                    <pre><code>{
+  "plc_connections": [
+    {
+      "name": "LINE-001-ControlLogix",
+      "type": "ALLEN_BRADLEY",
+      "family": "CONTROLLOGIX",
+      "enabled": true,
+      "connection": {
+        "ip_address": "192.168.1.10",
+        "port": 44818,
+        "slot": 0,
+        "timeout": 5.0,
+        "simulator_mode": false
+      },
+      "polling": {
+        "interval_ms": 1000,
+        "batch_size": 20
+      },
+      "metadata": {
+        "site_id": "SITE-001",
+        "area_id": "AREA-A",
+        "line_id": "LINE-001"
+      },
+      "tags": [
+        {
+          "name": "ProductionCount",
+          "address": "Program:MainProgram.ProductionCount",
+          "data_type": "DINT",
+          "description": "Total production count",
+          "sparkplug_metric": "production_count"
+        }
+      ]
+    }
+  ]
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

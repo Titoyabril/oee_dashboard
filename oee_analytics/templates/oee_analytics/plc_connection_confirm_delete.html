@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Delete PLC Connection{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="bi bi-exclamation-triangle"></i> Confirm Deletion</h4>
+                </div>
+                <div class="card-body">
+                    <p>Are you sure you want to delete this PLC connection?</p>
+                    <div class="alert alert-warning">
+                        <strong>Connection:</strong> {{ connection.name }}<br>
+                        <strong>IP Address:</strong> {{ connection.ip_address }}<br>
+                        <strong>Tags:</strong> {{ connection.tags.count }}<br>
+                        <br>
+                        <strong>Warning:</strong> This will permanently delete the connection and all {{ connection.tags.count }} associated tags. This action cannot be undone.
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'plc_config_dashboard' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Yes, Delete Connection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
