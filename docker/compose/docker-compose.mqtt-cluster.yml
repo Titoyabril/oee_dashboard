@@ -45,7 +45,7 @@ services:
       - EMQX_MQTT__SHARED_SUBSCRIPTION_STRATEGY=round_robin
       # Metrics
       - EMQX_PROMETHEUS__ENABLE=true
-      - EMQX_PROMETHEUS__PUSH_GATEWAY_SERVER=http://prometheus-pushgateway:9091
+      # - EMQX_PROMETHEUS__PUSH_GATEWAY_SERVER=http://prometheus-pushgateway:9091
       - EMQX_PROMETHEUS__INTERVAL=15s
     volumes:
       - emqx1_data:/opt/emqx/data
