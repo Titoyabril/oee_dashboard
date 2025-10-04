@@ -14,6 +14,10 @@ urlpatterns = [
     path('plc-monitor/', views_plc_monitor.plc_monitor_dashboard, name='plc_monitor_dashboard'),
     path('plc-monitor/stream/', views_plc_monitor.plc_stream, name='plc_stream'),
     path('api/plc-data/', views_plc_monitor.plc_data_api, name='plc_data_api'),
+
+    # Machine Configuration
+    path('machine-config/', views.machine_configuration, name='machine_configuration'),
+    path('device-connections/', views.device_connections_ignition, name='device_connections_ignition'),
     path('shifts/', views.dashboard, name='shifts'),  # Placeholder
     path('challenges/', views.dashboard, name='challenges'),  # Placeholder
     path('achievements/', views.dashboard, name='achievements'),  # Placeholder

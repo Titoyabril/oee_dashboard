@@ -47,6 +47,14 @@ def dataflow_monitor(request):
     """Data flow monitoring dashboard for separate screen display"""
     return render(request, 'oee_analytics/dataflow_monitor.html')
 
+def machine_configuration(request):
+    """Machine/PLC configuration UI"""
+    return render(request, 'oee_analytics/machine_configuration.html')
+
+def device_connections_ignition(request):
+    """Ignition-style Device Connections Manager"""
+    return render(request, 'oee_analytics/machine_configuration_ignition.html')
+
 def current_metrics_api(request):
     """API endpoint for real-time metrics"""
     # Calculate current OEE metrics

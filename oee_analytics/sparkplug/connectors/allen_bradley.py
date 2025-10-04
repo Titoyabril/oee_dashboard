@@ -415,16 +415,40 @@ class AllenBradleyConnector(BasePLCConnector):
         """Auto-discover available tags in AB PLC"""
         if not self._is_connected():
             raise PLCConnectionError("Not connected to PLC")
-        
+
         discovered_tags = []
-        
+
         try:
-            if self.driver and hasattr(self.driver, 'get_tag_list'):
+            # Simulator mode - return mock tags
+            if self.config.simulator_mode:
+                discovered_tags = [
+                    PLCTagDefinition(name="ProductionCount", address="ProductionCount", data_type="DINT",
+                                   description="Total production count", units="parts"),
+                    PLCTagDefinition(name="CycleTime", address="CycleTime", data_type="REAL",
+                                   description="Current cycle time", units="seconds"),
+                    PLCTagDefinition(name="MachineStatus", address="MachineStatus", data_type="INT",
+                                   description="Machine status (0=Stopped, 1=Running, 2=Error)"),
+                    PLCTagDefinition(name="Temperature", address="Temperature", data_type="REAL",
+                                   description="Process temperature", units="°C"),
+                    PLCTagDefinition(name="Pressure", address="Pressure", data_type="REAL",
+                                   description="System pressure", units="PSI"),
+                    PLCTagDefinition(name="Speed", address="Speed", data_type="REAL",
+                                   description="Line speed", units="m/min"),
+                    PLCTagDefinition(name="QualityCount", address="QualityCount", data_type="DINT",
+                                   description="Good parts count", units="parts"),
+                    PLCTagDefinition(name="RejectCount", address="RejectCount", data_type="DINT",
+                                   description="Rejected parts count", units="parts"),
+                    PLCTagDefinition(name="AlarmActive", address="AlarmActive", data_type="BOOL",
+                                   description="Active alarm indicator"),
+                    PLCTagDefinition(name="EStopActive", address="EStopActive", data_type="BOOL",
+                                   description="Emergency stop status"),
+                ]
+            elif self.driver and hasattr(self.driver, 'get_tag_list'):
                 # Get tag list from Logix PLC
                 tag_list = await asyncio.get_event_loop().run_in_executor(
                     None, self.driver.get_tag_list
                 )
-                
+
                 for tag_info in tag_list:
                     tag_def = PLCTagDefinition(
                         name=tag_info['tag_name'],
@@ -433,14 +457,14 @@ class AllenBradleyConnector(BasePLCConnector):
                         description=f"Auto-discovered {tag_info['data_type']} tag"
                     )
                     discovered_tags.append(tag_def)
-            
+
             elif self.legacy_driver:
                 # For legacy PLCs, create common address patterns
                 discovered_tags = self._get_common_legacy_tags()
-            
+
         except Exception as e:
             self.logger.error(f"Tag discovery failed: {e}")
-        
+
         return discovered_tags
     
     def validate_address(self, address: str) -> bool:
@@ -609,6 +633,7 @@ class AllenBradleyConnector(BasePLCConnector):
 from .base import PLCConnectorFactory
 PLCConnectorFactory.register_connector('ALLEN_BRADLEY', AllenBradleyConnector)
 PLCConnectorFactory.register_connector('AB', AllenBradleyConnector)
+PLCConnectorFactory.register_connector('ETHERNET_IP', AllenBradleyConnector)
 PLCConnectorFactory.register_connector('CONTROLLOGIX', AllenBradleyConnector)
 PLCConnectorFactory.register_connector('COMPACTLOGIX', AllenBradleyConnector)
 PLCConnectorFactory.register_connector('MICROLOGIX', AllenBradleyConnector)

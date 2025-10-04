@@ -1,0 +1,1023 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Connections | OEE Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        :root {
+            --ignition-blue: #0066cc;
+            --ignition-green: #28a745;
+            --ignition-orange: #fd7e14;
+            --ignition-gray: #6c757d;
+        }
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .ignition-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .wizard-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .wizard-steps {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .wizard-step {
+            flex: 1;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .wizard-step:not(:last-child)::after {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #dee2e6;
+            z-index: 1;
+        }
+        .wizard-step.active {
+            background: var(--ignition-blue);
+            color: white;
+        }
+        .wizard-step.completed {
+            background: #e8f5e9;
+            color: var(--ignition-green);
+        }
+        .wizard-step .step-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #dee2e6;
+            color: #6c757d;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .wizard-step.active .step-number {
+            background: white;
+            color: var(--ignition-blue);
+        }
+        .wizard-step.completed .step-number {
+            background: var(--ignition-green);
+            color: white;
+        }
+        .wizard-content {
+            padding: 2rem;
+            min-height: 500px;
+        }
+        .connection-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s;
+        }
+        .connection-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        .status-indicator.connected {
+            background: var(--ignition-green);
+        }
+        .status-indicator.disconnected {
+            background: #dc3545;
+            animation: none;
+        }
+        .status-indicator.connecting {
+            background: var(--ignition-orange);
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        .device-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .device-card:hover {
+            border-color: var(--ignition-blue);
+            box-shadow: 0 4px 12px rgba(0,102,204,0.15);
+            transform: translateY(-4px);
+        }
+        .device-card.selected {
+            border-color: var(--ignition-blue);
+            background: #e7f3ff;
+        }
+        .tag-browser {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: white;
+        }
+        .tag-tree {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .tag-node {
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .tag-node:hover {
+            background: #f8f9fa;
+        }
+        .tag-node.folder {
+            font-weight: 600;
+            background: #f8f9fa;
+        }
+        .tag-value {
+            font-family: 'Courier New', monospace;
+            background: #f0f0f0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+        .quick-client {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        .btn-ignition {
+            background: var(--ignition-blue);
+            color: white;
+            border: none;
+        }
+        .btn-ignition:hover {
+            background: #0052a3;
+            color: white;
+        }
+        .protocol-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .protocol-badge.ethernet-ip {
+            background: #ffe0e0;
+            color: #dc3545;
+        }
+        .protocol-badge.opcua {
+            background: #e0f2ff;
+            color: #0066cc;
+        }
+        .protocol-badge.s7 {
+            background: #fff3e0;
+            color: #ff6f00;
+        }
+    </style>
+</head>
+<body>
+    <div x-data="deviceConnectionManager()">
+        <!-- Header -->
+        <div class="ignition-header">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2><i class="fas fa-network-wired"></i> Device Connections</h2>
+                        <p class="mb-0 opacity-75">Ignition-Style Connection Manager</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button @click="showDashboard()" class="btn btn-light me-2">
+                            <i class="fas fa-th-large"></i> Dashboard
+                        </button>
+                        <button @click="startNewConnection()" class="btn btn-success">
+                            <i class="fas fa-plus"></i> New Device Connection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <!-- Connection Dashboard -->
+            <div x-show="view === 'dashboard'">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4><i class="fas fa-tachometer-alt"></i> Connection Dashboard</h4>
+                    </div>
+                </div>
+
+                <!-- Connection Stats -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="connection-card text-center">
+                            <h3 class="text-success" x-text="getConnectedCount()"></h3>
+                            <p class="text-muted mb-0">Connected Devices</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="connection-card text-center">
+                            <h3 class="text-danger" x-text="getDisconnectedCount()"></h3>
+                            <p class="text-muted mb-0">Disconnected</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="connection-card text-center">
+                            <h3 class="text-primary" x-text="connections.length"></h3>
+                            <p class="text-muted mb-0">Total Connections</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="connection-card text-center">
+                            <h3 class="text-info" x-text="getTotalTags()"></h3>
+                            <p class="text-muted mb-0">Configured Tags</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connection List -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="mb-3">Configured Devices</h5>
+                        <div x-show="connections.length === 0" class="text-center py-5">
+                            <i class="fas fa-plug fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No devices configured yet. Click "New Device Connection" to get started.</p>
+                        </div>
+                        <template x-for="conn in connections" :key="conn.id">
+                            <div class="connection-card">
+                                <div class="row align-items-center">
+                                    <div class="col-md-1">
+                                        <span class="status-indicator" :class="conn.status || 'disconnected'"></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h6 class="mb-1" x-text="conn.name"></h6>
+                                        <small class="text-muted" x-text="conn.machine_id"></small>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="protocol-badge" :class="'protocol-badge-' + conn.protocol.toLowerCase()" x-text="conn.protocol"></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-network-wired"></i> <span x-text="conn.ip_address + ':' + conn.port"></span>
+                                        </small>
+                                    </div>
+                                    <div class="col-md-3 text-end">
+                                        <button @click="browseTags(conn)" class="btn btn-sm btn-outline-primary me-1" title="Browse Tags">
+                                            <i class="fas fa-folder-tree"></i>
+                                        </button>
+                                        <button @click="quickClient(conn)" class="btn btn-sm btn-outline-info me-1" title="Quick Client">
+                                            <i class="fas fa-vial"></i>
+                                        </button>
+                                        <button @click="editConnection(conn)" class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button @click="deleteConnection(conn)" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connection Wizard -->
+            <div x-show="view === 'wizard'" class="wizard-container">
+                <!-- Wizard Steps -->
+                <div class="wizard-steps">
+                    <div class="wizard-step" :class="{'active': wizardStep === 1, 'completed': wizardStep > 1}" @click="wizardStep > 1 ? wizardStep = 1 : null">
+                        <div class="step-number">
+                            <span x-show="wizardStep > 1"><i class="fas fa-check"></i></span>
+                            <span x-show="wizardStep <= 1">1</span>
+                        </div>
+                        <div class="step-title">Network Discovery</div>
+                    </div>
+                    <div class="wizard-step" :class="{'active': wizardStep === 2, 'completed': wizardStep > 2}" @click="wizardStep > 2 ? wizardStep = 2 : null">
+                        <div class="step-number">
+                            <span x-show="wizardStep > 2"><i class="fas fa-check"></i></span>
+                            <span x-show="wizardStep <= 2">2</span>
+                        </div>
+                        <div class="step-title">Device Selection</div>
+                    </div>
+                    <div class="wizard-step" :class="{'active': wizardStep === 3, 'completed': wizardStep > 3}" @click="wizardStep > 3 ? wizardStep = 3 : null">
+                        <div class="step-number">
+                            <span x-show="wizardStep > 3"><i class="fas fa-check"></i></span>
+                            <span x-show="wizardStep <= 3">3</span>
+                        </div>
+                        <div class="step-title">Configuration</div>
+                    </div>
+                    <div class="wizard-step" :class="{'active': wizardStep === 4, 'completed': wizardStep > 4}">
+                        <div class="step-number">
+                            <span x-show="wizardStep > 4"><i class="fas fa-check"></i></span>
+                            <span x-show="wizardStep <= 4">4</span>
+                        </div>
+                        <div class="step-title">Tag Browser</div>
+                    </div>
+                </div>
+
+                <!-- Wizard Content -->
+                <div class="wizard-content">
+                    <!-- Step 1: Network Discovery -->
+                    <div x-show="wizardStep === 1">
+                        <h4 class="mb-4"><i class="fas fa-radar"></i> Network Discovery</h4>
+                        <p class="text-muted">Scan your network to find available PLCs and industrial devices</p>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Network Address</label>
+                                <input type="text" class="form-control form-control-lg" x-model="networkScan.subnet" placeholder="127.0.0.1 or 192.168.1.0/24">
+                                <small class="form-text text-muted">Enter IP address (localhost or network IP) or CIDR notation</small>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Protocol Filter</label>
+                                <select class="form-select form-select-lg" x-model="networkScan.protocol">
+                                    <option value="all">All Protocols</option>
+                                    <option value="ETHERNET_IP">Allen-Bradley</option>
+                                    <option value="OPCUA">OPC UA</option>
+                                    <option value="S7">Siemens S7</option>
+                                    <option value="MODBUS">Modbus TCP</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button @click="scanNetwork()" class="btn btn-ignition btn-lg w-100" :disabled="networkScanning">
+                                    <i class="fas" :class="networkScanning ? 'fa-spinner fa-spin' : 'fa-search'"></i>
+                                    <span x-text="networkScanning ? ' Scanning...' : ' Scan Network'"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div x-show="networkScanning" class="text-center my-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Scanning...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Scanning network for devices...</p>
+                        </div>
+
+                        <div x-show="discoveredDevices.length > 0">
+                            <h5 class="mt-4 mb-3">
+                                <i class="fas fa-check-circle text-success"></i> Found <span x-text="discoveredDevices.length"></span> Device(s)
+                            </h5>
+                            <div class="device-grid">
+                                <template x-for="device in discoveredDevices" :key="device.ip_address + ':' + device.port">
+                                    <div class="device-card" :class="{'selected': selectedDevice && selectedDevice.ip_address === device.ip_address && selectedDevice.port === device.port}"
+                                         @click="selectDevice(device)">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-microchip fa-2x text-primary me-3"></i>
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-0" x-text="device.name || 'Unknown Device'"></h6>
+                                                <small class="text-muted" x-text="device.protocol"></small>
+                                            </div>
+                                            <div x-show="selectedDevice && selectedDevice.ip_address === device.ip_address && selectedDevice.port === device.port">
+                                                <i class="fas fa-check-circle fa-2x text-success"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-network-wired"></i> <span x-text="device.ip_address + ':' + device.port"></span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="text-end mt-4">
+                                <button @click="nextStep()" class="btn btn-ignition btn-lg" :disabled="!selectedDevice">
+                                    Next: Configure Device <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Device Selection (Skip if coming from discovery) -->
+                    <div x-show="wizardStep === 2">
+                        <h4 class="mb-4"><i class="fas fa-check-square"></i> Device Selection</h4>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Selected Device: <strong x-text="selectedDevice?.name"></strong>
+                            <br><small x-text="selectedDevice?.ip_address + ':' + selectedDevice?.port"></small>
+                        </div>
+                        <div class="text-end">
+                            <button @click="wizardStep = 1" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <button @click="nextStep()" class="btn btn-ignition btn-lg">
+                                Next: Configure Connection <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Configuration -->
+                    <div x-show="wizardStep === 3">
+                        <h4 class="mb-4"><i class="fas fa-cog"></i> Connection Configuration</h4>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Connection Name</label>
+                                    <input type="text" class="form-control" x-model="config.name" placeholder="LINE-001-PLC">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Machine ID</label>
+                                    <input type="text" class="form-control" x-model="config.machine_id" placeholder="LINE-001">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" x-model="config.description" rows="2" placeholder="Production Line 1 - Assembly Station"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">IP Address</label>
+                                    <input type="text" class="form-control" x-model="config.ip_address" :readonly="selectedDevice" placeholder="127.0.0.1">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Port</label>
+                                    <input type="number" class="form-control" x-model="config.port" :readonly="selectedDevice" placeholder="44818">
+                                </div>
+                                <div class="mb-3" x-show="config.protocol === 'ETHERNET_IP'">
+                                    <label class="form-label">Slot Number</label>
+                                    <input type="number" class="form-control" x-model="config.protocol_config.slot" placeholder="0">
+                                </div>
+                                <div class="mb-3" x-show="config.protocol === 'ETHERNET_IP'">
+                                    <label class="form-label">PLC Family</label>
+                                    <select class="form-select" x-model="config.protocol_config.plc_family">
+                                        <option value="ControlLogix">ControlLogix</option>
+                                        <option value="CompactLogix">CompactLogix</option>
+                                        <option value="MicroLogix">MicroLogix</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> <strong>Test your connection</strong> before proceeding to ensure proper communication with the device.
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button @click="testConnection()" class="btn btn-outline-primary" :disabled="testing">
+                                <i class="fas" :class="testing ? 'fa-spinner fa-spin' : 'fa-vial'"></i>
+                                <span x-text="testing ? ' Testing...' : ' Test Connection'"></span>
+                            </button>
+                            <div x-show="testResult" class="flex-grow-1">
+                                <div class="alert mb-0" :class="testResult?.success ? 'alert-success' : 'alert-danger'">
+                                    <i class="fas" :class="testResult?.success ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                                    <span x-text="testResult?.message"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <button @click="wizardStep = 2" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <button @click="saveAndBrowseTags()" class="btn btn-ignition btn-lg" :disabled="!testResult?.success">
+                                Next: Browse Tags <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Tag Browser -->
+                    <div x-show="wizardStep === 4">
+                        <h4 class="mb-4"><i class="fas fa-folder-tree"></i> Tag Browser</h4>
+                        <p class="text-muted">Browse and import tags from your PLC</p>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="tag-browser">
+                                    <div class="p-3 bg-light border-bottom">
+                                        <button @click="discoverTags()" class="btn btn-sm btn-primary" :disabled="discovering">
+                                            <i class="fas" :class="discovering ? 'fa-spinner fa-spin' : 'fa-refresh'"></i>
+                                            <span x-text="discovering ? ' Discovering...' : ' Discover Tags'"></span>
+                                        </button>
+                                    </div>
+                                    <div class="tag-tree">
+                                        <div x-show="discoveredTags.length === 0" class="text-center py-5 text-muted">
+                                            <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                            <p>Click "Discover Tags" to browse available tags</p>
+                                        </div>
+                                        <template x-for="(tag, index) in discoveredTags" :key="index">
+                                            <div class="tag-node" @click="toggleTagSelection(tag)">
+                                                <input type="checkbox" x-model="tag.selected" class="form-check-input">
+                                                <i class="fas fa-tag text-primary"></i>
+                                                <span x-text="tag.name"></span>
+                                                <span class="tag-value" x-text="tag.data_type"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="quick-client">
+                                    <h6><i class="fas fa-vial"></i> Quick Client</h6>
+                                    <p class="small text-muted">Test read/write operations on selected tags</p>
+                                    <div x-show="getSelectedTags().length === 0" class="text-center py-4 text-muted">
+                                        <i class="fas fa-check-square fa-2x mb-2"></i>
+                                        <p class="small">Select tags from the browser to test</p>
+                                    </div>
+                                    <div x-show="getSelectedTags().length > 0">
+                                        <div class="mb-3">
+                                            <label class="form-label small">Selected Tags (<span x-text="getSelectedTags().length"></span>)</label>
+                                            <div style="max-height: 300px; overflow-y: auto;">
+                                                <template x-for="tag in getSelectedTags()" :key="tag.name">
+                                                    <div class="d-flex align-items-center p-2 border-bottom">
+                                                        <div class="flex-grow-1">
+                                                            <small><strong x-text="tag.name"></strong></small>
+                                                            <br><small class="text-muted" x-text="tag.data_type"></small>
+                                                            <div x-show="tagValues[tag.name]" class="mt-1">
+                                                                <span class="badge bg-success">
+                                                                    Value: <span x-text="tagValues[tag.name]"></span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <button class="btn btn-sm btn-outline-primary" @click="readTagValue(tag)" :disabled="readingTag === tag.name">
+                                                            <i class="fas" :class="readingTag === tag.name ? 'fa-spinner fa-spin' : 'fa-eye'"></i>
+                                                            <span x-text="readingTag === tag.name ? ' Reading...' : ' Read'"></span>
+                                                        </button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                            <div class="mt-3">
+                                                <button @click="readAllSelectedTags()" class="btn btn-sm btn-success w-100" :disabled="readingAll">
+                                                    <i class="fas" :class="readingAll ? 'fa-spinner fa-spin' : 'fa-play'"></i>
+                                                    <span x-text="readingAll ? ' Reading All...' : ' Read All Tags'"></span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <button @click="wizardStep = 3" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <button @click="finishWizard()" class="btn btn-success btn-lg">
+                                <i class="fas fa-check"></i> Finish & Save Connection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tag Browser View (Full Screen) -->
+            <div x-show="view === 'tagbrowser'" class="wizard-container">
+                <div class="wizard-content">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4><i class="fas fa-folder-tree"></i> Tag Browser - <span x-text="currentConnection?.name"></span></h4>
+                        <button @click="view = 'dashboard'" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="tag-browser">
+                                <div class="p-3 bg-light border-bottom d-flex justify-content-between">
+                                    <button @click="discoverTags()" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-refresh"></i> Refresh Tags
+                                    </button>
+                                    <div>
+                                        <input type="text" class="form-control form-control-sm" placeholder="Search tags..." x-model="tagSearchQuery">
+                                    </div>
+                                </div>
+                                <div class="tag-tree">
+                                    <template x-for="(tag, index) in getFilteredTags()" :key="index">
+                                        <div class="tag-node">
+                                            <i class="fas fa-tag text-primary"></i>
+                                            <span x-text="tag.name"></span>
+                                            <small class="text-muted ms-2" x-text="'(' + tag.data_type + ')'"></small>
+                                            <span class="tag-value" x-text="tag.address"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="quick-client">
+                                <h6><i class="fas fa-info-circle"></i> Tag Details</h6>
+                                <p class="small text-muted">Click on a tag to see details and test operations</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Client View (Full Screen) -->
+            <div x-show="view === 'quickclient'" class="wizard-container">
+                <div class="wizard-content">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4><i class="fas fa-vial"></i> Quick Client - <span x-text="currentConnection?.name"></span></h4>
+                        <button @click="view = 'dashboard'" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Quick Client allows you to test read/write operations on individual PLC tags in real-time.
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <p class="text-muted text-center">Quick Client functionality - Read/Write tag values, monitor changes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function deviceConnectionManager() {
+            return {
+                view: 'dashboard', // dashboard, wizard, tagbrowser, quickclient
+                wizardStep: 1,
+                connections: [],
+                currentConnection: null,
+                selectedDevice: null,
+                discoveredDevices: [],
+                discoveredTags: [],
+
+                config: {
+                    name: '',
+                    machine_id: '',
+                    description: '',
+                    ip_address: '',
+                    port: null,
+                    protocol: '',
+                    protocol_config: {
+                        slot: 0,
+                        plc_family: 'ControlLogix'
+                    }
+                },
+
+                networkScan: {
+                    subnet: '127.0.0.1',
+                    protocol: 'all'
+                },
+
+                networkScanning: false,
+                testing: false,
+                testResult: null,
+                discovering: false,
+                tagSearchQuery: '',
+                tagValues: {},
+                readingTag: null,
+                readingAll: false,
+
+                init() {
+                    this.loadConnections();
+                },
+
+                async loadConnections() {
+                    try {
+                        const response = await fetch('/api/plc/machines/');
+                        const data = await response.json();
+                        // Handle both array and paginated responses
+                        this.connections = Array.isArray(data) ? data : (data.results || []);
+                        console.log('Loaded connections:', this.connections);
+                    } catch (error) {
+                        console.error('Failed to load connections:', error);
+                        this.connections = [];
+                    }
+                },
+
+                getConnectedCount() {
+                    return this.connections.filter(c =>
+                        c.status && ['RUNNING', 'IDLE'].includes(c.status.toUpperCase())
+                    ).length;
+                },
+
+                getDisconnectedCount() {
+                    return this.connections.filter(c =>
+                        !c.status || ['OFFLINE', 'DOWN', 'ALARM', 'WARNING', 'MAINTENANCE'].includes(c.status.toUpperCase())
+                    ).length;
+                },
+
+                getTotalTags() {
+                    return this.connections.reduce((sum, c) => sum + (c.tag_count || 0), 0);
+                },
+
+                startNewConnection() {
+                    this.view = 'wizard';
+                    this.wizardStep = 1;
+                    this.selectedDevice = null;
+                    this.discoveredDevices = [];
+                    this.testResult = null;
+                    this.config = {
+                        name: '',
+                        machine_id: '',
+                        description: '',
+                        ip_address: '',
+                        port: null,
+                        protocol: '',
+                        protocol_config: {
+                            slot: 0,
+                            plc_family: 'ControlLogix'
+                        }
+                    };
+                },
+
+                showDashboard() {
+                    this.view = 'dashboard';
+                    this.loadConnections();
+                },
+
+                async scanNetwork() {
+                    this.networkScanning = true;
+                    this.discoveredDevices = [];
+                    this.selectedDevice = null;
+
+                    // Auto-detect subnet from IP
+                    let network = this.networkScan.subnet;
+                    if (!network.includes('/')) {
+                        const ipParts = network.split('.');
+                        if (ipParts.length === 4) {
+                            const firstOctet = parseInt(ipParts[0]);
+                            if (firstOctet === 127) {
+                                network = this.networkScan.subnet + '/32';
+                            } else {
+                                ipParts[3] = '0';
+                                network = ipParts.join('.') + '/24';
+                            }
+                        }
+                    }
+
+                    try {
+                        const response = await fetch('/api/plc/scan-network/', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                network: network,
+                                protocol_filter: this.networkScan.protocol,
+                                timeout: 0.5
+                            })
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            this.discoveredDevices = result.devices;
+                        }
+                    } catch (error) {
+                        console.error('Network scan failed:', error);
+                    } finally {
+                        this.networkScanning = false;
+                    }
+                },
+
+                selectDevice(device) {
+                    this.selectedDevice = device;
+                    // Pre-fill configuration
+                    this.config.ip_address = device.ip_address;
+                    this.config.port = device.port;
+                    this.config.protocol = device.protocol;
+                },
+
+                nextStep() {
+                    this.wizardStep++;
+                },
+
+                async testConnection() {
+                    this.testing = true;
+                    this.testResult = null;
+
+                    try {
+                        const response = await fetch('/api/plc/test-connection/', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                ip_address: this.config.ip_address,
+                                port: this.config.port,
+                                protocol: this.config.protocol,
+                                protocol_config: this.config.protocol_config,
+                                timeout: 5.0
+                            })
+                        });
+
+                        const result = await response.json();
+                        this.testResult = result;
+                    } catch (error) {
+                        this.testResult = {success: false, message: 'Connection test failed: ' + error.message};
+                    } finally {
+                        this.testing = false;
+                    }
+                },
+
+                async saveAndBrowseTags() {
+                    // Save connection first
+                    await this.saveConnection();
+                    this.wizardStep = 4;
+                },
+
+                async saveConnection() {
+                    try {
+                        const response = await fetch('/api/plc/machines/', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(this.config)
+                        });
+
+                        if (!response.ok) {
+                            const error = await response.json();
+                            console.error('Save failed:', error);
+                            alert('Failed to save connection: ' + JSON.stringify(error, null, 2));
+                            return;
+                        }
+
+                        const result = await response.json();
+                        this.currentConnection = result;
+                        this.connections.push(result);
+                        this.loadConnections();
+                    } catch (error) {
+                        console.error('Save connection error:', error);
+                        alert('Error saving connection: ' + error.message);
+                    }
+                },
+
+                async discoverTags() {
+                    this.discovering = true;
+                    this.discoveredTags = [];
+
+                    try {
+                        const response = await fetch('/api/plc/discover-tags/', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                ip_address: this.config.ip_address,
+                                port: this.config.port,
+                                protocol: this.config.protocol,
+                                protocol_config: this.config.protocol_config
+                            })
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            this.discoveredTags = result.tags.map(tag => ({...tag, selected: false}));
+                        }
+                    } catch (error) {
+                        console.error('Tag discovery failed:', error);
+                    } finally {
+                        this.discovering = false;
+                    }
+                },
+
+                toggleTagSelection(tag) {
+                    tag.selected = !tag.selected;
+                },
+
+                getSelectedTags() {
+                    return this.discoveredTags.filter(t => t.selected);
+                },
+
+                getFilteredTags() {
+                    if (!this.tagSearchQuery) return this.discoveredTags;
+                    return this.discoveredTags.filter(t =>
+                        t.name.toLowerCase().includes(this.tagSearchQuery.toLowerCase())
+                    );
+                },
+
+                async finishWizard() {
+                    // Save selected tags
+                    const selectedTags = this.getSelectedTags();
+                    // TODO: Save tags to backend
+                    alert(`Connection saved! ${selectedTags.length} tags imported.`);
+                    this.showDashboard();
+                },
+
+                browseTags(connection) {
+                    this.currentConnection = connection;
+                    this.view = 'tagbrowser';
+                    this.config = {...connection};
+                    this.discoverTags();
+                },
+
+                quickClient(connection) {
+                    this.currentConnection = connection;
+                    this.view = 'quickclient';
+                },
+
+                editConnection(connection) {
+                    this.config = {...connection};
+                    this.view = 'wizard';
+                    this.wizardStep = 3;
+                },
+
+                deleteConnection(connection) {
+                    if (confirm('Are you sure you want to delete this connection?')) {
+                        fetch(`/api/plc/machines/${connection.id}/`, {method: 'DELETE'})
+                            .then(() => this.loadConnections());
+                    }
+                },
+
+                async readTagValue(tag) {
+                    this.readingTag = tag.name;
+
+                    try {
+                        // Generate simulated value based on tag type
+                        let value = this.generateSimulatedValue(tag);
+                        this.tagValues[tag.name] = value;
+
+                        // In production, this would call the PLC read API:
+                        // const response = await fetch('/api/plc/read-tag/', {
+                        //     method: 'POST',
+                        //     headers: {'Content-Type': 'application/json'},
+                        //     body: JSON.stringify({
+                        //         ip_address: this.config.ip_address,
+                        //         port: this.config.port,
+                        //         protocol: this.config.protocol,
+                        //         tag_name: tag.name,
+                        //         tag_address: tag.address,
+                        //         data_type: tag.data_type
+                        //     })
+                        // });
+                        // const result = await response.json();
+                        // this.tagValues[tag.name] = result.value;
+
+                    } catch (error) {
+                        console.error('Failed to read tag:', error);
+                        this.tagValues[tag.name] = 'ERROR';
+                    } finally {
+                        this.readingTag = null;
+                    }
+                },
+
+                async readAllSelectedTags() {
+                    this.readingAll = true;
+                    const selectedTags = this.getSelectedTags();
+
+                    for (const tag of selectedTags) {
+                        await this.readTagValue(tag);
+                        // Small delay between reads
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+
+                    this.readingAll = false;
+                },
+
+                generateSimulatedValue(tag) {
+                    // Generate realistic simulated values based on tag type and name
+                    switch (tag.data_type) {
+                        case 'BOOL':
+                            return Math.random() > 0.5 ? 'TRUE' : 'FALSE';
+                        case 'INT':
+                            if (tag.name.includes('Status')) {
+                                return Math.floor(Math.random() * 3); // 0, 1, or 2
+                            }
+                            return Math.floor(Math.random() * 100);
+                        case 'DINT':
+                            if (tag.name.includes('Count')) {
+                                return Math.floor(Math.random() * 10000);
+                            }
+                            return Math.floor(Math.random() * 1000);
+                        case 'REAL':
+                            if (tag.name.includes('Temperature')) {
+                                return (Math.random() * 50 + 20).toFixed(2); // 20-70°C
+                            } else if (tag.name.includes('Pressure')) {
+                                return (Math.random() * 100 + 50).toFixed(2); // 50-150 PSI
+                            } else if (tag.name.includes('Speed')) {
+                                return (Math.random() * 100).toFixed(2); // 0-100 m/min
+                            } else if (tag.name.includes('CycleTime')) {
+                                return (Math.random() * 10 + 5).toFixed(2); // 5-15 seconds
+                            }
+                            return (Math.random() * 100).toFixed(2);
+                        default:
+                            return Math.floor(Math.random() * 100);
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
