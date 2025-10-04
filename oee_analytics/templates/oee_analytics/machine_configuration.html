@@ -1,0 +1,808 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Configuration | OEE Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        body {
+            background: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .protocol-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            height: 100%;
+        }
+        .protocol-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .protocol-card.selected {
+            border-color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+        .protocol-logo {
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 1rem;
+        }
+        .form-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+        .tag-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .tag-item:hover {
+            background-color: #f8f9fa;
+        }
+        .test-result {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        .test-result.success {
+            background-color: #d1e7dd;
+            border-left: 4px solid #198754;
+        }
+        .test-result.error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4" x-data="machineConfig()">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1><i class="fas fa-cogs"></i> Machine/PLC Configuration</h1>
+                <p class="text-muted">Configure and manage industrial equipment connections</p>
+            </div>
+        </div>
+
+        <!-- Step 1: Protocol Selection -->
+        <div x-show="step === 1" class="row">
+            <div class="col-12 mb-3">
+                <h3>Step 1: Select PLC Protocol</h3>
+            </div>
+            <div class="col-md-3">
+                <div class="card protocol-card" :class="{'selected': config.protocol === 'ETHERNET_IP'}" @click="selectProtocol('ETHERNET_IP')">
+                    <div class="card-body text-center">
+                        <i class="fas fa-microchip fa-4x mb-3 text-danger"></i>
+                        <h5>Allen-Bradley</h5>
+                        <p class="small text-muted">EtherNet/IP Protocol</p>
+                        <p class="small">ControlLogix, CompactLogix, MicroLogix</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card protocol-card" :class="{'selected': config.protocol === 'S7'}" @click="selectProtocol('S7')">
+                    <div class="card-body text-center">
+                        <i class="fas fa-industry fa-4x mb-3 text-primary"></i>
+                        <h5>Siemens S7</h5>
+                        <p class="small text-muted">S7 Communication</p>
+                        <p class="small">S7-300, S7-400, S7-1200, S7-1500</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card protocol-card" :class="{'selected': config.protocol === 'OPCUA'}" @click="selectProtocol('OPCUA')">
+                    <div class="card-body text-center">
+                        <i class="fas fa-network-wired fa-4x mb-3 text-success"></i>
+                        <h5>OPC-UA</h5>
+                        <p class="small text-muted">Universal Protocol</p>
+                        <p class="small">Any OPC-UA compatible device</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card protocol-card" :class="{'selected': config.protocol === 'MODBUS'}" @click="selectProtocol('MODBUS')">
+                    <div class="card-body text-center">
+                        <i class="fas fa-plug fa-4x mb-3 text-warning"></i>
+                        <h5>Modbus TCP</h5>
+                        <p class="small text-muted">Modbus Protocol</p>
+                        <p class="small">Generic Modbus devices</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 mt-3">
+                <button @click="step = 2" :disabled="!config.protocol" class="btn btn-primary btn-lg">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Configuration Form -->
+        <div x-show="step === 2" class="row">
+            <div class="col-12 mb-3">
+                <button @click="step = 1" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <h3 class="mt-3">Step 2: Configure <span x-text="getProtocolName()"></span> Connection</h3>
+            </div>
+
+            <div class="col-lg-8">
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h5><i class="fas fa-info-circle"></i> Basic Information</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Machine Name *</label>
+                            <input type="text" class="form-control" x-model="config.name" placeholder="LINE-001-PLC">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Machine ID *</label>
+                            <input type="text" class="form-control" x-model="config.machine_id" placeholder="MACHINE-001">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" x-model="config.description" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network Scanner (RSLinx-style) -->
+                <div class="form-section">
+                    <h5><i class="fas fa-network-wired"></i> Network Discovery</h5>
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle"></i> Scan your network to automatically find PLCs and HMIs (like RSLinx/Studio 5000)
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">IP Address or Network</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" x-model="networkScan.subnet" placeholder="127.0.0.1 or 192.168.1.0/24">
+                                <select class="form-select" style="max-width: 150px;" x-model="networkScan.protocol">
+                                    <option value="all">All Protocols</option>
+                                    <option value="ETHERNET_IP">Allen-Bradley Only</option>
+                                    <option value="OPCUA">OPC-UA Only</option>
+                                    <option value="S7">Siemens S7 Only</option>
+                                    <option value="MODBUS">Modbus Only</option>
+                                </select>
+                                <button class="btn btn-primary" type="button" @click="scanNetwork()" :disabled="networkScanning || !networkScan.subnet">
+                                    <i class="fas" :class="networkScanning ? 'fa-spinner fa-spin' : 'fa-radar'"></i>
+                                    <span x-text="networkScanning ? ' Scanning...' : ' Scan Network'"></span>
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">
+                                Enter 127.0.0.1 for localhost simulators, or any IP (192.168.1.50) to scan that network /24, or use CIDR
+                            </small>
+                        </div>
+                        <div class="col-md-4" x-show="networkScanning">
+                            <label class="form-label">Progress</label>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                            </div>
+                            <small class="text-muted">Scanning network...</small>
+                        </div>
+                    </div>
+
+                    <!-- Network Scan Results -->
+                    <div x-show="networkDevices.length > 0" class="mb-3">
+                        <div class="alert alert-success">
+                            <strong><i class="fas fa-check-circle"></i> Found <span x-text="networkDevices.length"></span> device(s) on network</strong>
+                            <div class="table-responsive mt-2">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>IP Address</th>
+                                            <th>Device Name</th>
+                                            <th>Protocol</th>
+                                            <th>Port</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(device, index) in networkDevices" :key="device.ip_address + ':' + device.port">
+                                            <tr>
+                                                <td><code x-text="device.ip_address"></code></td>
+                                                <td><span x-text="device.name || 'Unknown Device'"></span></td>
+                                                <td><span class="badge bg-primary" x-text="device.protocol"></span></td>
+                                                <td><span x-text="device.port"></span></td>
+                                                <td>
+                                                    <button type="button" class="btn btn-sm btn-outline-success" @click="selectNetworkDevice(device)">
+                                                        <i class="fas fa-check"></i> Select
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connection Settings -->
+                <div class="form-section">
+                    <h5><i class="fas fa-ethernet"></i> Connection Settings</h5>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">IP Address *</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" x-model="config.ip_address" placeholder="192.168.1.10">
+                                <button class="btn btn-outline-primary" type="button" @click="discoverPLCs()" :disabled="discovering || !config.ip_address">
+                                    <i class="fas" :class="discovering ? 'fa-spinner fa-spin' : 'fa-search'"></i>
+                                    <span x-text="discovering ? ' Discovering...' : ' Discover PLCs'"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Port</label>
+                            <input type="number" class="form-control" x-model="config.port" :placeholder="getDefaultPort()">
+                        </div>
+                    </div>
+
+                    <!-- Discovered PLCs -->
+                    <div x-show="discoveredPLCs.length > 0" class="mb-3">
+                        <div class="alert alert-info">
+                            <strong><i class="fas fa-check-circle"></i> Found <span x-text="discoveredPLCs.length"></span> PLC(s)</strong>
+                            <div class="mt-2">
+                                <template x-for="plc in discoveredPLCs" :key="plc.port">
+                                    <button type="button" class="btn btn-sm btn-outline-success m-1" @click="selectDiscoveredPLC(plc)">
+                                        <i class="fas fa-server"></i>
+                                        <span x-text="plc.name"></span> - Port <span x-text="plc.port"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Allen-Bradley Specific Fields -->
+                    <div x-show="config.protocol === 'ETHERNET_IP'">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Slot Number</label>
+                                <input type="number" class="form-control" x-model="config.protocol_config.slot" min="0" max="17" value="0">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">PLC Family</label>
+                                <select class="form-select" x-model="config.protocol_config.plc_family">
+                                    <option value="">Select Family</option>
+                                    <option value="ControlLogix">ControlLogix</option>
+                                    <option value="CompactLogix">CompactLogix</option>
+                                    <option value="MicroLogix">MicroLogix</option>
+                                    <option value="SLC-500">SLC-500</option>
+                                    <option value="PLC-5">PLC-5</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Siemens S7 Specific Fields -->
+                    <div x-show="config.protocol === 'S7'">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Rack Number</label>
+                                <input type="number" class="form-control" x-model="config.protocol_config.rack" min="0" max="7" value="0">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Slot Number</label>
+                                <input type="number" class="form-control" x-model="config.protocol_config.slot" min="0" max="17" value="1">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">PLC Type</label>
+                                <select class="form-select" x-model="config.protocol_config.plc_type">
+                                    <option value="">Select Type</option>
+                                    <option value="S7-300">S7-300</option>
+                                    <option value="S7-400">S7-400</option>
+                                    <option value="S7-1200">S7-1200</option>
+                                    <option value="S7-1500">S7-1500</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OPC-UA Specific Fields -->
+                    <div x-show="config.protocol === 'OPCUA'">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Security Policy</label>
+                                <select class="form-select" x-model="config.protocol_config.security_policy">
+                                    <option value="None">None</option>
+                                    <option value="Basic256">Basic256</option>
+                                    <option value="Basic256Sha256">Basic256Sha256 (Recommended)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Authentication</label>
+                                <select class="form-select" x-model="config.protocol_config.authentication_mode">
+                                    <option value="Anonymous">Anonymous</option>
+                                    <option value="UserPassword">Username/Password</option>
+                                    <option value="Certificate">Certificate</option>
+                                </select>
+                            </div>
+                            <div x-show="config.protocol_config.authentication_mode === 'UserPassword'" class="col-md-6 mb-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" x-model="config.protocol_config.username">
+                            </div>
+                            <div x-show="config.protocol_config.authentication_mode === 'UserPassword'" class="col-md-6 mb-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" x-model="config.protocol_config.password">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test Connection -->
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5><i class="fas fa-plug"></i> Connection Test</h5>
+                        <button @click="testConnection()" class="btn btn-secondary" :disabled="testing || !config.ip_address">
+                            <span x-show="!testing"><i class="fas fa-vial"></i> Test Connection</span>
+                            <span x-show="testing"><span class="spinner-border spinner-border-sm"></span> Testing...</span>
+                        </button>
+                    </div>
+
+                    <!-- Test Results -->
+                    <div x-show="testResult" class="test-result" :class="testResult.success ? 'success' : 'error'">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-2x me-3" :class="testResult.success ? 'fa-check-circle text-success' : 'fa-times-circle text-danger'"></i>
+                            <div class="flex-grow-1">
+                                <h6 x-text="testResult.success ? 'Connection Successful!' : 'Connection Failed'"></h6>
+                                <p class="mb-2" x-text="testResult.message"></p>
+                                <div x-show="testResult.device_info">
+                                    <strong>Device Information:</strong>
+                                    <pre class="bg-light p-2 rounded mt-2" x-text="JSON.stringify(testResult.device_info, null, 2)"></pre>
+                                </div>
+                                <div x-show="testResult.diagnostics && testResult.diagnostics.suggestions.length > 0">
+                                    <strong>Suggestions:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <template x-for="suggestion in testResult.diagnostics.suggestions">
+                                            <li x-text="suggestion"></li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex gap-2">
+                    <button @click="saveConfiguration()" class="btn btn-success btn-lg" :disabled="saving || !connectionTested">
+                        <span x-show="!saving"><i class="fas fa-save"></i> Save Configuration</span>
+                        <span x-show="saving"><span class="spinner-border spinner-border-sm"></span> Saving...</span>
+                    </button>
+                    <button @click="step = 3" class="btn btn-primary btn-lg" :disabled="!config.id" x-show="config.id">
+                        Discover Tags <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Help Panel -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-question-circle"></i> Configuration Help
+                    </div>
+                    <div class="card-body">
+                        <div x-show="config.protocol === 'ETHERNET_IP'">
+                            <h6>Allen-Bradley EtherNet/IP</h6>
+                            <ul class="small">
+                                <li>Default port: 44818</li>
+                                <li>Slot 0 for CompactLogix</li>
+                                <li>Slots 0-17 for ControlLogix</li>
+                                <li>Supports auto tag discovery</li>
+                            </ul>
+                        </div>
+                        <div x-show="config.protocol === 'S7'">
+                            <h6>Siemens S7</h6>
+                            <ul class="small">
+                                <li>Default port: 102</li>
+                                <li>Rack typically 0</li>
+                                <li>Slot 1 for most CPUs</li>
+                                <li>Requires manual tag addressing</li>
+                            </ul>
+                        </div>
+                        <div x-show="config.protocol === 'OPCUA'">
+                            <h6>OPC-UA</h6>
+                            <ul class="small">
+                                <li>Default port: 4840</li>
+                                <li>Use Basic256Sha256 for security</li>
+                                <li>Supports full tag browsing</li>
+                                <li>Certificate management available</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header bg-secondary text-white">
+                        <i class="fas fa-list"></i> Existing Machines
+                    </div>
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        <div x-show="machines.length === 0" class="text-muted text-center py-3">
+                            No machines configured yet
+                        </div>
+                        <template x-for="machine in machines" :key="machine.id">
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                                <div>
+                                    <strong x-text="machine.name"></strong>
+                                    <br><small class="text-muted" x-text="machine.protocol"></small>
+                                </div>
+                                <button @click="editMachine(machine.id)" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Tag Discovery -->
+        <div x-show="step === 3" class="row">
+            <div class="col-12 mb-3">
+                <button @click="step = 2" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <h3 class="mt-3">Step 3: Tag Configuration</h3>
+            </div>
+
+            <div class="col-12">
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5><i class="fas fa-search"></i> Discover Tags</h5>
+                        <button @click="discoverTags()" class="btn btn-primary" :disabled="discovering">
+                            <span x-show="!discovering"><i class="fas fa-satellite-dish"></i> Auto-Discover Tags</span>
+                            <span x-show="discovering"><span class="spinner-border spinner-border-sm"></span> Discovering...</span>
+                        </button>
+                    </div>
+
+                    <div x-show="discoveredTags.length > 0">
+                        <p class="text-muted">Found <strong x-text="discoveredTags.length"></strong> tags</p>
+                        <div style="max-height: 500px; overflow-y: auto;">
+                            <template x-for="(tag, index) in discoveredTags" :key="index">
+                                <div class="tag-item">
+                                    <input type="checkbox" x-model="tag.selected" class="form-check-input me-3">
+                                    <div class="flex-grow-1">
+                                        <strong x-text="tag.name"></strong>
+                                        <br><small class="text-muted">Address: <code x-text="tag.address"></code> | Type: <span x-text="tag.data_type"></span></small>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <button @click="saveTags()" class="btn btn-success mt-3">
+                            <i class="fas fa-save"></i> Save Selected Tags
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function machineConfig() {
+            return {
+                step: 1,
+                config: {
+                    protocol: null,
+                    name: '',
+                    machine_id: '',
+                    description: '',
+                    ip_address: '',
+                    port: null,
+                    protocol_config: {},
+                    id: null
+                },
+                machines: [],
+                testing: false,
+                testResult: null,
+                connectionTested: false,
+                saving: false,
+                discovering: false,
+                discoveredTags: [],
+                discoveredPLCs: [],
+                networkScanning: false,
+                networkDevices: [],
+                networkScan: {
+                    subnet: '127.0.0.1',
+                    protocol: 'all'
+                },
+
+                init() {
+                    this.loadMachines();
+                },
+
+                selectProtocol(protocol) {
+                    this.config.protocol = protocol;
+                    this.config.port = this.getDefaultPort();
+                },
+
+                getProtocolName() {
+                    const names = {
+                        'ETHERNET_IP': 'Allen-Bradley EtherNet/IP',
+                        'S7': 'Siemens S7',
+                        'OPCUA': 'OPC-UA',
+                        'MODBUS': 'Modbus TCP'
+                    };
+                    return names[this.config.protocol] || '';
+                },
+
+                getDefaultPort() {
+                    const defaults = {
+                        'ETHERNET_IP': 44818,
+                        'S7': 102,
+                        'OPCUA': 4840,
+                        'MODBUS': 502
+                    };
+                    return defaults[this.config.protocol] || 502;
+                },
+
+                async testConnection() {
+                    this.testing = true;
+                    this.testResult = null;
+
+                    try {
+                        const response = await fetch('/api/plc/test-connection/', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                ip_address: this.config.ip_address,
+                                port: this.config.port || this.getDefaultPort(),
+                                protocol: this.config.protocol,
+                                protocol_config: this.config.protocol_config
+                            })
+                        });
+
+                        const result = await response.json();
+                        this.testResult = result;
+                        this.connectionTested = result.success;
+                    } catch (error) {
+                        this.testResult = {success: false, message: error.message};
+                    } finally {
+                        this.testing = false;
+                    }
+                },
+
+                async discoverPLCs() {
+                    if (!this.config.ip_address) {
+                        alert('Please enter an IP address first');
+                        return;
+                    }
+
+                    this.discovering = true;
+                    this.discoveredPLCs = [];
+
+                    try {
+                        const response = await fetch('/api/plc/discover/', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                ip_address: this.config.ip_address,
+                                timeout: 1.0
+                            })
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            this.discoveredPLCs = result.discovered;
+                        }
+                    } catch (error) {
+                        console.error('Discovery failed:', error);
+                        alert('Failed to discover PLCs: ' + error.message);
+                    } finally {
+                        this.discovering = false;
+                    }
+                },
+
+                selectDiscoveredPLC(plc) {
+                    // Auto-fill form with discovered PLC info
+                    this.config.protocol = plc.protocol;
+                    this.config.port = plc.port;
+
+                    // Copy protocol-specific config
+                    this.config.protocol_config = { ...plc.config };
+
+                    // Reset test result
+                    this.testResult = null;
+                    this.connectionTested = false;
+
+                    // Clear discovered list
+                    this.discoveredPLCs = [];
+                },
+
+                async scanNetwork() {
+                    if (!this.networkScan.subnet) {
+                        alert('Please enter an IP address or network subnet');
+                        return;
+                    }
+
+                    this.networkScanning = true;
+                    this.networkDevices = [];
+
+                    // Auto-detect if it's just an IP address and convert to subnet
+                    let network = this.networkScan.subnet;
+                    if (!network.includes('/')) {
+                        // Just an IP address - determine subnet automatically
+                        const ipParts = network.split('.');
+                        if (ipParts.length === 4) {
+                            const firstOctet = parseInt(ipParts[0]);
+                            const secondOctet = parseInt(ipParts[1]);
+
+                            // For localhost, only scan that specific IP (not entire /24)
+                            if (firstOctet === 127) {
+                                network = this.networkScan.subnet + '/32';  // Single IP only
+                                console.log(`Localhost detected - scanning single IP: ${network}`);
+                            }
+                            // For private networks, use /24
+                            else if (firstOctet === 10 ||
+                                (firstOctet === 192 && secondOctet === 168) ||
+                                (firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31)) {
+                                // Private network - use /24
+                                ipParts[3] = '0';  // Set last octet to 0 for network address
+                                network = ipParts.join('.') + '/24';
+                                console.log(`Auto-detected network: ${network} from IP ${this.networkScan.subnet}`);
+                            } else {
+                                // Public or unknown - use /24 anyway
+                                ipParts[3] = '0';
+                                network = ipParts.join('.') + '/24';
+                                console.log(`Using /24 subnet: ${network} from IP ${this.networkScan.subnet}`);
+                            }
+                        }
+                    }
+
+                    try {
+                        const response = await fetch('/api/plc/scan-network/', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                network: network,
+                                protocol_filter: this.networkScan.protocol,
+                                timeout: 0.5
+                            })
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            this.networkDevices = result.devices;
+                            if (result.devices_found === 0) {
+                                alert(`No devices found on ${result.network}. Try a different network or protocol filter.`);
+                            }
+                        } else {
+                            alert('Network scan failed: ' + result.message);
+                        }
+                    } catch (error) {
+                        console.error('Network scan failed:', error);
+                        alert('Failed to scan network: ' + error.message);
+                    } finally {
+                        this.networkScanning = false;
+                    }
+                },
+
+                selectNetworkDevice(device) {
+                    // Auto-fill form with network device info
+                    this.config.ip_address = device.ip_address;
+                    this.config.protocol = device.protocol;
+                    this.config.port = device.port;
+
+                    // Copy device-specific config
+                    if (device.protocol === 'ETHERNET_IP') {
+                        this.config.protocol_config.slot = 0;
+                        this.config.protocol_config.plc_family = device.device_info?.device_type || 'ControlLogix';
+                    } else if (device.protocol === 'S7') {
+                        this.config.protocol_config.rack = 0;
+                        this.config.protocol_config.slot = 1;
+                    } else if (device.protocol === 'OPCUA') {
+                        this.config.protocol_config.security_policy = 'None';
+                    }
+
+                    // Reset test result
+                    this.testResult = null;
+                    this.connectionTested = false;
+
+                    // Clear network scan results
+                    this.networkDevices = [];
+
+                    // Scroll to connection settings
+                    document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+                },
+
+                async saveConfiguration() {
+                    this.saving = true;
+
+                    try {
+                        const response = await fetch('/api/plc/machines/', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(this.config)
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            this.config.id = result.id;
+                            alert('Configuration saved successfully!');
+                            this.loadMachines();
+                        } else {
+                            const error = await response.json();
+                            alert('Failed to save: ' + JSON.stringify(error));
+                        }
+                    } catch (error) {
+                        alert('Failed to save: ' + error.message);
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+
+                async loadMachines() {
+                    try {
+                        const response = await fetch('/api/plc/machines/');
+                        if (response.ok) {
+                            this.machines = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Failed to load machines:', error);
+                    }
+                },
+
+                async discoverTags() {
+                    if (!this.config.id) {
+                        alert('Please save the configuration first');
+                        return;
+                    }
+
+                    this.discovering = true;
+
+                    try {
+                        const response = await fetch(`/api/plc/machines/${this.config.id}/discover_tags/`, {
+                            method: 'POST'
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            this.discoveredTags = result.tags.map(tag => ({...tag, selected: false}));
+                        } else {
+                            alert('Tag discovery failed');
+                        }
+                    } catch (error) {
+                        alert('Tag discovery failed: ' + error.message);
+                    } finally {
+                        this.discovering = false;
+                    }
+                },
+
+                async saveTags() {
+                    const selectedTags = this.discoveredTags.filter(tag => tag.selected);
+                    alert(`${selectedTags.length} tags will be saved (implementation pending)`);
+                    window.location.href = '/plc-monitor/';
+                },
+
+                async editMachine(id) {
+                    try {
+                        const response = await fetch(`/api/plc/machines/${id}/`);
+                        if (response.ok) {
+                            const machine = await response.json();
+                            this.config = machine;
+                            this.step = 2;
+                        }
+                    } catch (error) {
+                        alert('Failed to load machine: ' + error.message);
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
