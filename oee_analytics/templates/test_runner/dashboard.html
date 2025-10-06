@@ -1,0 +1,578 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500-Point Test Runner Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .header-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 2rem;
+        }
+
+        .header-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .header-subtitle {
+            color: #64748b;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 0.25rem;
+        }
+
+        .phase-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .phase-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+        }
+
+        .phase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .phase-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .phase-badge {
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .phase-description {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .phase-meta {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .meta-item i {
+            color: var(--primary);
+        }
+
+        .btn-run {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-run:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-run:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-run-all {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            width: 100%;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+
+        .btn-run-all:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .results-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .results-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .results-badge.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .results-badge.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .results-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-stat {
+            text-align: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .result-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .result-stat-value.passed { color: var(--success); }
+        .result-stat-value.failed { color: var(--danger); }
+        .result-stat-value.warnings { color: var(--warning); }
+
+        .result-stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        .log-viewer {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .log-viewer::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .log-viewer::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        .log-viewer::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 4px solid #e5e7eb;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        .phase-running {
+            border-left: 4px solid var(--warning);
+            background: #fffbeb;
+        }
+
+        .phase-success {
+            border-left: 4px solid var(--success);
+            background: #f0fdf4;
+        }
+
+        .phase-error {
+            border-left: 4px solid var(--danger);
+            background: #fef2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header-card">
+            <h1 class="header-title">
+                <i class="fas fa-flask-vial"></i> 500-Point Test Runner Dashboard
+            </h1>
+            <p class="header-subtitle">
+                Execute and monitor the complete OEE Analytics test suite with real-time results
+            </p>
+
+            <div class="stats-row">
+                <div class="stat-card">
+                    <p class="stat-value">{{ total_tests }}</p>
+                    <p class="stat-label">Total Tests</p>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <p class="stat-value">{{ total_critical }}</p>
+                    <p class="stat-label">Critical Tests</p>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <p class="stat-value">5</p>
+                    <p class="stat-label">Test Phases</p>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <p class="stat-value">~2s</p>
+                    <p class="stat-label">Execution Time</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Run All Button -->
+        <button class="btn-run-all" onclick="runAllTests()">
+            <i class="fas fa-rocket"></i> Run All 500 Tests
+        </button>
+
+        <!-- Test Phases -->
+        <div class="phases-container">
+            {% for phase in phases %}
+            <div class="phase-card" id="phase-{{ phase.id }}" data-phase="{{ phase.id }}">
+                <div class="phase-header">
+                    <div>
+                        <h3 class="phase-title">{{ phase.name }}</h3>
+                        <span class="phase-badge">Phase {{ phase.id }}</span>
+                    </div>
+                    <button class="btn btn-run" onclick="runPhase({{ phase.id }})">
+                        <i class="fas fa-play"></i> Run Phase
+                    </button>
+                </div>
+
+                <p class="phase-description">{{ phase.description }}</p>
+
+                <div class="phase-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-vial"></i>
+                        <span><strong>{{ phase.tests }}</strong> tests</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-star"></i>
+                        <span><strong>{{ phase.critical_tests }}</strong> critical</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-file-code"></i>
+                        <span>{{ phase.file }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="results-section">
+            <div class="results-header">
+                <h2 class="results-title" id="results-title">Test Results</h2>
+                <span class="results-badge" id="results-badge"></span>
+            </div>
+
+            <div class="results-stats" id="results-stats"></div>
+
+            <div>
+                <h4 style="margin-bottom: 1rem; color: var(--dark);">
+                    <i class="fas fa-terminal"></i> Test Output
+                </h4>
+                <div class="log-viewer" id="log-viewer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p style="margin: 0; font-weight: 600; color: var(--dark);" id="loading-text">
+                Executing tests...
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let currentPhase = null;
+
+        async function runPhase(phaseId) {
+            const phaseCard = document.getElementById(`phase-${phaseId}`);
+            const btn = phaseCard.querySelector('.btn-run');
+            const originalHtml = btn.innerHTML;
+
+            try {
+                // Update UI
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Running...';
+                phaseCard.classList.add('phase-running');
+                document.getElementById('loading-overlay').classList.add('show');
+                document.getElementById('loading-text').textContent = `Executing Phase ${phaseId}...`;
+
+                // Execute test
+                const response = await fetch('/api/test-runner/run-phase/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ phase_id: phaseId })
+                });
+
+                const data = await response.json();
+
+                // Update results
+                showResults(data);
+
+                // Update phase card
+                phaseCard.classList.remove('phase-running');
+                if (data.success) {
+                    phaseCard.classList.add('phase-success');
+                } else {
+                    phaseCard.classList.add('phase-error');
+                }
+
+            } catch (error) {
+                alert('Error running test: ' + error.message);
+                phaseCard.classList.remove('phase-running');
+                phaseCard.classList.add('phase-error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                document.getElementById('loading-overlay').classList.remove('show');
+            }
+        }
+
+        async function runAllTests() {
+            const btn = event.target;
+            const originalHtml = btn.innerHTML;
+
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Running All 500 Tests...';
+                document.getElementById('loading-overlay').classList.add('show');
+                document.getElementById('loading-text').textContent = 'Executing all 500 tests...';
+
+                const response = await fetch('/api/test-runner/run-all/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                showResults(data);
+
+            } catch (error) {
+                alert('Error running tests: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+                document.getElementById('loading-overlay').classList.remove('show');
+            }
+        }
+
+        function showResults(data) {
+            const resultsSection = document.getElementById('results-section');
+            const resultsTitle = document.getElementById('results-title');
+            const resultsBadge = document.getElementById('results-badge');
+            const resultsStats = document.getElementById('results-stats');
+            const logViewer = document.getElementById('log-viewer');
+
+            // Update title
+            resultsTitle.textContent = data.phase_name || 'All 500 Tests';
+
+            // Update badge
+            if (data.success) {
+                resultsBadge.className = 'results-badge success';
+                resultsBadge.innerHTML = '<i class="fas fa-check-circle"></i> PASSED';
+            } else {
+                resultsBadge.className = 'results-badge error';
+                resultsBadge.innerHTML = '<i class="fas fa-times-circle"></i> FAILED';
+            }
+
+            // Update stats
+            resultsStats.innerHTML = `
+                <div class="result-stat">
+                    <p class="result-stat-value passed">${data.passed}</p>
+                    <p class="result-stat-label">Passed</p>
+                </div>
+                <div class="result-stat">
+                    <p class="result-stat-value failed">${data.failed}</p>
+                    <p class="result-stat-label">Failed</p>
+                </div>
+                <div class="result-stat">
+                    <p class="result-stat-value warnings">${data.warnings}</p>
+                    <p class="result-stat-label">Warnings</p>
+                </div>
+                <div class="result-stat">
+                    <p class="result-stat-value" style="color: var(--primary);">${data.execution_time.toFixed(2)}s</p>
+                    <p class="result-stat-label">Time</p>
+                </div>
+            `;
+
+            // Update log viewer
+            logViewer.textContent = data.output;
+
+            // Show results section
+            resultsSection.classList.add('show');
+
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Auto-refresh status every 5 seconds (optional)
+        setInterval(async () => {
+            try {
+                const response = await fetch('/api/test-runner/status/');
+                const data = await response.json();
+                // Could update UI with latest status here
+            } catch (error) {
+                console.error('Error fetching status:', error);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

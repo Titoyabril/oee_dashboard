@@ -1,1 +1,9 @@
 static/models/blender-*
+static/models/
+*.pyc
+__pycache__/
+*.log
+.vscode/
+.idea/
+*.bak
+%TEMP%*
