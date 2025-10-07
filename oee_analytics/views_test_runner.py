@@ -55,6 +55,14 @@ TEST_PHASES = [
         'tests': 100,
         'description': 'Metrics, Logging, Tracing, Quality Codes, Data Validation, Clock Sync',
         'critical_tests': 8
+    },
+    {
+        'id': 6,
+        'name': 'Phase 6: Sensor Range Validation',
+        'file': 'test_sensor_validator_comprehensive.py',
+        'tests': 110,
+        'description': 'Database-driven sensor validation, cache performance, boundary cases, quality degradation',
+        'critical_tests': 12
     }
 ]
 
@@ -178,7 +186,7 @@ def run_all_tests(request):
 
         # Generate log filename
         timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
-        log_file = log_dir / f'all_500_tests_{timestamp}.log'
+        log_file = log_dir / f'all_610_tests_{timestamp}.log'
 
         # Execute all tests
         cmd = [
@@ -198,7 +206,7 @@ def run_all_tests(request):
 
         # Save output
         with open(log_file, 'w') as f:
-            f.write("=== ALL 500 TESTS ===\n")
+            f.write("=== ALL 610 TESTS ===\n")
             f.write(f"Executed: {datetime.now(timezone.utc).isoformat()}\n")
             f.write(f"Command: {' '.join(cmd)}\n\n")
             f.write("=== STDOUT ===\n")
@@ -221,7 +229,7 @@ def run_all_tests(request):
 
         response_data = {
             'success': result.returncode == 0,
-            'total_tests': 500,
+            'total_tests': 610,
             'passed': passed,
             'failed': failed,
             'warnings': warnings,
@@ -287,13 +295,13 @@ def get_test_status(request):
 
     latest_log = None
     if test_dir.exists():
-        log_files = sorted(test_dir.glob('all_500_tests_*.log'), reverse=True)
+        log_files = sorted(test_dir.glob('all_610_tests_*.log'), reverse=True)
         if log_files:
             latest_log = log_files[0].name
 
     return JsonResponse({
         'phases': TEST_PHASES,
-        'total_tests': 500,
-        'total_critical': 71,
+        'total_tests': 610,
+        'total_critical': 83,  # 71 + 12 from Phase 6
         'latest_log': latest_log
     })
