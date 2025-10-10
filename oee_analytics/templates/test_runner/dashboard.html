@@ -343,7 +343,7 @@
         <!-- Header -->
         <div class="header-card">
             <h1 class="header-title">
-                <i class="fas fa-flask-vial"></i> 610-Point Test Runner Dashboard
+                <i class="fas fa-flask-vial"></i> 605-Point Test Runner Dashboard
             </h1>
             <p class="header-subtitle">
                 Execute and monitor the complete OEE Analytics test suite with real-time results
@@ -371,7 +371,7 @@
 
         <!-- Run All Button -->
         <button class="btn-run-all" onclick="runAllTests()">
-            <i class="fas fa-rocket"></i> Run All 610 Tests
+            <i class="fas fa-rocket"></i> Run All 605 Tests
         </button>
 
         <!-- Test Phases -->
@@ -491,9 +491,9 @@
 
             try {
                 btn.disabled = true;
-                btn.innerHTML = '<span class="spinner"></span> Running All 610 Tests...';
+                btn.innerHTML = '<span class="spinner"></span> Running All 605 Tests...';
                 document.getElementById('loading-overlay').classList.add('show');
-                document.getElementById('loading-text').textContent = 'Executing all 610 tests...';
+                document.getElementById('loading-text').textContent = 'Executing all 605 tests...';
 
                 const response = await fetch('/api/test-runner/run-all/', {
                     method: 'POST',
@@ -522,7 +522,7 @@
             const logViewer = document.getElementById('log-viewer');
 
             // Update title
-            resultsTitle.textContent = data.phase_name || 'All 610 Tests';
+            resultsTitle.textContent = data.phase_name || 'All 605 Tests';
 
             // Update badge
             if (data.success) {

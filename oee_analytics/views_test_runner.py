@@ -59,10 +59,10 @@ TEST_PHASES = [
     {
         'id': 6,
         'name': 'Phase 6: Sensor Range Validation',
-        'file': 'test_sensor_validator_comprehensive.py',
-        'tests': 110,
-        'description': 'Database-driven sensor validation, cache performance, boundary cases, quality degradation',
-        'critical_tests': 12
+        'file': 'test_sensor_validator_standalone.py',
+        'tests': 105,
+        'description': 'Comprehensive sensor validation: range checks, caching, config state, error handling, edge cases, performance, real-world scenarios',
+        'critical_tests': 25
     }
 ]
 
@@ -135,16 +135,22 @@ def run_test_phase(request):
 
         # Parse pytest output for results
         output = result.stdout
-        passed = output.count(' PASSED')
-        failed = output.count(' FAILED')
+
+        # Parse from summary line (more reliable than counting individual results)
+        import re
+
+        # Look for summary line like "7 passed in 2.34s" or "5 failed, 37 passed in 11.61s"
+        summary_match = re.search(r'(\d+)\s+passed', output)
+        passed = int(summary_match.group(1)) if summary_match else 0
+
+        failed_match = re.search(r'(\d+)\s+failed', output)
+        failed = int(failed_match.group(1)) if failed_match else 0
 
         # Count only actual pytest warnings (from summary line)
-        import re
         warning_match = re.search(r'(\d+)\s+warning', output)
         warnings = int(warning_match.group(1)) if warning_match else 0
 
         # Extract execution time
-        import re
         time_match = re.search(r'in ([\d.]+)s', output)
         execution_time = float(time_match.group(1)) if time_match else 0
 
@@ -186,7 +192,7 @@ def run_all_tests(request):
 
         # Generate log filename
         timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
-        log_file = log_dir / f'all_610_tests_{timestamp}.log'
+        log_file = log_dir / f'all_605_tests_{timestamp}.log'
 
         # Execute all tests
         cmd = [
@@ -206,7 +212,7 @@ def run_all_tests(request):
 
         # Save output
         with open(log_file, 'w') as f:
-            f.write("=== ALL 610 TESTS ===\n")
+            f.write("=== ALL 605 TESTS ===\n")
             f.write(f"Executed: {datetime.now(timezone.utc).isoformat()}\n")
             f.write(f"Command: {' '.join(cmd)}\n\n")
             f.write("=== STDOUT ===\n")
@@ -214,13 +220,18 @@ def run_all_tests(request):
             f.write("\n\n=== STDERR ===\n")
             f.write(result.stderr)
 
-        # Parse results
+        # Parse results from summary line
         output = result.stdout
-        passed = output.count(' PASSED')
-        failed = output.count(' FAILED')
+        import re
+
+        # Parse from summary line (more reliable)
+        summary_match = re.search(r'(\d+)\s+passed', output)
+        passed = int(summary_match.group(1)) if summary_match else 0
+
+        failed_match = re.search(r'(\d+)\s+failed', output)
+        failed = int(failed_match.group(1)) if failed_match else 0
 
         # Count only actual pytest warnings (from summary line)
-        import re
         warning_match = re.search(r'(\d+)\s+warning', output)
         warnings = int(warning_match.group(1)) if warning_match else 0
 
@@ -229,7 +240,7 @@ def run_all_tests(request):
 
         response_data = {
             'success': result.returncode == 0,
-            'total_tests': 610,
+            'total_tests': 605,
             'passed': passed,
             'failed': failed,
             'warnings': warnings,
@@ -295,13 +306,13 @@ def get_test_status(request):
 
     latest_log = None
     if test_dir.exists():
-        log_files = sorted(test_dir.glob('all_610_tests_*.log'), reverse=True)
+        log_files = sorted(test_dir.glob('all_605_tests_*.log'), reverse=True)
         if log_files:
             latest_log = log_files[0].name
 
     return JsonResponse({
         'phases': TEST_PHASES,
-        'total_tests': 610,
-        'total_critical': 83,  # 71 + 12 from Phase 6
+        'total_tests': 605,
+        'total_critical': 86,  # 61 from phases 1-5 + 25 from Phase 6
         'latest_log': latest_log
     })
